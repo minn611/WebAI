@@ -20,18 +20,28 @@ const ClientApp = {
   // Render a standard product card HTML
   renderProductCard(product) {
     const defaultImg = "images/products/hong-tra-mochi-keo-dai.jpg";
+    const categoryLabels = {
+      "mochi": "🍡 Mochi Kéo Dài",
+      "tiramisu": "🍫 Tiramisu & Cookies",
+      "tra-sua": "🧋 Trà Sữa Đô Đô",
+      "tra-trai-cay": "🍊 Trà Hoa Quả",
+      "da-xay": "🍧 Đá Xay",
+      "ca-phe": "☕ Cà Phê"
+    };
+    const categoryDisplay = categoryLabels[product.category] || product.category;
+
     return `
       <div class="product-card" data-product-id="${product.id}">
         ${product.oldPrice ? `<span class="badge badge-discount">-${Math.round((1 - product.price / product.oldPrice) * 100)}%</span>` : ""}
         ${product.isBestseller ? `<span class="badge badge-warning badge-tag">🔥 Hot</span>` : (product.isNew ? `<span class="badge badge-secondary badge-tag">✨ Mới</span>` : "")}
         <div class="card-img-wrap" onclick="window.location.href='product-detail.html?id=${product.id}'" style="cursor: pointer;" title="Xem chi tiết ly ${product.name}">
           <img src="${product.image || defaultImg}" alt="${product.name}" loading="lazy" onerror="this.onerror=null; this.src='${defaultImg}';">
-          <div class="quick-view-overlay" style="position: absolute; inset: 0; background: rgba(230,0,35,0.25); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.25s ease;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
-            <span class="btn btn-primary btn-sm" style="box-shadow: 0 4px 12px rgba(0,0,0,0.3);">👁️ Xem Chi Tiết Ly</span>
+          <div class="quick-view-overlay" style="position: absolute; inset: 0; background: rgba(230,0,35,0.3); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.25s ease;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
+            <span class="btn btn-primary btn-sm" style="box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-weight: 700;">👁️ Xem Chi Tiết Ly</span>
           </div>
         </div>
         <div class="card-body">
-          <span class="card-category">${product.category}</span>
+          <span class="card-category" style="color: var(--primary); font-weight: 700; font-size: 0.78rem;">${categoryDisplay}</span>
           <h3 class="card-title">
             <a href="product-detail.html?id=${product.id}" style="color: inherit; text-decoration: none;" title="Xem chi tiết ${product.name}">
               ${product.name}
@@ -41,16 +51,16 @@ const ClientApp = {
             <span>⭐ ${product.rating || 5.0}</span>
             <span style="color: var(--text-subtle);">(${product.sold || 0} đã bán)</span>
           </div>
-          <div class="card-footer" style="gap: 0.35rem; flex-wrap: wrap; justify-content: space-between;">
+          <div class="card-footer" style="gap: 0.5rem; flex-wrap: wrap; justify-content: space-between; align-items: center; padding-top: 0.85rem;">
             <div class="price-wrap">
-              <span class="current-price">${Formatters.currency(product.price)}</span>
+              <span class="current-price" style="font-size: 1.2rem;">${Formatters.currency(product.price)}</span>
               ${product.oldPrice ? `<span class="oldPrice" style="font-size: 0.75rem; text-decoration: line-through; color: var(--text-subtle);">${Formatters.currency(product.oldPrice)}</span>` : ""}
             </div>
-            <div style="display: flex; gap: 0.35rem;">
-              <a href="product-detail.html?id=${product.id}" class="btn btn-outline btn-sm" style="padding: 0.35rem 0.55rem; font-size: 0.8rem;" title="Xem chi tiết">
+            <div style="display: flex; gap: 0.4rem; align-items: center;">
+              <a href="product-detail.html?id=${product.id}" class="btn-card-detail" title="Xem công thức & tùy chỉnh">
                 Chi Tiết ➔
               </a>
-              <button class="btn btn-primary btn-sm" style="padding: 0.35rem 0.65rem;" onclick="ClientApp.openCustomizer('${product.id}')" title="Chọn Size & Topping nhanh">
+              <button class="btn-customize-quick" onclick="ClientApp.openCustomizer('${product.id}')" title="Chọn Size & Topping nhanh">
                 🛒 Chọn Món
               </button>
             </div>
@@ -89,12 +99,12 @@ const ClientApp = {
     const toppingListEl = document.getElementById("cust-toppings-list");
     if (toppingListEl) {
       toppingListEl.innerHTML = toppings.map(top => `
-        <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.85rem; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;" class="topping-option-label" id="topping-label-${top.id}">
-          <div style="display: flex; align-items: center; gap: 0.6rem;">
-            <input type="checkbox" value="${top.name}" data-price="${top.price}" onchange="ClientApp.toggleTopping('${top.name}', ${top.price}, this.checked)">
-            <span style="font-size: 0.9rem; font-weight: 600;">${top.name}</span>
+        <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;" class="topping-option-label" id="cust-top-label-${top.id}">
+          <div style="display: flex; align-items: center; gap: 0.65rem;">
+            <input type="checkbox" value="${top.name}" data-price="${top.price}" onchange="ClientApp.toggleTopping('${top.name}', ${top.price}, this.checked, 'cust-top-label-${top.id}')">
+            <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-main);">${top.name}</span>
           </div>
-          <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary);">+${Formatters.currency(top.price)}</span>
+          <span style="font-size: 0.85rem; font-weight: 800; color: var(--primary); background: rgba(230,0,35,0.08); padding: 2px 8px; border-radius: 20px;">+${Formatters.currency(top.price)}</span>
         </label>
       `).join("");
     }
@@ -144,13 +154,17 @@ const ClientApp = {
     this.updateCustomizerVisual();
   },
 
-  toggleTopping(toppingName, price, isChecked) {
+  toggleTopping(toppingName, price, isChecked, labelId) {
     if (isChecked) {
       if (!this.customizerState.toppings.includes(toppingName)) {
         this.customizerState.toppings.push(toppingName);
       }
     } else {
       this.customizerState.toppings = this.customizerState.toppings.filter(t => t !== toppingName);
+    }
+    if (labelId) {
+      const el = document.getElementById(labelId);
+      if (el) el.classList.toggle("checked", isChecked);
     }
     this.updateCustomizerVisual();
     this.calculateCustomizerPrice();
@@ -178,7 +192,14 @@ const ClientApp = {
     // Size extra
     const sizes = DB.get(STORAGE_KEYS.SIZES, INITIAL_SIZES);
     const sizeObj = sizes.find(s => s.id === this.customizerState.size);
-    const sizePrice = sizeObj ? sizeObj.extraPrice : 0;
+    let sizePrice = 0;
+    if (sizeObj && typeof sizeObj.extraPrice === "number") {
+      sizePrice = sizeObj.extraPrice;
+    } else if (this.customizerState.size === "L") {
+      sizePrice = 6000;
+    } else if (this.customizerState.size === "XL") {
+      sizePrice = 12000;
+    }
 
     // Toppings total
     const toppings = DB.getToppings();
@@ -277,6 +298,15 @@ const ClientApp = {
   // --------------------------------------------------------------------------
   // Lucky Spin Wheel Minigame
   // --------------------------------------------------------------------------
+  openLuckyWheel() {
+    const section = document.getElementById("lucky-wheel-section") || document.querySelector(".lucky-spin-section");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "center" });
+    } else {
+      window.location.href = "index.html#lucky-wheel-section";
+    }
+  },
+
   initLuckyWheel() {
     const canvas = document.getElementById("lucky-wheel-canvas");
     if (!canvas) return;

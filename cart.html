@@ -99,7 +99,7 @@
           </div>
         </div>
 
-        <a href="checkout.html" class="btn btn-primary btn-lg" style="width: 100%; text-align: center;">Tiến Hành Đặt Hàng ➔</a>
+        <a id="cart-checkout-btn" href="checkout.html" class="btn btn-primary btn-lg" style="width: 100%; text-align: center;">Tiến Hành Đặt Hàng ➔</a>
         <a href="menu.html" class="btn btn-ghost btn-sm text-center" style="width: 100%; margin-top: 0.5rem;">+ Chọn Thêm Món Khác</a>
       </div>
     </div>
@@ -167,19 +167,22 @@
             <div style="flex: 1; min-width: 0;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <h4 style="font-size: 1.05rem; margin-bottom: 2px;">${item.name}</h4>
-                <button onclick="Cart.removeItem('${item.itemKey}'); renderFullCartPage();" class="btn btn-ghost btn-sm" style="color: var(--status-cancelled); font-size: 0.8rem;">Xóa</button>
+                <div style="display: flex; gap: 0.35rem; align-items: center;">
+                  <button onclick="ClientApp.openCustomizer('${item.productId}')" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: var(--radius-full);" title="Tùy chỉnh lại ly">✏️ Tùy Biến</button>
+                  <button onclick="Cart.removeItem('${item.itemKey}'); renderFullCartPage();" class="btn btn-ghost btn-sm" style="color: var(--status-cancelled); font-size: 0.8rem; font-weight: 700; padding: 0.25rem 0.5rem;" title="Xóa món">✕ Xóa</button>
+                </div>
               </div>
               <div class="text-xs text-muted" style="margin-bottom: 4px;">
                 Size: <b>${item.size}</b> | Đường: <b>${item.sugar}</b> | Đá: <b>${item.ice}</b>
               </div>
-              ${item.toppings.length ? `<div class="text-xs text-primary" style="margin-bottom: 6px;">Topping: ${item.toppings.join(", ")}</div>` : ''}
+              ${item.toppings.length ? `<div class="text-xs text-primary font-semibold" style="margin-bottom: 6px;">Topping: ${item.toppings.join(", ")}</div>` : ''}
               
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                <span style="font-size: 1.05rem; font-weight: 800; color: var(--primary);">${Formatters.currency(item.unitPrice)}</span>
+                <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary); font-family: var(--font-heading);">${Formatters.currency(item.unitPrice)}</span>
                 <div class="qty-counter">
-                  <button class="qty-btn" onclick="Cart.updateQuantity('${item.itemKey}', -1); renderFullCartPage();">-</button>
+                  <button class="qty-btn" onclick="Cart.updateQuantity('${item.itemKey}', -1); renderFullCartPage();" title="Giảm số lượng">-</button>
                   <input type="text" class="qty-input" value="${item.quantity}" readonly>
-                  <button class="qty-btn" onclick="Cart.updateQuantity('${item.itemKey}', 1); renderFullCartPage();">+</button>
+                  <button class="qty-btn" onclick="Cart.updateQuantity('${item.itemKey}', 1); renderFullCartPage();" title="Tăng số lượng">+</button>
                 </div>
               </div>
             </div>
@@ -221,6 +224,11 @@
       }
 
       document.getElementById("cart-final-total").textContent = Formatters.currency(finalTotal);
+
+      const checkoutBtn = document.getElementById("cart-checkout-btn");
+      if (checkoutBtn) {
+        checkoutBtn.href = appliedVoucher ? `checkout.html?voucher=${encodeURIComponent(appliedVoucher.code)}` : "checkout.html";
+      }
     }
 
     function applyCartVoucher() {

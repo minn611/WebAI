@@ -81,6 +81,12 @@
             <span class="text-xs text-muted">Tiếp nhận, đổi trạng thái đơn, điều phối shipper và in hóa đơn POS</span>
           </div>
         </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <button class="btn btn-outline btn-sm" onclick="OrderMgmt.refresh()">Làm mới 🔄</button>
+          <button class="btn btn-primary" onclick="OrderMgmt.openCreateOrderModal()">
+            <span>+ Tạo Đơn Tại Quầy (POS)</span>
+          </button>
+        </div>
       </header>
 
       <div class="admin-content">
@@ -102,7 +108,9 @@
               <span class="input-icon">🔍</span>
               <input type="text" id="admin-order-search" class="form-control form-control-sm" placeholder="Tìm theo Mã đơn, Tên khách hoặc SĐT...">
             </div>
-            <button class="btn btn-outline btn-sm" onclick="OrderMgmt.refresh()">Làm mới 🔄</button>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">
+              💡 <i>Thao tác: Xem chi tiết, Chỉnh sửa thông tin, In hóa đơn POS hoặc Xóa đơn</i>
+            </div>
           </div>
 
           <div class="table-responsive">
@@ -116,7 +124,7 @@
                   <th>Tổng Tiền</th>
                   <th>Thanh Toán</th>
                   <th>Trạng Thái</th>
-                  <th>Thao Tác</th>
+                  <th style="text-align: center;">Thao Tác (Xem / Sửa / Xóa)</th>
                 </tr>
               </thead>
               <tbody id="admin-orders-tbody">
@@ -143,6 +151,129 @@
       <div class="modal-footer" id="detail-modal-footer">
         <!-- Action buttons injected -->
       </div>
+    </div>
+  </div>
+
+  <!-- Order Edit Modal -->
+  <div id="order-edit-modal" class="modal-backdrop">
+    <div class="modal-container" style="max-width: 580px;">
+      <div class="modal-header">
+        <h4 class="modal-title" id="order-edit-modal-title">Chỉnh Sửa Thông Tin Đơn Hàng</h4>
+        <button class="modal-close" data-close-modal="order-edit-modal">✕</button>
+      </div>
+      <form onsubmit="OrderMgmt.saveOrderEditSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="edit-order-id">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label class="form-label text-xs">Tên Khách Hàng *</label>
+              <input type="text" id="edit-order-name" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Số Điện Thoại *</label>
+              <input type="tel" id="edit-order-phone" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Địa Chỉ Giao Hàng</label>
+            <input type="text" id="edit-order-address" class="form-control">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label class="form-label text-xs">Trạng Thái Đơn Hàng</label>
+              <select id="edit-order-status" class="form-select">
+                <option value="pending">Chờ xác nhận</option>
+                <option value="confirmed">Đã duyệt (Chờ pha)</option>
+                <option value="preparing">Đang pha chế</option>
+                <option value="shipping">Đang giao hàng</option>
+                <option value="completed">Đã hoàn thành</option>
+                <option value="cancelled">Đã hủy đơn</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Trạng Thái Thanh Toán</label>
+              <select id="edit-order-payment-status" class="form-select">
+                <option value="unpaid">Chưa thanh toán</option>
+                <option value="paid">Đã thanh toán</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Ghi Chú Cho Pha Chế / Giao Hàng</label>
+            <textarea id="edit-order-note" class="form-textarea" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal="order-edit-modal">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu Thay Đổi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Order Modal (POS Quick Create) -->
+  <div id="order-create-modal" class="modal-backdrop">
+    <div class="modal-container" style="max-width: 650px;">
+      <div class="modal-header">
+        <h4 class="modal-title">+ Tạo Đơn Hàng Tại Quầy / Điện Thoại (POS)</h4>
+        <button class="modal-close" data-close-modal="order-create-modal">✕</button>
+      </div>
+      <form onsubmit="OrderMgmt.saveCreateOrderSubmit(event)">
+        <div class="modal-body">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label class="form-label text-xs">Tên Khách Hàng *</label>
+              <input type="text" id="create-order-name" class="form-control" placeholder="Khách lẻ tại quầy" value="Khách lẻ tại quầy" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Số Điện Thoại</label>
+              <input type="tel" id="create-order-phone" class="form-control" placeholder="0901234567" value="0901234567">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Địa Chỉ / Bàn</label>
+            <input type="text" id="create-order-address" class="form-control" placeholder="Dùng tại quán hoặc mang đi" value="Uống tại quán / Mang đi">
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="form-group" style="grid-column: span 2;">
+              <label class="form-label text-xs">Chọn Món Nhanh *</label>
+              <select id="create-order-product" class="form-select">
+                <!-- Injected products -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Số Lượng</label>
+              <input type="number" id="create-order-qty" class="form-control" value="1" min="1">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label class="form-label text-xs">Hình Thức Thanh Toán</label>
+              <select id="create-order-payment-method" class="form-select">
+                <option value="cash">Tiền mặt (Cash)</option>
+                <option value="vietqr">Chuyển khoản VietQR</option>
+                <option value="momo">Ví MoMo</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Trạng Thái Ban Đầu</label>
+              <select id="create-order-init-status" class="form-select">
+                <option value="preparing">🧋 Pha Chế Ngay (Đang pha)</option>
+                <option value="confirmed">Đã duyệt (Chờ pha)</option>
+                <option value="completed">✅ Hoàn thành (Đã giao khách)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Ghi Chú Đơn Hàng (Đường, đá, vị đặc biệt)</label>
+            <input type="text" id="create-order-note" class="form-control" placeholder="Ví dụ: 70% đường, ít đá, nhiều mochi...">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal="order-create-modal">Hủy</button>
+          <button type="submit" class="btn btn-primary">Tạo Đơn Hàng ➔</button>
+        </div>
+      </form>
     </div>
   </div>
 

@@ -173,7 +173,7 @@
             <td><b class="badge ${idx === 0 ? 'badge-warning' : 'badge-secondary'}">#${idx + 1}</b></td>
             <td>
               <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <img src="${p.image}" alt="${p.name}" style="width: 38px; height: 38px; border-radius: var(--radius-sm); object-fit: cover;">
+                <img src="${p.image.startsWith('http') || p.image.startsWith('../') ? p.image : '../' + p.image}" alt="${p.name}" onerror="this.onerror=null; this.src='../images/products/hong-tra-mochi-keo-dai.jpg';" style="width: 38px; height: 38px; border-radius: var(--radius-sm); object-fit: cover;">
                 <span class="font-bold">${p.name}</span>
               </div>
             </td>

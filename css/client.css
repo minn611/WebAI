@@ -473,3 +473,175 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* --------------------------------------------------------------------------
+   7. Prominent Customizer Controls & Topping Buttons
+   -------------------------------------------------------------------------- */
+.cust-size-btn,
+.cust-sugar-btn,
+.cust-ice-btn {
+  font-weight: 600;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cust-size-btn:hover,
+.cust-sugar-btn:hover,
+.cust-ice-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-bg);
+  transform: translateY(-1px);
+}
+
+.cust-size-btn.active,
+.cust-sugar-btn.active,
+.cust-ice-btn.active {
+  background: linear-gradient(135deg, var(--primary) 0%, #FF2A4D 100%) !important;
+  color: #ffffff !important;
+  border-color: var(--primary) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(230, 0, 35, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+/* Topping Card Selectable Option */
+.topping-option-label,
+.topping-check-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.9rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.topping-option-label:hover,
+.topping-check-card:hover {
+  border-color: var(--primary);
+  background-color: #FFF8F8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(230, 0, 35, 0.08);
+}
+
+.topping-option-label:has(input:checked),
+.topping-check-card:has(input:checked),
+.topping-option-label.checked,
+.topping-check-card.checked {
+  border-color: var(--primary) !important;
+  background-color: #FFF0F2 !important;
+  box-shadow: 0 3px 10px rgba(230, 0, 35, 0.15) !important;
+}
+
+.topping-option-label input[type="checkbox"],
+.topping-check-card input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+}
+
+/* Prominent Product Card Action Buttons */
+.btn-card-detail {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.2s ease;
+}
+
+.btn-card-detail:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-bg);
+  transform: translateY(-1px);
+}
+
+.btn-customize-quick {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--primary) 0%, #FF334B 100%);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  box-shadow: 0 3px 10px rgba(230, 0, 35, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-customize-quick:hover {
+  background: linear-gradient(135deg, #C5001E 0%, #E60023 100%);
+  box-shadow: 0 5px 15px rgba(230, 0, 35, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-customize-quick:active {
+  transform: scale(0.96);
+}
+
+/* Prominent Quantity Counter Buttons */
+.qty-counter {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  padding: 2px;
+}
+
+.qty-counter .qty-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--bg-subtle);
+  color: var(--text-main);
+  font-weight: 800;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.qty-counter .qty-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(230, 0, 35, 0.3);
+}
+
+.qty-counter .qty-input {
+  width: 38px;
+  text-align: center;
+  font-weight: 800;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  outline: none;
+}
+

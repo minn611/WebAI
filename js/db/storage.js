@@ -18,7 +18,7 @@ const STORAGE_KEYS = {
   VERSION: "teajoy_version"
 };
 
-const DODO_VERSION = "dodo_v5_local_assets_vietnampro";
+const DODO_VERSION = "dodo_v7_size_xl_synced";
 
 const DB = {
   // Initialize and Seed LocalStorage if empty or outdated
@@ -41,8 +41,15 @@ const DB = {
     if (!localStorage.getItem(STORAGE_KEYS.ORDERS)) {
       this.set(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
     }
-    if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-      this.set(STORAGE_KEYS.USERS, INITIAL_USERS);
+    if (!localStorage.getItem(STORAGE_KEYS.USERS) || needRefresh) {
+      const existingUsers = this.get(STORAGE_KEYS.USERS, []);
+      const mergedUsers = [...INITIAL_USERS];
+      existingUsers.forEach(u => {
+        if (!mergedUsers.some(mu => mu.username.toLowerCase() === u.username.toLowerCase())) {
+          mergedUsers.push(u);
+        }
+      });
+      this.set(STORAGE_KEYS.USERS, mergedUsers);
     }
     if (!localStorage.getItem(STORAGE_KEYS.VOUCHERS)) {
       this.set(STORAGE_KEYS.VOUCHERS, INITIAL_VOUCHERS);
@@ -150,6 +157,16 @@ const DB = {
   // Toppings & Categories
   getToppings() { return this.get(STORAGE_KEYS.TOPPINGS, []); },
   saveToppings(toppings) { this.set(STORAGE_KEYS.TOPPINGS, toppings); },
+  saveTopping(topping) {
+    const list = this.getToppings();
+    const index = list.findIndex(t => t.id === topping.id);
+    if (index >= 0) {
+      list[index] = { ...list[index], ...topping };
+    } else {
+      list.push(topping);
+    }
+    this.saveToppings(list);
+  },
   getCategories() { return this.get(STORAGE_KEYS.CATEGORIES, []); },
   getVouchers() { return this.get(STORAGE_KEYS.VOUCHERS, []); },
   getSuppliers() { return this.get(STORAGE_KEYS.SUPPLIERS, []); },

@@ -78,17 +78,21 @@
           <button class="action-btn" id="sidebar-toggle-btn" onclick="document.getElementById('admin-sidebar').classList.toggle('open')" style="display: none;">☰</button>
           <div>
             <h3 style="font-size: 1.25rem; margin: 0;">Quản Lý Khuyến Mãi & Banner Quảng Cáo</h3>
-            <span class="text-xs text-muted">Tạo mã voucher giảm giá, quản lý banner trang chủ và vòng quay may mắn</span>
+            <span class="text-xs text-muted">Tạo mã voucher giảm giá, quản lý banner trang chủ và chương trình ưu đãi</span>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="MarketingMgmt.openAddVoucherModal()">+ Tạo Mã Voucher Mới</button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-primary" onclick="MarketingMgmt.openAddVoucherModal()">+ Thêm Voucher</button>
+          <button class="btn btn-outline" onclick="MarketingMgmt.openAddBannerModal()">+ Thêm Banner</button>
+        </div>
       </header>
 
       <div class="admin-content">
         <!-- Vouchers Section -->
         <div class="data-table-container" style="margin-bottom: 2rem;">
-          <div class="table-toolbar">
+          <div class="table-toolbar" style="display: flex; justify-content: space-between; align-items: center;">
             <h4 style="margin: 0;">🎟️ Danh Sách Mã Giảm Giá Đang Hoạt Động</h4>
+            <button class="btn btn-primary btn-sm" onclick="MarketingMgmt.openAddVoucherModal()">+ Thêm Mã Giảm Giá</button>
           </div>
 
           <div class="table-responsive">
@@ -101,7 +105,7 @@
                   <th>Mô Tả Khuyến Mãi</th>
                   <th>Hạn Sử Dụng</th>
                   <th>Trạng Thái</th>
-                  <th>Thao Tác</th>
+                  <th style="text-align: center;">Thao Tác</th>
                 </tr>
               </thead>
               <tbody id="admin-vouchers-tbody">
@@ -113,8 +117,9 @@
 
         <!-- Banners Section -->
         <div class="data-table-container">
-          <div class="table-toolbar">
+          <div class="table-toolbar" style="display: flex; justify-content: space-between; align-items: center;">
             <h4 style="margin: 0;">🖼️ Banner Quảng Cáo Trang Chủ</h4>
+            <button class="btn btn-outline btn-sm" onclick="MarketingMgmt.openAddBannerModal()">+ Thêm Banner Mới</button>
           </div>
 
           <div class="table-responsive">
@@ -126,6 +131,7 @@
                   <th>Hình Ảnh Xem Trước</th>
                   <th>Liên Kết Đích</th>
                   <th>Trạng Thái Hiển Thị</th>
+                  <th style="text-align: center;">Thao Tác</th>
                 </tr>
               </thead>
               <tbody id="admin-banners-tbody">
@@ -139,14 +145,15 @@
     </main>
   </div>
 
-  <!-- Add Voucher Modal -->
+  <!-- Add / Edit Voucher Modal -->
   <div id="voucher-modal" class="modal-backdrop">
     <div class="modal-container" style="max-width: 500px;">
       <div class="modal-header">
-        <h4 class="modal-title">Tạo Mã Khuyến Mãi Mới</h4>
+        <h4 class="modal-title" id="voucher-modal-title">Tạo Mã Khuyến Mãi Mới</h4>
         <button class="modal-close" data-close-modal="voucher-modal">✕</button>
       </div>
       <form onsubmit="MarketingMgmt.saveVoucherSubmit(event)">
+        <input type="hidden" id="vouch-old-code">
         <div class="modal-body">
           <div class="form-group">
             <label class="form-label text-xs">Mã Giảm Giá (Viết hoa liền không dấu) *</label>
@@ -182,7 +189,45 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" data-close-modal="voucher-modal">Hủy</button>
-          <button type="submit" class="btn btn-primary">Tạo Mã</button>
+          <button type="submit" class="btn btn-primary">Lưu Voucher</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add / Edit Banner Modal -->
+  <div id="banner-modal" class="modal-backdrop">
+    <div class="modal-container" style="max-width: 520px;">
+      <div class="modal-header">
+        <h4 class="modal-title" id="banner-modal-title">Thêm Banner Quảng Cáo</h4>
+        <button class="modal-close" data-close-modal="banner-modal">✕</button>
+      </div>
+      <form onsubmit="MarketingMgmt.saveBannerSubmit(event)">
+        <input type="hidden" id="banner-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label text-xs">Tiêu Đề Banner *</label>
+            <input type="text" id="banner-title" class="form-control" required placeholder="VD: Thử Thách Mochi Kéo Dài 2026">
+          </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Đường Dẫn Hình Ảnh (URL hoặc Đường dẫn tương đối) *</label>
+            <input type="text" id="banner-image" class="form-control" required placeholder="VD: images/banner-mochi.jpg hoặc URL ảnh online">
+          </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Liên Kết Khi Nhấp Vào</label>
+            <input type="text" id="banner-link" class="form-control" value="menu.html?cat=mochi" placeholder="menu.html">
+          </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Trạng Thái Hiển Thị</label>
+            <select id="banner-status" class="form-select">
+              <option value="active">Đang Hiển Thị</option>
+              <option value="hidden">Ẩn Banner</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal="banner-modal">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu Banner</button>
         </div>
       </form>
     </div>
@@ -208,16 +253,24 @@
         if (!tbody) return;
 
         const vouchers = DB.getVouchers();
+        if (vouchers.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Chưa có voucher nào.</td></tr>`;
+          return;
+        }
+
         tbody.innerHTML = vouchers.map(v => `
           <tr>
             <td><b class="font-bold text-primary">${v.code}</b></td>
             <td><span class="badge badge-warning">${v.discountPercent ? `${v.discountPercent}%` : Formatters.currency(v.discountAmount)}</span></td>
             <td>${Formatters.currency(v.minOrder || 0)}</td>
             <td>${v.desc}</td>
-            <td class="text-xs text-muted">${v.expiry}</td>
+            <td class="text-xs text-muted">${v.expiry || 'Vô thời hạn'}</td>
             <td><span class="badge badge-success">Đang Áp Dụng</span></td>
-            <td>
-              <button class="btn btn-outline btn-sm" onclick="MarketingMgmt.deleteVoucher('${v.code}')">Xóa</button>
+            <td style="text-align: center;">
+              <div class="table-actions" style="justify-content: center; gap: 0.35rem;">
+                <button class="action-icon-btn btn-edit" title="Sửa mã voucher" onclick="MarketingMgmt.openEditVoucherModal('${v.code}')">✏️</button>
+                <button class="action-icon-btn btn-del" title="Xóa mã voucher" onclick="MarketingMgmt.deleteVoucher('${v.code}')">🗑️</button>
+              </div>
             </td>
           </tr>
         `).join("");
@@ -228,28 +281,70 @@
         if (!tbody) return;
 
         const banners = DB.get(STORAGE_KEYS.BANNERS, INITIAL_BANNERS);
+        if (banners.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Chưa có banner nào.</td></tr>`;
+          return;
+        }
+
         tbody.innerHTML = banners.map(b => `
           <tr>
             <td class="font-bold">${b.id}</td>
             <td class="font-bold">${b.title}</td>
             <td>
-              <img src="${b.image}" alt="${b.title}" style="width: 120px; height: 50px; object-fit: cover; border-radius: var(--radius-sm);">
+              <img src="${b.image.startsWith('http') || b.image.startsWith('../') ? b.image : '../' + b.image}" alt="${b.title}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1558857563-b37fcdd72460?auto=format&fit=crop&w=1200&q=80';" style="width: 120px; height: 50px; object-fit: cover; border-radius: var(--radius-sm);">
             </td>
             <td><code>${b.link}</code></td>
-            <td><span class="badge badge-success">Đang Hiển Thị</span></td>
+            <td>
+              ${b.status === 'hidden' 
+                ? '<span class="badge badge-warning">Đã Ẩn</span>' 
+                : '<span class="badge badge-success">Đang Hiển Thị</span>'}
+            </td>
+            <td style="text-align: center;">
+              <div class="table-actions" style="justify-content: center; gap: 0.35rem;">
+                <button class="action-icon-btn btn-edit" title="Sửa banner" onclick="MarketingMgmt.openEditBannerModal('${b.id}')">✏️</button>
+                <button class="action-icon-btn btn-del" title="Xóa banner" onclick="MarketingMgmt.deleteBanner('${b.id}')">🗑️</button>
+              </div>
+            </td>
           </tr>
         `).join("");
       },
 
       openAddVoucherModal() {
+        document.getElementById("voucher-modal-title").textContent = "Tạo Mã Khuyến Mãi Mới";
+        document.getElementById("vouch-old-code").value = "";
         document.getElementById("vouch-code").value = "";
+        document.getElementById("vouch-type").value = "percent";
         document.getElementById("vouch-val").value = "";
+        document.getElementById("vouch-min").value = "50000";
+        document.getElementById("vouch-exp").value = "2026-12-31";
         document.getElementById("vouch-desc").value = "";
+        Modal.open("voucher-modal");
+      },
+
+      openEditVoucherModal(code) {
+        const list = DB.getVouchers();
+        const v = list.find(item => item.code === code);
+        if (!v) return;
+
+        document.getElementById("voucher-modal-title").textContent = `Sửa Mã Giảm Giá: ${v.code}`;
+        document.getElementById("vouch-old-code").value = v.code;
+        document.getElementById("vouch-code").value = v.code;
+        if (v.discountPercent) {
+          document.getElementById("vouch-type").value = "percent";
+          document.getElementById("vouch-val").value = v.discountPercent;
+        } else {
+          document.getElementById("vouch-type").value = "fixed";
+          document.getElementById("vouch-val").value = v.discountAmount || 0;
+        }
+        document.getElementById("vouch-min").value = v.minOrder || 0;
+        document.getElementById("vouch-exp").value = v.expiry || "2026-12-31";
+        document.getElementById("vouch-desc").value = v.desc || "";
         Modal.open("voucher-modal");
       },
 
       saveVoucherSubmit(e) {
         e.preventDefault();
+        const oldCode = document.getElementById("vouch-old-code").value;
         const code = document.getElementById("vouch-code").value.trim().toUpperCase();
         const type = document.getElementById("vouch-type").value;
         const val = parseInt(document.getElementById("vouch-val").value) || 0;
@@ -258,7 +353,7 @@
         const desc = document.getElementById("vouch-desc").value || `Mã giảm giá ${code}`;
 
         const list = DB.getVouchers();
-        const newVoucher = {
+        const voucherData = {
           code,
           discountPercent: type === "percent" ? val : null,
           discountAmount: type === "fixed" ? val : null,
@@ -267,19 +362,108 @@
           expiry: exp
         };
 
-        list.push(newVoucher);
-        DB.set(STORAGE_KEYS.VOUCHERS, list);
-        Toast.success(`Đã tạo mã khuyến mãi: <b>${code}</b>`);
+        if (oldCode) {
+          const idx = list.findIndex(v => v.code === oldCode);
+          if (idx !== -1) {
+            list[idx] = voucherData;
+            DB.set(STORAGE_KEYS.VOUCHERS, list);
+            Toast.success(`Đã cập nhật mã voucher: <b>${code}</b>`);
+          }
+        } else {
+          // Check if code already exists
+          if (list.some(v => v.code === code)) {
+            Toast.error(`Mã voucher <b>${code}</b> đã tồn tại! Vui lòng chọn mã khác.`);
+            return;
+          }
+          list.push(voucherData);
+          DB.set(STORAGE_KEYS.VOUCHERS, list);
+          Toast.success(`Đã tạo mã khuyến mãi: <b>${code}</b>`);
+        }
+
         Modal.close("voucher-modal");
         this.renderVouchers();
       },
 
       deleteVoucher(code) {
-        let list = DB.getVouchers();
-        list = list.filter(v => v.code !== code);
-        DB.set(STORAGE_KEYS.VOUCHERS, list);
-        Toast.info("Đã xóa mã voucher.");
-        this.renderVouchers();
+        if (confirm(`Bạn có chắc chắn muốn xóa mã voucher "${code}" không?`)) {
+          let list = DB.getVouchers();
+          list = list.filter(v => v.code !== code);
+          DB.set(STORAGE_KEYS.VOUCHERS, list);
+          Toast.info(`Đã xóa mã voucher <b>${code}</b>.`);
+          this.renderVouchers();
+        }
+      },
+
+      // --- Banner CRUD ---
+      openAddBannerModal() {
+        document.getElementById("banner-modal-title").textContent = "Thêm Banner Quảng Cáo Mới";
+        document.getElementById("banner-id").value = "";
+        document.getElementById("banner-title").value = "";
+        document.getElementById("banner-image").value = "";
+        document.getElementById("banner-link").value = "menu.html";
+        document.getElementById("banner-status").value = "active";
+        Modal.open("banner-modal");
+      },
+
+      openEditBannerModal(id) {
+        const banners = DB.get(STORAGE_KEYS.BANNERS, INITIAL_BANNERS);
+        const b = banners.find(item => item.id == id);
+        if (!b) return;
+
+        document.getElementById("banner-modal-title").textContent = `Sửa Banner: ${b.title}`;
+        document.getElementById("banner-id").value = b.id;
+        document.getElementById("banner-title").value = b.title;
+        document.getElementById("banner-image").value = b.image;
+        document.getElementById("banner-link").value = b.link || "menu.html";
+        document.getElementById("banner-status").value = b.status || "active";
+        Modal.open("banner-modal");
+      },
+
+      saveBannerSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById("banner-id").value;
+        const title = document.getElementById("banner-title").value.trim();
+        const image = document.getElementById("banner-image").value.trim();
+        const link = document.getElementById("banner-link").value.trim();
+        const status = document.getElementById("banner-status").value;
+
+        const banners = DB.get(STORAGE_KEYS.BANNERS, INITIAL_BANNERS);
+
+        if (id) {
+          const idx = banners.findIndex(b => b.id == id);
+          if (idx !== -1) {
+            banners[idx] = { ...banners[idx], title, image, link, status };
+            DB.set(STORAGE_KEYS.BANNERS, banners);
+            Toast.success(`Đã cập nhật banner: <b>${title}</b>`);
+          }
+        } else {
+          const newBanner = {
+            id: `BAN-${Date.now().toString().slice(-4)}`,
+            title,
+            image,
+            link,
+            status
+          };
+          banners.push(newBanner);
+          DB.set(STORAGE_KEYS.BANNERS, banners);
+          Toast.success(`Đã thêm banner: <b>${title}</b>`);
+        }
+
+        Modal.close("banner-modal");
+        this.renderBanners();
+      },
+
+      deleteBanner(id) {
+        const banners = DB.get(STORAGE_KEYS.BANNERS, INITIAL_BANNERS);
+        const b = banners.find(item => item.id == id);
+        if (!b) return;
+
+        if (confirm(`Bạn có chắc chắn muốn xóa banner "${b.title}" không?`)) {
+          const updated = banners.filter(item => item.id != id);
+          DB.set(STORAGE_KEYS.BANNERS, updated);
+          Toast.info(`Đã xóa banner <b>${b.title}</b>.`);
+          this.renderBanners();
+        }
       }
     };
 

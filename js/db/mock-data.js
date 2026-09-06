@@ -3,10 +3,10 @@
    ========================================================================== */
 
 const INITIAL_CATEGORIES = [
-  { id: "mochi", name: "Series Mochi Kéo Dài", icon: "🍡", count: 4 },
-  { id: "tiramisu", name: "Series Tiramisu & Cookies", icon: "🍫", count: 3 },
+  { id: "mochi", name: "Series Mochi Kéo Dài", icon: "🍡", count: 5 },
+  { id: "tiramisu", name: "Series Tiramisu & Cookies", icon: "🍫", count: 4 },
   { id: "tra-sua", name: "Series Trà Sữa Đô Đô", icon: "🧋", count: 3 },
-  { id: "tra-trai-cay", name: "Series Trà Hoa Quả", icon: "🍊", count: 3 }
+  { id: "tra-trai-cay", name: "Series Trà Hoa Quả", icon: "🍊", count: 4 }
 ];
 
 const INITIAL_TOPPINGS = [
@@ -22,7 +22,8 @@ const INITIAL_TOPPINGS = [
 
 const INITIAL_SIZES = [
   { id: "M", name: "Size M (Chuẩn Đô Đô)", extraPrice: 0 },
-  { id: "L", name: "Size L (700ml)", extraPrice: 6000 }
+  { id: "L", name: "Size L (700ml)", extraPrice: 6000 },
+  { id: "XL", name: "Size XL (1000ml)", extraPrice: 12000 }
 ];
 
 const INITIAL_PRODUCTS = [
@@ -279,9 +280,11 @@ const INITIAL_USERS = [
   {
     id: "USR-001",
     username: "admin",
-    password: "1",
+    password: "123456",
     fullName: "Đỗ Trung Hiếu (Quản Lý)",
     role: "admin", // admin, staff, customer
+    position: "quan_ly",
+    positionTitle: "Quản Lý Cửa Hàng",
     email: "admin@dodo.vn",
     phone: "0901234567",
     status: "active",
@@ -290,9 +293,11 @@ const INITIAL_USERS = [
   {
     id: "USR-002",
     username: "thungan",
-    password: "1",
+    password: "123456",
     fullName: "Nguyễn Văn Thu Ngân",
     role: "staff",
+    position: "thu_ngan",
+    positionTitle: "Thu Ngân & Bán Hàng",
     email: "thungan@dodo.vn",
     phone: "0912345678",
     status: "active",
@@ -301,9 +306,11 @@ const INITIAL_USERS = [
   {
     id: "USR-003",
     username: "phache",
-    password: "1",
+    password: "123456",
     fullName: "Trần Thị Pha Chế",
     role: "staff",
+    position: "pha_che",
+    positionTitle: "Nhân Viên Pha Chế",
     email: "phache@dodo.vn",
     phone: "0933445566",
     status: "active",

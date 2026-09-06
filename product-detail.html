@@ -56,8 +56,17 @@
 
     <!-- Product Customizer Hero Section -->
     <div class="cup-builder-container" style="margin-bottom: 3.5rem;">
-      <!-- Visual Cup Live Graphic -->
-      <div class="cup-visual-wrapper">
+      <!-- Visual Cup Live Graphic & Photo -->
+      <div class="cup-visual-wrapper" style="position: relative;">
+        <!-- Real Product Photo Header -->
+        <div style="width: 100%; max-width: 220px; aspect-ratio: 1; border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.25rem; box-shadow: 0 8px 20px rgba(0,0,0,0.12); border: 2px solid #fff;">
+          <img id="detail-product-img" src="images/products/hong-tra-mochi-keo-dai.jpg" alt="Ly Trà Sữa" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">
+          Mô Phỏng Ly Trực Quan 👇
+        </div>
+
         <div class="tea-straw"></div>
         <div class="tea-cup">
           <div class="cheese-foam-layer" id="detail-visual-cheese"></div>
@@ -74,7 +83,7 @@
           </div>
         </div>
         <div style="margin-top: 1.25rem; text-align: center;">
-          <div id="detail-total-unit-price" style="font-size: 1.5rem; font-weight: 800; color: var(--primary); font-family: var(--font-heading);">25.000 ₫</div>
+          <div id="detail-total-unit-price" style="font-size: 1.65rem; font-weight: 800; color: var(--primary); font-family: var(--font-heading);">25.000 ₫</div>
           <div class="text-xs text-muted">Giá đã gồm Size & Topping chọn thêm</div>
         </div>
       </div>
@@ -206,6 +215,13 @@
         document.getElementById("detail-breadcrumb-name").textContent = currentProd.name;
         document.getElementById("detail-product-title").textContent = currentProd.name;
         document.getElementById("detail-product-desc").textContent = currentProd.description || "Thức uống đậm vị chuẩn gu được pha chế từ lá trà hữu cơ tuyển chọn.";
+        
+        const imgEl = document.getElementById("detail-product-img");
+        if (imgEl && currentProd.image) {
+          imgEl.src = currentProd.image;
+          imgEl.onerror = () => { imgEl.src = 'images/products/hong-tra-mochi-keo-dai.jpg'; };
+        }
+
         const tagEl = document.getElementById("detail-product-tag");
         if (tagEl) {
           if (currentProd.isBestseller) {
@@ -225,12 +241,12 @@
       const topGrid = document.getElementById("detail-toppings-grid");
       if (topGrid) {
         topGrid.innerHTML = toppings.map(t => `
-          <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.85rem; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer; background: var(--bg-surface);">
-            <div style="display: flex; align-items: center; gap: 0.6rem;">
-              <input type="checkbox" value="${t.name}" data-price="${t.price}" onchange="toggleDetailTopping('${t.name}', this.checked)">
+          <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer; background: var(--bg-surface); transition: all 0.2s;" class="topping-option-label" id="detail-top-label-${t.id}">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <input type="checkbox" value="${t.name}" data-price="${t.price}" onchange="toggleDetailTopping('${t.name}', this.checked, 'detail-top-label-${t.id}')">
               <span class="text-sm font-semibold">${t.name}</span>
             </div>
-            <span class="text-xs text-primary font-bold">+${Formatters.currency(t.price)}</span>
+            <span class="text-xs text-primary font-bold" style="background: rgba(230,0,35,0.08); padding: 2px 8px; border-radius: 20px;">+${Formatters.currency(t.price)}</span>
           </label>
         `).join("");
       }
@@ -268,11 +284,15 @@
       updateDetailPriceAndVisual();
     }
 
-    function toggleDetailTopping(topName, checked) {
+    function toggleDetailTopping(topName, checked, labelId) {
       if (checked) {
         if (!detailConfig.toppings.includes(topName)) detailConfig.toppings.push(topName);
       } else {
         detailConfig.toppings = detailConfig.toppings.filter(t => t !== topName);
+      }
+      if (labelId) {
+        const el = document.getElementById(labelId);
+        if (el) el.classList.toggle("checked", checked);
       }
       updateDetailPriceAndVisual();
     }

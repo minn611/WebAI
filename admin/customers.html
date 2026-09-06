@@ -81,6 +81,9 @@
             <span class="text-xs text-muted">Tra cứu lịch sử mua, quản lý điểm thưởng và phân hạng thành viên</span>
           </div>
         </div>
+        <button class="btn btn-primary" onclick="CustomerMgmt.openAddModal()">
+          <span>+ Thêm Khách Hàng</span>
+        </button>
       </header>
 
       <div class="admin-content">
@@ -90,7 +93,7 @@
               <span class="input-icon">🔍</span>
               <input type="text" id="admin-cust-search" class="form-control form-control-sm" placeholder="Tìm tên khách, số điện thoại, email...">
             </div>
-            <span class="text-xs text-muted">Đang hiển thị khách hàng đăng ký hệ thống</span>
+            <span class="text-xs text-muted">💡 <i>Thao tác: Chỉnh sửa thông tin, Cộng/Trừ điểm tích lũy, Khóa hoặc Xóa khách hàng</i></span>
           </div>
 
           <div class="table-responsive">
@@ -104,7 +107,7 @@
                   <th>Hạng Thành Viên</th>
                   <th>Ngày Đăng Ký</th>
                   <th>Trạng Thái</th>
-                  <th>Thao Tác</th>
+                  <th style="text-align: center;">Thao Tác</th>
                 </tr>
               </thead>
               <tbody id="admin-customers-tbody">
@@ -115,6 +118,54 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Add / Edit Customer Modal -->
+  <div id="customer-modal" class="modal-backdrop">
+    <div class="modal-container" style="max-width: 520px;">
+      <div class="modal-header">
+        <h4 class="modal-title" id="cust-modal-title">Thêm Khách Hàng Mới</h4>
+        <button class="modal-close" data-close-modal="customer-modal">✕</button>
+      </div>
+      <form onsubmit="CustomerMgmt.saveCustomerSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="cust-id">
+          <div class="form-group">
+            <label class="form-label text-xs">Họ và Tên *</label>
+            <input type="text" id="cust-name" class="form-control" required placeholder="Ví dụ: Nguyễn Văn Khách">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label class="form-label text-xs">Số Điện Thoại *</label>
+              <input type="tel" id="cust-phone" class="form-control" required placeholder="0988776655">
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Email</label>
+              <input type="email" id="cust-email" class="form-control" placeholder="khachhang@gmail.com">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label class="form-label text-xs">Điểm Tích Lũy</label>
+              <input type="number" id="cust-points" class="form-control" value="0" min="0">
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Hạng Thành Viên</label>
+              <select id="cust-tier" class="form-select">
+                <option value="VIP Đồng">VIP Đồng (Mặc định)</option>
+                <option value="VIP Bạc">VIP Bạc</option>
+                <option value="VIP Vàng">VIP Vàng</option>
+                <option value="VIP Kim Cương">VIP Kim Cương</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal="customer-modal">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu Khách Hàng</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- Scripts -->
@@ -148,8 +199,8 @@
             <tr>
               <td colspan="8" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
                 <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">👥</div>
-                <b>Chưa có tài khoản khách hàng nào đăng ký.</b>
-                <p class="text-xs" style="margin-top: 4px;">Tài khoản mới do khách hàng tự đăng ký trên trang chủ sẽ tự động xuất hiện tại đây.</p>
+                <b>Chưa có tài khoản khách hàng nào.</b>
+                <p class="text-xs" style="margin-top: 4px;">Bạn có thể nhấn nút <b>+ Thêm Khách Hàng</b> phía trên để tạo thủ công cho khách tại quầy.</p>
               </td>
             </tr>
           `;
@@ -161,7 +212,7 @@
             <td class="font-bold text-primary">${u.id}</td>
             <td>
               <div class="font-bold">${u.fullName}</div>
-              <div class="text-xs text-muted">${u.email || 'Chưa cập nhật email'}</div>
+              <div class="text-xs text-muted">${u.email || 'Chưa có email'}</div>
             </td>
             <td><b>${u.phone || 'Chưa có'}</b></td>
             <td><span class="badge badge-warning font-bold">${u.points || 0} pts</span></td>
@@ -172,15 +223,88 @@
                 ${u.status === 'locked' ? 'Đã Khóa' : 'Hoạt Động'}
               </span>
             </td>
-            <td>
-              <div class="table-actions">
-                <button class="btn btn-outline btn-sm" onclick="CustomerMgmt.toggleLock('${u.id}')">
-                  ${u.status === 'locked' ? 'Mở Khóa 🔓' : 'Khóa 🔒'}
+            <td style="text-align: center;">
+              <div class="table-actions" style="justify-content: center; gap: 0.35rem;">
+                <button class="action-icon-btn btn-edit" onclick="CustomerMgmt.openEditModal('${u.id}')" title="Chỉnh sửa thông tin & điểm">✏️</button>
+                <button class="action-icon-btn" onclick="CustomerMgmt.toggleLock('${u.id}')" title="${u.status === 'locked' ? 'Mở Khóa' : 'Tạm Khóa'}">
+                  ${u.status === 'locked' ? '🔓' : '🔒'}
                 </button>
+                <button class="action-icon-btn btn-del" onclick="CustomerMgmt.deleteCustomer('${u.id}')" title="Xóa khách hàng">🗑️</button>
               </div>
             </td>
           </tr>
         `).join("");
+      },
+
+      openAddModal() {
+        document.getElementById("cust-modal-title").textContent = "Thêm Khách Hàng Mới";
+        document.getElementById("cust-id").value = "";
+        document.getElementById("cust-name").value = "";
+        document.getElementById("cust-phone").value = "";
+        document.getElementById("cust-email").value = "";
+        document.getElementById("cust-points").value = "0";
+        document.getElementById("cust-tier").value = "VIP Đồng";
+        Modal.open("customer-modal");
+      },
+
+      openEditModal(userId) {
+        const users = DB.getUsers();
+        const u = users.find(user => user.id === userId);
+        if (!u) return;
+
+        document.getElementById("cust-modal-title").textContent = `Chỉnh Sửa: ${u.fullName}`;
+        document.getElementById("cust-id").value = u.id;
+        document.getElementById("cust-name").value = u.fullName || "";
+        document.getElementById("cust-phone").value = u.phone || "";
+        document.getElementById("cust-email").value = u.email || "";
+        document.getElementById("cust-points").value = u.points || 0;
+        document.getElementById("cust-tier").value = u.tier || "VIP Đồng";
+        Modal.open("customer-modal");
+      },
+
+      saveCustomerSubmit(e) {
+        e.preventDefault();
+        const custId = document.getElementById("cust-id").value;
+        const name = document.getElementById("cust-name").value.trim();
+        const phone = document.getElementById("cust-phone").value.trim();
+        const email = document.getElementById("cust-email").value.trim();
+        const points = parseInt(document.getElementById("cust-points").value) || 0;
+        const tier = document.getElementById("cust-tier").value;
+
+        let users = DB.getUsers();
+        if (custId) {
+          const idx = users.findIndex(u => u.id === custId);
+          if (idx >= 0) {
+            users[idx] = {
+              ...users[idx],
+              fullName: name,
+              phone,
+              email,
+              points,
+              tier
+            };
+          }
+          Toast.success(`Đã cập nhật khách hàng: <b>${name}</b>`);
+        } else {
+          const newCust = {
+            id: `CUST-${Date.now().toString().slice(-4)}`,
+            fullName: name,
+            username: phone,
+            phone,
+            email,
+            points,
+            tier,
+            role: "customer",
+            status: "active",
+            createdAt: new Date().toISOString().split("T")[0]
+          };
+          users.push(newCust);
+          Toast.success(`Đã thêm khách hàng: <b>${name}</b>`);
+        }
+
+        DB.set(STORAGE_KEYS.USERS, users);
+        Modal.close("customer-modal");
+        this.renderTable();
       },
 
       toggleLock(userId) {
@@ -189,7 +313,20 @@
         if (target) {
           target.status = target.status === 'locked' ? 'active' : 'locked';
           DB.set(STORAGE_KEYS.USERS, users);
-          Toast.success(`Đã cập nhật trạng thái tài khoản: <b>${target.fullName}</b>`);
+          Toast.success(`Đã ${target.status === 'locked' ? 'khóa' : 'mở khóa'} tài khoản: <b>${target.fullName}</b>`);
+          this.renderTable();
+        }
+      },
+
+      deleteCustomer(userId) {
+        const users = DB.getUsers();
+        const target = users.find(u => u.id === userId);
+        if (!target) return;
+
+        if (confirm(`Bạn có chắc muốn xóa khách hàng "${target.fullName}" (${target.phone}) khỏi hệ thống?`)) {
+          const updated = users.filter(u => u.id !== userId);
+          DB.set(STORAGE_KEYS.USERS, updated);
+          Toast.info(`Đã xóa khách hàng: ${target.fullName}`);
           this.renderTable();
         }
       }

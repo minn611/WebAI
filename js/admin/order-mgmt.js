@@ -89,11 +89,6 @@ const OrderMgmt = {
     if (countCompleted) countCompleted.textContent = orders.filter(o => o.orderStatus === "completed").length;
     if (countCancelled) countCancelled.textContent = orders.filter(o => o.orderStatus === "cancelled").length;
   },
-    if (countPreparing) countPreparing.textContent = orders.filter(o => o.orderStatus === "preparing").length;
-    if (countShipping) countShipping.textContent = orders.filter(o => o.orderStatus === "shipping").length;
-    if (countCompleted) countCompleted.textContent = orders.filter(o => o.orderStatus === "completed").length;
-    if (countCancelled) countCancelled.textContent = orders.filter(o => o.orderStatus === "cancelled").length;
-  },
 
   initSearch() {
     const searchInput = document.getElementById("admin-order-search");
@@ -141,10 +136,12 @@ const OrderMgmt = {
           </span>
         </td>
         <td>${Formatters.orderStatusBadge(o.orderStatus)}</td>
-        <td>
-          <div class="table-actions">
-            <button class="btn btn-outline btn-sm" onclick="OrderMgmt.openOrderDetail('${o.id}')">Xem ➔</button>
-            <button class="action-icon-btn" onclick="OrderMgmt.printReceipt('${o.id}')" title="In Hóa Đơn 80mm">🖨️</button>
+        <td style="text-align: center;">
+          <div class="table-actions" style="justify-content: center; gap: 0.35rem;">
+            <button class="action-icon-btn btn-view" onclick="OrderMgmt.openOrderDetail('${o.id}')" title="Xem chi tiết & Chuyển trạng thái">👁️</button>
+            <button class="action-icon-btn btn-edit" onclick="OrderMgmt.openEditOrderModal('${o.id}')" title="Chỉnh sửa thông tin đơn">✏️</button>
+            <button class="action-icon-btn btn-print" onclick="OrderMgmt.printReceipt('${o.id}')" title="In Hóa Đơn 80mm">🖨️</button>
+            <button class="action-icon-btn btn-del" onclick="OrderMgmt.deleteOrder('${o.id}')" title="Xóa đơn hàng">🗑️</button>
           </div>
         </td>
       </tr>
@@ -321,6 +318,171 @@ const OrderMgmt = {
     `;
 
     window.print();
+  },
+
+  // --------------------------------------------------------------------------
+  // Delete Order
+  // --------------------------------------------------------------------------
+  async deleteOrder(orderId) {
+    if (confirm(`Bạn có chắc muốn xóa đơn hàng #${orderId} khỏi hệ thống?`)) {
+      let orders = DB.getOrders();
+      orders = orders.filter(o => o.id !== orderId);
+      DB.saveOrders(orders);
+      
+      try {
+        await fetch(`http://localhost:5000/api/orders/${orderId}`, { method: "DELETE" });
+      } catch (err) {}
+
+      Toast.info(`Đã xóa đơn hàng #${orderId}.`);
+      this.renderOrdersTable();
+      this.updateStatusCounts();
+      Modal.close("order-detail-modal");
+    }
+  },
+
+  // --------------------------------------------------------------------------
+  // Edit Order Modal & Save
+  // --------------------------------------------------------------------------
+  openEditOrderModal(orderId) {
+    const order = DB.getOrderById(orderId);
+    if (!order) return;
+
+    document.getElementById("edit-order-id").value = order.id;
+    document.getElementById("edit-order-name").value = order.customerName || "";
+    document.getElementById("edit-order-phone").value = order.customerPhone || "";
+    document.getElementById("edit-order-address").value = order.customerAddress || "";
+    document.getElementById("edit-order-status").value = order.orderStatus || "pending";
+    document.getElementById("edit-order-payment-status").value = order.paymentStatus || "unpaid";
+    document.getElementById("edit-order-note").value = order.note || "";
+
+    Modal.open("order-edit-modal");
+  },
+
+  async saveOrderEditSubmit(e) {
+    e.preventDefault();
+    const orderId = document.getElementById("edit-order-id").value;
+    const customerName = document.getElementById("edit-order-name").value.trim();
+    const customerPhone = document.getElementById("edit-order-phone").value.trim();
+    const customerAddress = document.getElementById("edit-order-address").value.trim();
+    const orderStatus = document.getElementById("edit-order-status").value;
+    const paymentStatus = document.getElementById("edit-order-payment-status").value;
+    const note = document.getElementById("edit-order-note").value.trim();
+
+    let orders = DB.getOrders();
+    const idx = orders.findIndex(o => o.id === orderId);
+    if (idx >= 0) {
+      orders[idx] = {
+        ...orders[idx],
+        customerName,
+        customerPhone,
+        customerAddress,
+        orderStatus,
+        paymentStatus,
+        note
+      };
+      DB.saveOrders(orders);
+
+      try {
+        await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: orderStatus, paymentStatus })
+        });
+      } catch (err) {}
+
+      Toast.success(`Đã cập nhật thông tin đơn hàng <b>#${orderId}</b> thành công!`);
+      Modal.close("order-edit-modal");
+      this.renderOrdersTable();
+      this.updateStatusCounts();
+    }
+  },
+
+  // --------------------------------------------------------------------------
+  // Create Order POS Modal & Save
+  // --------------------------------------------------------------------------
+  openCreateOrderModal() {
+    const products = DB.getProducts();
+    const selectEl = document.getElementById("create-order-product");
+    if (selectEl) {
+      selectEl.innerHTML = products.map(p => `
+        <option value="${p.id}" data-name="${p.name}" data-price="${p.price}">
+          ${p.name} - ${Formatters.currency(p.price)}
+        </option>
+      `).join("");
+    }
+    document.getElementById("create-order-name").value = "Khách lẻ tại quầy";
+    document.getElementById("create-order-phone").value = "0901234567";
+    document.getElementById("create-order-address").value = "Uống tại quán / Mang đi";
+    document.getElementById("create-order-qty").value = "1";
+    document.getElementById("create-order-note").value = "";
+    
+    Modal.open("order-create-modal");
+  },
+
+  async saveCreateOrderSubmit(e) {
+    e.preventDefault();
+    const customerName = document.getElementById("create-order-name").value.trim();
+    const customerPhone = document.getElementById("create-order-phone").value.trim();
+    const customerAddress = document.getElementById("create-order-address").value.trim();
+    const prodSelect = document.getElementById("create-order-product");
+    const productId = prodSelect.value;
+    const selectedOpt = prodSelect.options[prodSelect.selectedIndex];
+    const productName = selectedOpt.getAttribute("data-name");
+    const productPrice = parseInt(selectedOpt.getAttribute("data-price")) || 25000;
+    const quantity = parseInt(document.getElementById("create-order-qty").value) || 1;
+    const paymentMethod = document.getElementById("create-order-payment-method").value;
+    const orderStatus = document.getElementById("create-order-init-status").value;
+    const note = document.getElementById("create-order-note").value.trim();
+
+    const orderId = `POS-${Date.now().toString().slice(-6)}`;
+    const itemsTotal = productPrice * quantity;
+    const totalAmount = itemsTotal;
+
+    const newOrder = {
+      id: orderId,
+      customerName,
+      customerPhone,
+      customerAddress,
+      paymentMethod,
+      paymentStatus: paymentMethod === 'cash' ? 'paid' : 'unpaid',
+      orderStatus,
+      itemsTotal,
+      shippingFee: 0,
+      discount: 0,
+      totalAmount,
+      note,
+      createdAt: new Date().toISOString(),
+      items: [
+        {
+          productId,
+          name: productName,
+          size: "M",
+          sugar: "100%",
+          ice: "100%",
+          toppings: [],
+          quantity,
+          unitPrice: productPrice,
+          subtotal: itemsTotal
+        }
+      ]
+    };
+
+    let orders = DB.getOrders();
+    orders.unshift(newOrder);
+    DB.saveOrders(orders);
+
+    try {
+      await fetch("http://localhost:5000/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newOrder)
+      });
+    } catch (err) {}
+
+    Toast.success(`🎉 Đã tạo thành công đơn hàng tại quầy: <b>#${orderId}</b>!`);
+    Modal.close("order-create-modal");
+    this.renderOrdersTable();
+    this.updateStatusCounts();
   }
 };
 

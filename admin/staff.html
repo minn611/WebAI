@@ -85,28 +85,6 @@
       </header>
 
       <div class="admin-content">
-        <!-- Staff Session & Logout Banner -->
-        <div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #FFF0F2 0%, #FFFFFF 100%); border: 1.5px solid var(--border-color); padding: 1.25rem 1.5rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold;">🧋</div>
-              <div>
-                <h4 style="margin: 0; font-size: 1.1rem;" id="staff-banner-name">Tài Khoản Nhân Viên Pha Chế</h4>
-                <p class="text-xs text-muted" style="margin: 0;" id="staff-banner-role">Đang đăng nhập hệ thống quản lý & pha chế cửa hàng</p>
-              </div>
-            </div>
-
-            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-              <span class="text-xs text-muted font-bold">Chuyển vai trò thử nghiệm:</span>
-              <button class="btn btn-outline btn-sm" onclick="Auth.switchRole('admin')" title="Đăng nhập Admin Quản Lý">👑 Admin</button>
-              <button class="btn btn-outline btn-sm" onclick="Auth.switchRole('staff')" title="Đăng nhập Nhân Viên Thu Ngân/Pha Chế">🧋 Pha Chế / Thu Ngân</button>
-              <button class="btn btn-primary btn-sm" onclick="Auth.logout()" style="background: var(--primary); color: white;" title="Đăng xuất khỏi hệ thống">
-                🚪 Đăng Xuất Ngay
-              </button>
-            </div>
-          </div>
-        </div>
-
         <div class="data-table-container">
           <div class="table-toolbar">
             <h4 style="margin: 0;">Danh Sách Tài Khoản Nhân Viên & Pha Chế</h4>
@@ -135,15 +113,16 @@
     </main>
   </div>
 
-  <!-- Add Staff Modal -->
+  <!-- Add/Edit Staff Modal -->
   <div id="staff-modal" class="modal-backdrop">
     <div class="modal-container" style="max-width: 520px;">
       <div class="modal-header">
-        <h4 class="modal-title">Thêm Nhân Viên Mới</h4>
+        <h4 class="modal-title" id="staff-modal-title">Thêm Nhân Viên Mới</h4>
         <button class="modal-close" data-close-modal="staff-modal">✕</button>
       </div>
       <form onsubmit="StaffMgmt.saveStaffSubmit(event)">
         <div class="modal-body">
+          <input type="hidden" id="staff-id">
           <div class="form-group">
             <label class="form-label text-xs">Họ và Tên *</label>
             <input type="text" id="staff-name" class="form-control" required placeholder="Ví dụ: Lê Văn Pha Chế">
@@ -166,8 +145,9 @@
             <div class="form-group">
               <label class="form-label text-xs">Vai Trò Phân Quyền *</label>
               <select id="staff-role" class="form-select">
-                <option value="staff">🧋 Nhân Viên Pha Chế / Thu Ngân</option>
-                <option value="admin">👑 Quản Lý Chi Nhánh (Admin)</option>
+                <option value="phache">🧋 Nhân Viên Pha Chế</option>
+                <option value="thungan">💼 Nhân Viên Thu Ngân & Bán Hàng</option>
+                <option value="admin">👑 Quản Lý Cửa Hàng (Admin)</option>
               </select>
             </div>
           </div>
@@ -191,21 +171,7 @@
   <script>
     const StaffMgmt = {
       init() {
-        this.updateUserBanner();
         this.renderTable();
-      },
-
-      updateUserBanner() {
-        const u = Auth.getCurrentUser();
-        const bName = document.getElementById("staff-banner-name");
-        const bRole = document.getElementById("staff-banner-role");
-        if (bName && u) {
-          bName.textContent = `Tài Khoản: ${u.fullName} (${u.username})`;
-        }
-        if (bRole && u) {
-          const roleTitle = u.role === "admin" ? "Quản Lý Cửa Hàng (Admin)" : (u.username === "phache" ? "Nhân Viên Pha Chế Đồ Uống" : "Nhân Viên Thu Ngân & Bán Hàng");
-          bRole.textContent = `Chức danh: ${roleTitle} • Bạn có thể đăng xuất bất kỳ lúc nào bằng nút bên phải.`;
-        }
       },
 
       renderTable() {
@@ -215,8 +181,14 @@
         const staff = DB.getUsers().filter(u => u.role === "admin" || u.role === "staff");
         tbody.innerHTML = staff.map(s => {
           let roleBadge = '💼 Thu Ngân';
-          if (s.role === 'admin') roleBadge = '👑 Quản Lý';
-          else if (s.username === 'phache' || s.fullName.toLowerCase().includes('pha chế')) roleBadge = '🧋 Pha Chế';
+          let badgeClass = 'badge-info';
+          if (s.role === 'admin' || s.position === 'quan_ly') {
+            roleBadge = '👑 Quản Lý';
+            badgeClass = 'badge-primary';
+          } else if (s.username === 'phache' || s.position === 'pha_che' || (s.fullName || '').toLowerCase().includes('pha chế')) {
+            roleBadge = '🧋 Pha Chế';
+            badgeClass = 'badge-warning';
+          }
 
           return `
           <tr>
@@ -224,7 +196,7 @@
             <td class="font-bold">${s.fullName}</td>
             <td><code>${s.username}</code></td>
             <td>
-              <span class="badge ${s.role === 'admin' ? 'badge-primary' : 'badge-info'}">
+              <span class="badge ${badgeClass}">
                 ${roleBadge}
               </span>
             </td>
@@ -236,9 +208,11 @@
             </td>
             <td>
               <div class="table-actions">
-                <button class="btn btn-outline btn-sm" onclick="StaffMgmt.toggleStaff('${s.id}')">
-                  ${s.status === 'locked' ? 'Mở Khóa' : 'Khóa'}
+                <button class="action-icon-btn btn-edit" onclick="StaffMgmt.openEditModal('${s.id}')" title="Chỉnh sửa nhân viên">✏️</button>
+                <button class="action-icon-btn" onclick="StaffMgmt.toggleStaff('${s.id}')" title="${s.status === 'locked' ? 'Mở Khóa' : 'Tạm Khóa'}">
+                  ${s.status === 'locked' ? '▶️' : '⏸️'}
                 </button>
+                <button class="action-icon-btn btn-del" onclick="StaffMgmt.deleteStaff('${s.id}')" title="Xóa nhân viên">🗑️</button>
               </div>
             </td>
           </tr>
@@ -247,33 +221,97 @@
       },
 
       openAddModal() {
+        document.getElementById("staff-modal-title").textContent = "Thêm Nhân Viên Mới";
+        document.getElementById("staff-id").value = "";
         document.getElementById("staff-name").value = "";
         document.getElementById("staff-username").value = "";
+        document.getElementById("staff-password").value = "123456";
         document.getElementById("staff-phone").value = "";
+        document.getElementById("staff-role").value = "phache";
+        Modal.open("staff-modal");
+      },
+
+      openEditModal(staffId) {
+        const users = DB.getUsers();
+        const s = users.find(u => u.id === staffId);
+        if (!s) return;
+
+        document.getElementById("staff-modal-title").textContent = `Chỉnh Sửa: ${s.fullName}`;
+        document.getElementById("staff-id").value = s.id;
+        document.getElementById("staff-name").value = s.fullName || "";
+        document.getElementById("staff-username").value = s.username || "";
+        document.getElementById("staff-password").value = s.password || "123456";
+        document.getElementById("staff-phone").value = s.phone || "";
+        
+        let roleVal = "phache";
+        if (s.role === "admin" || s.position === "quan_ly") roleVal = "admin";
+        else if (s.position === "thu_ngan" || s.username === "thungan") roleVal = "thungan";
+        document.getElementById("staff-role").value = roleVal;
+
         Modal.open("staff-modal");
       },
 
       saveStaffSubmit(e) {
         e.preventDefault();
-        const name = document.getElementById("staff-name").value;
-        const u = document.getElementById("staff-username").value;
+        const staffId = document.getElementById("staff-id").value;
+        const name = document.getElementById("staff-name").value.trim();
+        const u = document.getElementById("staff-username").value.trim();
         const p = document.getElementById("staff-password").value;
-        const phone = document.getElementById("staff-phone").value;
-        const role = document.getElementById("staff-role").value;
+        const phone = document.getElementById("staff-phone").value.trim();
+        const selectedRole = document.getElementById("staff-role").value;
 
-        const newStaff = {
-          id: `STF-${Date.now().toString().slice(-4)}`,
-          fullName: name,
-          username: u,
-          password: p,
-          phone,
-          role,
-          status: "active",
-          createdAt: new Date().toISOString().split("T")[0]
-        };
+        let role = "staff";
+        let position = "pha_che";
+        let positionTitle = "Nhân Viên Pha Chế";
 
-        DB.saveUser(newStaff);
-        Toast.success(`Đã thêm nhân viên: <b>${name}</b>`);
+        if (selectedRole === "admin") {
+          role = "admin";
+          position = "quan_ly";
+          positionTitle = "Quản Lý Cửa Hàng";
+        } else if (selectedRole === "thungan") {
+          role = "staff";
+          position = "thu_ngan";
+          positionTitle = "Thu Ngân & Bán Hàng";
+        } else {
+          role = "staff";
+          position = "pha_che";
+          positionTitle = "Nhân Viên Pha Chế";
+        }
+
+        let users = DB.getUsers();
+        if (staffId) {
+          const idx = users.findIndex(user => user.id === staffId);
+          if (idx >= 0) {
+            users[idx] = {
+              ...users[idx],
+              fullName: name,
+              username: u,
+              password: p,
+              phone,
+              role,
+              position,
+              positionTitle
+            };
+          }
+          Toast.success(`Đã cập nhật nhân viên: <b>${name}</b> (${positionTitle})`);
+        } else {
+          const newStaff = {
+            id: `NV-${Date.now().toString().slice(-4)}`,
+            fullName: name,
+            username: u,
+            password: p,
+            phone,
+            role,
+            position,
+            positionTitle,
+            status: "active",
+            createdAt: new Date().toISOString().split("T")[0]
+          };
+          users.push(newStaff);
+          Toast.success(`Đã thêm nhân viên mới: <b>${name}</b> (${positionTitle})`);
+        }
+
+        DB.set(STORAGE_KEYS.USERS, users);
         Modal.close("staff-modal");
         this.renderTable();
       },
@@ -284,7 +322,24 @@
         if (s) {
           s.status = s.status === 'locked' ? 'active' : 'locked';
           DB.set(STORAGE_KEYS.USERS, users);
-          Toast.success("Cập nhật trạng thái nhân viên thành công!");
+          Toast.success(`Đã ${s.status === 'locked' ? 'khóa' : 'mở khóa'} tài khoản: <b>${s.fullName}</b>`);
+          this.renderTable();
+        }
+      },
+
+      deleteStaff(id) {
+        const users = DB.getUsers();
+        const s = users.find(u => u.id === id);
+        if (!s) return;
+        if (s.role === "admin" && users.filter(u => u.role === "admin").length <= 1) {
+          Toast.warning("Không thể xóa tài khoản Quản Lý Admin duy nhất!");
+          return;
+        }
+
+        if (confirm(`Bạn có chắc muốn xóa nhân viên "${s.fullName}" (${s.username}) khỏi hệ thống?`)) {
+          const updated = users.filter(u => u.id !== id);
+          DB.set(STORAGE_KEYS.USERS, updated);
+          Toast.info(`Đã xóa nhân viên: ${s.fullName}`);
           this.renderTable();
         }
       }

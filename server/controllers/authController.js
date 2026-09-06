@@ -84,7 +84,8 @@ const authController = {
 
       // Query TAI_KHOAN joined with KHACH_HANG and NHAN_VIEN
       const [users] = await pool.query(
-        `SELECT tk.*, kh.ho_ten as kh_ho_ten, kh.diem_tich_luy, kh.hang_thanh_vien, nv.ho_ten as nv_ho_ten 
+        `SELECT tk.*, kh.ho_ten as kh_ho_ten, kh.diem_tich_luy, kh.hang_thanh_vien, 
+                nv.ho_ten as nv_ho_ten, nv.chuc_vu as nv_chuc_vu, nv.ma_nhan_vien as nv_ma_nv 
          FROM TAI_KHOAN tk
          LEFT JOIN KHACH_HANG kh ON tk.id = kh.tai_khoan_id
          LEFT JOIN NHAN_VIEN nv ON tk.id = nv.tai_khoan_id
@@ -128,11 +129,12 @@ const authController = {
       const fullName = dbUser.nv_ho_ten || dbUser.kh_ho_ten || dbUser.ten_dang_nhap;
 
       const user = {
-        id: `USR-${dbUser.id}`,
+        id: dbUser.nv_ma_nv || `USR-${dbUser.id}`,
         dbId: dbUser.id,
         username: dbUser.ten_dang_nhap,
         fullName,
         role,
+        position: dbUser.nv_chuc_vu || (role === 'admin' ? 'Quản Lý Cửa Hàng' : (dbUser.ten_dang_nhap === 'phache' ? 'Nhân Viên Pha Chế' : 'Thu Ngân & Bán Hàng')),
         email: dbUser.email || '',
         phone: dbUser.so_dien_thoai || '',
         points: dbUser.diem_tich_luy || 0,
@@ -161,7 +163,8 @@ const authController = {
       if (!userId) return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
 
       const [users] = await pool.query(
-        `SELECT tk.*, kh.ho_ten as kh_ho_ten, kh.diem_tich_luy, kh.hang_thanh_vien, nv.ho_ten as nv_ho_ten 
+        `SELECT tk.*, kh.ho_ten as kh_ho_ten, kh.diem_tich_luy, kh.hang_thanh_vien, 
+                nv.ho_ten as nv_ho_ten, nv.chuc_vu as nv_chuc_vu, nv.ma_nhan_vien as nv_ma_nv 
          FROM TAI_KHOAN tk
          LEFT JOIN KHACH_HANG kh ON tk.id = kh.tai_khoan_id
          LEFT JOIN NHAN_VIEN nv ON tk.id = nv.tai_khoan_id
@@ -173,13 +176,15 @@ const authController = {
 
       const dbUser = users[0];
       const roleMap = { 'admin': 'admin', 'nhan_vien': 'staff', 'khach_hang': 'customer' };
+      const role = roleMap[dbUser.vai_tro] || 'customer';
 
       const user = {
-        id: `USR-${dbUser.id}`,
+        id: dbUser.nv_ma_nv || `USR-${dbUser.id}`,
         dbId: dbUser.id,
         username: dbUser.ten_dang_nhap,
         fullName: dbUser.nv_ho_ten || dbUser.kh_ho_ten || dbUser.ten_dang_nhap,
-        role: roleMap[dbUser.vai_tro] || 'customer',
+        role,
+        position: dbUser.nv_chuc_vu || (role === 'admin' ? 'Quản Lý Cửa Hàng' : (dbUser.ten_dang_nhap === 'phache' ? 'Nhân Viên Pha Chế' : 'Thu Ngân & Bán Hàng')),
         email: dbUser.email || '',
         phone: dbUser.so_dien_thoai || '',
         points: dbUser.diem_tich_luy || 0,

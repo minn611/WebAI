@@ -100,7 +100,7 @@
                   <th>Số Điện Thoại</th>
                   <th>Nguyên Liệu Cung Cấp</th>
                   <th>Trạng Thái</th>
-                  <th>Thao Tác</th>
+                  <th style="text-align: center;">Thao Tác</th>
                 </tr>
               </thead>
               <tbody id="admin-suppliers-tbody">
@@ -113,14 +113,15 @@
     </main>
   </div>
 
-  <!-- Add Supplier Modal -->
+  <!-- Add / Edit Supplier Modal -->
   <div id="supplier-modal" class="modal-backdrop">
     <div class="modal-container" style="max-width: 520px;">
       <div class="modal-header">
-        <h4 class="modal-title">Thêm Đối Tác Cung Ứng</h4>
+        <h4 class="modal-title" id="sup-modal-title">Thêm Đối Tác Cung Ứng</h4>
         <button class="modal-close" data-close-modal="supplier-modal">✕</button>
       </div>
       <form onsubmit="SupplierMgmt.saveSubmit(event)">
+        <input type="hidden" id="sup-id">
         <div class="modal-body">
           <div class="form-group">
             <label class="form-label text-xs">Tên Doanh Nghiệp / Đối Tác *</label>
@@ -140,10 +141,17 @@
             <label class="form-label text-xs">Nguyên Liệu Cung Cấp *</label>
             <input type="text" id="sup-materials" class="form-control" required placeholder="Lá trà Ô long, Trà đen Assam, Sữa...">
           </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Trạng Thái Hợp Tác</label>
+            <select id="sup-status" class="form-select">
+              <option value="active">Đang Hợp Tác</option>
+              <option value="paused">Tạm Ngưng Cung Ứng</option>
+            </select>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" data-close-modal="supplier-modal">Hủy</button>
-          <button type="submit" class="btn btn-primary">Lưu Đối Tác</button>
+          <button type="submit" class="btn btn-primary">Lưu Thông Tin</button>
         </div>
       </form>
     </div>
@@ -168,6 +176,11 @@
         if (!tbody) return;
 
         const sups = DB.getSuppliers();
+        if (sups.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Chưa có nhà cung cấp nào.</td></tr>`;
+          return;
+        }
+
         tbody.innerHTML = sups.map(s => `
           <tr>
             <td class="font-bold text-primary">${s.id}</td>
@@ -175,10 +188,16 @@
             <td>${s.contact}</td>
             <td><b>${s.phone}</b></td>
             <td><span class="text-xs text-muted">${s.materials}</span></td>
-            <td><span class="badge badge-success">Hợp Tác Tốt</span></td>
             <td>
-              <div class="table-actions">
-                <button class="btn btn-outline btn-sm" onclick="Toast.info('Lịch sử nhập kho: 12 lô hàng đã nhận')">Lịch Sử Nhập ➔</button>
+              ${s.status === 'paused' 
+                ? '<span class="badge badge-warning">Tạm Dừng</span>' 
+                : '<span class="badge badge-success">Hợp Tác Tốt</span>'}
+            </td>
+            <td style="text-align: center;">
+              <div class="table-actions" style="justify-content: center; gap: 0.35rem;">
+                <button class="action-icon-btn btn-edit" title="Sửa thông tin đối tác" onclick="SupplierMgmt.openEditModal('${s.id}')">✏️</button>
+                <button class="action-icon-btn btn-view" title="Lịch sử nhập kho" onclick="Toast.info('Lịch sử nhập kho của ${s.name}: 12 lô hàng đã nhận')">📦</button>
+                <button class="action-icon-btn btn-del" title="Xóa đối tác" onclick="SupplierMgmt.deleteSupplier('${s.id}')">🗑️</button>
               </div>
             </td>
           </tr>
@@ -186,34 +205,78 @@
       },
 
       openAddModal() {
+        document.getElementById("sup-modal-title").textContent = "Thêm Đối Tác Cung Ứng Mới";
+        document.getElementById("sup-id").value = "";
         document.getElementById("sup-name").value = "";
         document.getElementById("sup-contact").value = "";
         document.getElementById("sup-phone").value = "";
         document.getElementById("sup-materials").value = "";
+        document.getElementById("sup-status").value = "active";
+        Modal.open("supplier-modal");
+      },
+
+      openEditModal(id) {
+        const list = DB.getSuppliers();
+        const sup = list.find(s => s.id === id);
+        if (!sup) return;
+
+        document.getElementById("sup-modal-title").textContent = `Sửa Đối Tác: ${sup.name}`;
+        document.getElementById("sup-id").value = sup.id;
+        document.getElementById("sup-name").value = sup.name;
+        document.getElementById("sup-contact").value = sup.contact;
+        document.getElementById("sup-phone").value = sup.phone;
+        document.getElementById("sup-materials").value = sup.materials;
+        document.getElementById("sup-status").value = sup.status || "active";
         Modal.open("supplier-modal");
       },
 
       saveSubmit(e) {
         e.preventDefault();
-        const name = document.getElementById("sup-name").value;
-        const contact = document.getElementById("sup-contact").value;
-        const phone = document.getElementById("sup-phone").value;
-        const materials = document.getElementById("sup-materials").value;
+        const id = document.getElementById("sup-id").value;
+        const name = document.getElementById("sup-name").value.trim();
+        const contact = document.getElementById("sup-contact").value.trim();
+        const phone = document.getElementById("sup-phone").value.trim();
+        const materials = document.getElementById("sup-materials").value.trim();
+        const status = document.getElementById("sup-status").value;
 
         const list = DB.getSuppliers();
-        const newSup = {
-          id: `SUP-0${list.length + 1}`,
-          name,
-          contact,
-          phone,
-          materials,
-          status: "active"
-        };
-        list.push(newSup);
-        DB.set(STORAGE_KEYS.SUPPLIERS, list);
-        Toast.success(`Đã thêm nhà cung cấp: <b>${name}</b>`);
+
+        if (id) {
+          const idx = list.findIndex(s => s.id === id);
+          if (idx !== -1) {
+            list[idx] = { ...list[idx], name, contact, phone, materials, status };
+            DB.set(STORAGE_KEYS.SUPPLIERS, list);
+            Toast.success(`Đã cập nhật nhà cung cấp: <b>${name}</b>`);
+          }
+        } else {
+          const newSup = {
+            id: `SUP-0${list.length + 1}`,
+            name,
+            contact,
+            phone,
+            materials,
+            status
+          };
+          list.push(newSup);
+          DB.set(STORAGE_KEYS.SUPPLIERS, list);
+          Toast.success(`Đã thêm nhà cung cấp: <b>${name}</b>`);
+        }
+
         Modal.close("supplier-modal");
         this.renderTable();
+      },
+
+      deleteSupplier(id) {
+        const list = DB.getSuppliers();
+        const sup = list.find(s => s.id === id);
+        if (!sup) return;
+
+        if (confirm(`Bạn có chắc chắn muốn xóa nhà cung cấp "${sup.name}" không?`)) {
+          const updated = list.filter(s => s.id !== id);
+          DB.set(STORAGE_KEYS.SUPPLIERS, updated);
+          Toast.info(`Đã xóa nhà cung cấp <b>${sup.name}</b>`);
+          this.renderTable();
+        }
       }
     };
 

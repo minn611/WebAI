@@ -11,6 +11,14 @@ const Checkout = {
     this.renderOrderSummary();
     this.initEventListeners();
     this.fillCurrentUserAddress();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const voucherParam = urlParams.get("voucher");
+    if (voucherParam) {
+      const vInput = document.getElementById("voucher-input");
+      if (vInput) vInput.value = voucherParam;
+      this.applyVoucherCode();
+    }
   },
 
   fillCurrentUserAddress() {

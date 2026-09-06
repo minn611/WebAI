@@ -203,8 +203,11 @@
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  background-color: var(--bg-subtle);
+  background-color: #F8EAD6; /* Màu nền studio đồng bộ với bộ ảnh Đô Đô */
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .product-card .card-img-wrap img {

@@ -19,9 +19,11 @@ const productController = {
         description: r.mo_ta,
         price: parseFloat(r.gia_goc),
         originalPrice: r.gia_khuyen_mai ? parseFloat(r.gia_khuyen_mai) : null,
+        oldPrice: r.gia_khuyen_mai ? parseFloat(r.gia_khuyen_mai) : null,
         image: r.hinh_anh_url,
         stockQty: r.so_luong_ton,
         soldQty: r.da_ban,
+        sold: r.da_ban || 0,
         rating: parseFloat(r.danh_gia_tb),
         inStock: Boolean(r.trang_thai && r.so_luong_ton > 0)
       }));

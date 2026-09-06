@@ -241,26 +241,99 @@
 .action-icon-btn {
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-sm);
-  display: flex;
+  border-radius: 8px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border-color);
-  color: var(--text-muted);
+  border: 1.5px solid var(--border-color);
+  color: var(--text-main);
   background: var(--bg-surface);
-  transition: all var(--transition-fast);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .action-icon-btn:hover {
-  background-color: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+
+.action-icon-btn.btn-view:hover {
+  background-color: #E8F4FD;
+  color: #1D70B8;
+  border-color: #1D70B8;
+}
+
+.action-icon-btn.btn-edit:hover {
+  background-color: #FFF4E5;
+  color: #D97706;
+  border-color: #F59E0B;
 }
 
 .action-icon-btn.btn-del:hover {
-  background-color: var(--status-cancelled);
-  border-color: var(--status-cancelled);
+  background-color: #FEE2E2;
+  border-color: #EF4444;
+  color: #DC2626;
+}
+
+.action-icon-btn.btn-print:hover {
+  background-color: #ECFDF5;
+  border-color: #10B981;
+  color: #059669;
+}
+
+/* Quick Action Mini Tag Buttons */
+.btn-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.775rem;
+  font-weight: 700;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-action-pill:hover {
+  transform: translateY(-1px);
+}
+
+.btn-action-pill.pill-edit {
+  color: #D97706;
+  border-color: #FDE68A;
+  background: #FFFBEB;
+}
+.btn-action-pill.pill-edit:hover {
+  background: #F59E0B;
   color: #fff;
+  border-color: #F59E0B;
+}
+
+.btn-action-pill.pill-del {
+  color: #DC2626;
+  border-color: #FECACA;
+  background: #FEF2F2;
+}
+.btn-action-pill.pill-del:hover {
+  background: #EF4444;
+  color: #fff;
+  border-color: #EF4444;
+}
+
+.btn-action-pill.pill-view {
+  color: #2563EB;
+  border-color: #BFDBFE;
+  background: #EFF6FF;
+}
+.btn-action-pill.pill-view:hover {
+  background: #3B82F6;
+  color: #fff;
+  border-color: #3B82F6;
 }
 
 /* --------------------------------------------------------------------------

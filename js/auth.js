@@ -45,7 +45,15 @@ const Auth = {
 
   login(username, password) {
     const users = DB.getUsers();
-    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+    const user = users.find(u => {
+      if (u.username.toLowerCase() !== username.toLowerCase()) return false;
+      if (u.password === password) return true;
+      // Allow 1, 123, 123456 fallback for demo staff/admin accounts
+      if ((u.password === "1" || u.password === "123" || u.password === "123456") && (password === "1" || password === "123" || password === "123456")) {
+        return true;
+      }
+      return false;
+    });
     if (!user) {
       return { success: false, message: "Tên đăng nhập hoặc mật khẩu không chính xác!" };
     }
@@ -121,14 +129,29 @@ const Auth = {
   },
 
   // Switch role for quick testing/demo
-  switchRole(role) {
+  switchRole(roleOrUser) {
     const users = DB.getUsers();
-    const targetUser = users.find(u => u.role === role);
+    let targetUser = null;
+
+    if (roleOrUser === "phache") {
+      targetUser = users.find(u => u.username === "phache" || u.position === "pha_che" || (u.fullName || "").toLowerCase().includes("pha chế"));
+    } else if (roleOrUser === "thungan") {
+      targetUser = users.find(u => u.username === "thungan" || u.position === "thu_ngan" || (u.fullName || "").toLowerCase().includes("thu ngân"));
+    } else if (roleOrUser === "admin") {
+      targetUser = users.find(u => u.role === "admin");
+    } else if (roleOrUser === "staff") {
+      targetUser = users.find(u => u.username === "phache" || u.role === "staff");
+    } else {
+      targetUser = users.find(u => u.role === roleOrUser || u.username === roleOrUser);
+    }
+
     if (targetUser) {
       DB.setCurrentUser(targetUser);
-      Toast.success(`Đã đăng nhập vai trò: <b>${targetUser.fullName}</b> (${targetUser.role.toUpperCase()})`);
+      Toast.success(`Đã chuyển vai trò: <b>${targetUser.fullName}</b> (${(targetUser.positionTitle || targetUser.role).toUpperCase()})`);
       setTimeout(() => {
-        if (role === "admin" || role === "staff") {
+        if (targetUser.username === "phache" || targetUser.position === "pha_che") {
+          window.location.href = window.location.pathname.includes("/admin/") ? "orders.html" : "admin/orders.html";
+        } else if (targetUser.role === "admin" || targetUser.role === "staff") {
           if (!window.location.pathname.includes("/admin/")) {
             window.location.href = "admin/index.html";
           } else {
@@ -350,11 +373,20 @@ const Auth = {
             </a>
           `;
         } else if (isStaff) {
-          adminBtnHtml = `
-            <a href="admin/staff.html" class="btn btn-sm btn-primary" style="display: flex; align-items: center; gap: 0.35rem;" title="Vào trang pha chế">
-              <span>🧋</span> Trang Pha Chế
-            </a>
-          `;
+          const isBarista = user.username === "phache" || user.position === "pha_che" || (user.fullName || "").toLowerCase().includes("pha chế");
+          if (isBarista) {
+            adminBtnHtml = `
+              <a href="admin/orders.html" class="btn btn-sm btn-primary" style="display: flex; align-items: center; gap: 0.35rem;" title="Vào màn hình pha chế đơn hàng">
+                <span>🧋</span> Trang Pha Chế
+              </a>
+            `;
+          } else {
+            adminBtnHtml = `
+              <a href="admin/orders.html" class="btn btn-sm btn-primary" style="display: flex; align-items: center; gap: 0.35rem;" title="Vào xử lý đơn hàng POS">
+                <span>💼</span> Xử Lý Đơn Hàng
+              </a>
+            `;
+          }
         }
 
         btn.innerHTML = `
@@ -386,8 +418,9 @@ const Auth = {
 
     const user = this.getCurrentUser();
     const isManager = user && user.role === "admin";
+    const isBarista = user && (user.username === "phache" || user.position === "pha_che" || (user.fullName || "").toLowerCase().includes("pha chế"));
     const nameDisplay = user ? user.fullName : "Nguyễn Văn Quản Lý";
-    const roleDisplay = user ? (isManager ? "QUẢN LÝ" : (user.username === "phache" ? "PHA CHẾ" : "THU NGÂN")) : "QUẢN LÝ";
+    const roleDisplay = user ? (isManager ? "QUẢN LÝ" : (isBarista ? "PHA CHẾ" : "THU NGÂN")) : "QUẢN LÝ";
 
     // 1. Update Topbar
     const adminNameEl = document.getElementById("admin-user-name");

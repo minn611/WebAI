@@ -18,8 +18,8 @@ const OrderTracking = {
       const user = typeof Auth !== "undefined" ? Auth.getCurrentUser() : null;
       if (user && (user.phone || user.fullName)) {
         const userOrders = DB.getOrders().filter(o => 
-          (user.phone && o.customerPhone === user.phone) || 
-          (user.fullName && o.customerName === user.fullName)
+          (user.phone && (o.customerPhone === user.phone || o.phone === user.phone)) || 
+          (user.fullName && (o.customerName === user.fullName || o.name === user.fullName))
         );
         if (userOrders.length > 0) {
           this.renderOrderDetails(userOrders[0]);
@@ -75,7 +75,12 @@ const OrderTracking = {
     // 2. Fallback sang LocalStorage nếu không có từ API
     if (!found) {
       const orders = DB.getOrders();
-      found = orders.find(o => (o.id && o.id.toUpperCase() === query.toUpperCase()) || o.customerPhone === query);
+      found = orders.find(o => 
+        (o.id && o.id.toUpperCase() === query.toUpperCase()) || 
+        (o.orderId && o.orderId.toUpperCase() === query.toUpperCase()) ||
+        (o.customerPhone && o.customerPhone.trim() === query.trim()) ||
+        (o.phone && o.phone.trim() === query.trim())
+      );
     }
 
     if (!found) {

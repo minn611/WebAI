@@ -41,13 +41,23 @@
     <form id="login-form" onsubmit="handleLoginSubmit(event)">
       <div class="form-group">
         <label class="form-label text-xs">Tên đăng nhập</label>
-        <input type="text" id="login-username" class="form-control" placeholder="admin / nhanvien / khachhang" required>
+        <input type="text" id="login-username" class="form-control" placeholder="admin / thungan / phache" required>
       </div>
       <div class="form-group">
         <label class="form-label text-xs">Mật khẩu</label>
-        <input type="password" id="login-password" class="form-control" placeholder="Mật khẩu demo: 123" required>
+        <input type="password" id="login-password" class="form-control" placeholder="Mật khẩu demo: 123456" required>
       </div>
       <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 0.5rem;">Đăng Nhập ➔</button>
+
+      <!-- Quick Demo Login Buttons -->
+      <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); text-align: center;">
+        <span class="text-xs text-muted font-bold" style="display: block; margin-bottom: 0.5rem;">Đăng nhập nhanh 1-Click (Demo):</span>
+        <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="quickLogin('admin', '123456')">👑 Admin</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="quickLogin('thungan', '123456')">💼 Thu Ngân</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="quickLogin('phache', '123456')">🧋 Pha Chế</button>
+        </div>
+      </div>
     </form>
 
     <!-- Register Form -->
@@ -112,7 +122,9 @@
       if (res.success) {
         Toast.success(`Chào mừng <b>${res.user.fullName}</b>!`);
         setTimeout(() => {
-          if (res.user.role === "admin" || res.user.role === "staff") {
+          if (res.user.username === "phache" || res.user.position === "pha_che") {
+            window.location.href = "admin/orders.html";
+          } else if (res.user.role === "admin" || res.user.role === "staff") {
             window.location.href = "admin/index.html";
           } else {
             window.location.href = "index.html";
@@ -148,7 +160,9 @@
       if (res.success) {
         Toast.success(`Đã đăng nhập vai trò: <b>${res.user.fullName}</b>`);
         setTimeout(() => {
-          if (res.user.role === "admin" || res.user.role === "staff") {
+          if (res.user.username === "phache" || res.user.position === "pha_che") {
+            window.location.href = "admin/orders.html";
+          } else if (res.user.role === "admin" || res.user.role === "staff") {
             window.location.href = "admin/index.html";
           } else {
             window.location.href = "index.html";

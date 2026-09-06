@@ -181,7 +181,7 @@ const orderController = {
         status: dh.trang_thai_don_hang,
         orderStatus: dh.trang_thai_don_hang,
         paymentMethod: dh.phuong_thuc || 'cod',
-        paymentStatus: dh.trang_thai_tt === 'da_thanh_toan' ? 'paid' : 'pending',
+        paymentStatus: (dh.trang_thai_tt === 'da_thanh_toan' || dh.trang_thai_tt === 'thanh_cong') ? 'paid' : 'pending',
         createdAt: dh.ngay_dat,
         items: itemsByOrderId.get(dh.id) || []
       }));
@@ -268,7 +268,7 @@ const orderController = {
         status: dh.trang_thai_don_hang,
         orderStatus: dh.trang_thai_don_hang,
         paymentMethod: dh.phuong_thuc || 'cod',
-        paymentStatus: dh.trang_thai_tt === 'da_thanh_toan' ? 'paid' : 'pending',
+        paymentStatus: (dh.trang_thai_tt === 'da_thanh_toan' || dh.trang_thai_tt === 'thanh_cong') ? 'paid' : 'pending',
         createdAt: dh.ngay_dat,
         items: formattedItems
       };
