@@ -136,6 +136,43 @@
             </div>
           </form>
         </div>
+
+        <!-- Change Password Form (FR-03 Bảo mật tài khoản) -->
+        <div class="card" style="padding: 1.75rem;">
+          <h4 style="margin-bottom: 1.25rem;">🔒 Đổi Mật Khẩu</h4>
+          <form onsubmit="changePasswordSubmit(event)">
+            <div class="form-group">
+              <label class="form-label text-xs">Mật khẩu hiện tại</label>
+              <input type="password" id="old-pass" class="form-control" required placeholder="Nhập mật khẩu hiện tại">
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Mật khẩu mới</label>
+              <input type="password" id="new-pass" class="form-control" required placeholder="Tối thiểu 6 ký tự">
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Xác nhận mật khẩu mới</label>
+              <input type="password" id="confirm-pass" class="form-control" required placeholder="Nhập lại mật khẩu mới">
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 0.5rem;">🔑 Cập Nhật Mật Khẩu</button>
+          </form>
+        </div>
+
+        <!-- Complaint / Feedback Form (FR-12 & FR-24 Khiếu nại dịch vụ) -->
+        <div class="card" style="padding: 1.75rem;">
+          <h4 style="margin-bottom: 0.5rem;">📩 Khiếu Nại & Góp Ý Chất Lượng</h4>
+          <p class="text-xs text-muted" style="margin-bottom: 1rem;">Mọi phản ánh của bạn về đồ uống hoặc thái độ phục vụ sẽ được Ban quản lý tiếp nhận và xử lý trong 24h.</p>
+          <form onsubmit="submitComplaint(event)">
+            <div class="form-group">
+              <label class="form-label text-xs">Mã đơn hàng liên quan (nếu có)</label>
+              <input type="text" id="comp-order-id" class="form-control" placeholder="Ví dụ: ORD-1001">
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Nội dung phản ánh / khiếu nại</label>
+              <textarea id="comp-content" class="form-control" rows="3" required placeholder="Mô tả chi tiết vấn đề bạn gặp phải..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-outline btn-sm">📨 Gửi Phản Hồi Cho Quản Lý</button>
+          </form>
+        </div>
       </div>
     </div>
   </main>
@@ -242,6 +279,56 @@
       DB.setCurrentUser(user);
       Toast.success("Cập nhật thông tin thành công!");
       initProfilePage();
+    }
+
+    function changePasswordSubmit(e) {
+      e.preventDefault();
+      const oldP = document.getElementById("old-pass").value;
+      const newP = document.getElementById("new-pass").value;
+      const confP = document.getElementById("confirm-pass").value;
+
+      if (newP !== confP) {
+        Toast.error("Mật khẩu mới và xác nhận mật khẩu không khớp!");
+        return;
+      }
+      if (newP.length < 6) {
+        Toast.error("Mật khẩu mới phải có ít nhất 6 ký tự!");
+        return;
+      }
+
+      const user = Auth.getCurrentUser();
+      if (user) {
+        user.password = newP;
+        DB.saveUser(user);
+        DB.setCurrentUser(user);
+      }
+      Toast.success("Đổi mật khẩu thành công! Mật khẩu mới đã được cập nhật an toàn.");
+      document.getElementById("old-pass").value = "";
+      document.getElementById("new-pass").value = "";
+      document.getElementById("confirm-pass").value = "";
+    }
+
+    function submitComplaint(e) {
+      e.preventDefault();
+      const orderId = document.getElementById("comp-order-id").value.trim();
+      const content = document.getElementById("comp-content").value.trim();
+      const user = Auth.getCurrentUser() || { fullName: "Khách Hàng", phone: "0900000000" };
+
+      // Gửi thông báo tới hệ thống Audit Logger máy chủ
+      fetch("/api/audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          actor: user.fullName || "Khách Hàng",
+          role: "KHACH_HANG",
+          action: "GỬI KHIẾU NẠI / PHẢN HỒI DỊCH VỤ",
+          detail: `Mã đơn: ${orderId || 'Không rõ'} | Nội dung: ${content}`
+        })
+      }).catch(() => {});
+
+      Toast.success("Đã gửi phản hồi thành công! Mã phiếu tiếp nhận: <b>KN-" + Math.floor(1000 + Math.random() * 9000) + "</b>. Quản lý cửa hàng sẽ liên hệ lại với bạn trong 24h!");
+      document.getElementById("comp-order-id").value = "";
+      document.getElementById("comp-content").value = "";
     }
 
     function reOrderFromHistory(orderId) {

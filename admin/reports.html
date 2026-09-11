@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
@@ -154,54 +154,104 @@
   <script src="../js/auth.js"></script>
 
   <script>
-    function initReportsPage() {
-      const orders = DB.getOrders();
-      const revenue = orders.filter(o => o.orderStatus !== "cancelled").reduce((s, o) => s + o.totalAmount, 0);
-      const completed = orders.filter(o => o.orderStatus === "completed").length;
-      const aov = orders.length ? Math.round(revenue / orders.length) : 0;
+    async function initReportsPage() {
+      try {
+        // 1. Gọi API Summary
+        const sumRes = await fetch('/api/reports/summary');
+        const sumJson = await sumRes.json();
+        if (sumJson.success && sumJson.data) {
+          const d = sumJson.data;
+          const totalRev = Number(d.tong_doanh_thu) || 0;
+          const totalOrders = Number(d.tong_don_hang) || 0;
+          const completedOrders = Number(d.don_hoan_thanh) || 0;
+          const aov = totalOrders > 0 ? Math.round(totalRev / totalOrders) : 0;
+          const rate = totalOrders > 0 ? Math.round((completedOrders / totalOrders) * 100) : 100;
 
-      document.getElementById("rep-total-revenue").textContent = Formatters.currency(revenue);
-      document.getElementById("rep-aov").textContent = Formatters.currency(aov);
-      document.getElementById("rep-completed-orders").textContent = `${orders.length ? Math.round((completed / orders.length) * 100) : 100}%`;
+          document.getElementById("rep-total-revenue").textContent = Formatters.currency(totalRev);
+          document.getElementById("rep-aov").textContent = Formatters.currency(aov);
+          document.getElementById("rep-completed-orders").textContent = `${rate}%`;
+        }
 
-      // Render Top Products
-      const products = DB.getProducts().sort((a, b) => b.sold - a.sold).slice(0, 5);
-      const tbody = document.getElementById("admin-top-selling-tbody");
-      if (tbody) {
-        tbody.innerHTML = products.map((p, idx) => `
-          <tr>
-            <td><b class="badge ${idx === 0 ? 'badge-warning' : 'badge-secondary'}">#${idx + 1}</b></td>
-            <td>
-              <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <img src="${p.image.startsWith('http') || p.image.startsWith('../') ? p.image : '../' + p.image}" alt="${p.name}" onerror="this.onerror=null; this.src='../images/products/hong-tra-mochi-keo-dai.jpg';" style="width: 38px; height: 38px; border-radius: var(--radius-sm); object-fit: cover;">
-                <span class="font-bold">${p.name}</span>
-              </div>
-            </td>
-            <td><span class="badge badge-secondary">${p.category}</span></td>
-            <td>${Formatters.currency(p.price)}</td>
-            <td><b>${p.sold}</b> ly</td>
-            <td class="font-bold text-primary">${Formatters.currency(p.price * p.sold)}</td>
-          </tr>
-        `).join("");
+        // 2. Gọi API Top 5 Sản Phẩm Bán Chạy
+        const topRes = await fetch('/api/reports/top-products');
+        const topJson = await topRes.json();
+        const tbody = document.getElementById("admin-top-selling-tbody");
+        if (tbody && topJson.success && topJson.data && topJson.data.length > 0) {
+          tbody.innerHTML = topJson.data.map((p, idx) => `
+            <tr>
+              <td><b class="badge ${idx === 0 ? 'badge-warning' : 'badge-secondary'}">#${idx + 1}</b></td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <img src="${p.hinh_anh_url && (p.hinh_anh_url.startsWith('http') || p.hinh_anh_url.startsWith('../')) ? p.hinh_anh_url : '../' + (p.hinh_anh_url || 'images/products/hong-tra-mochi-keo-dai.jpg')}" alt="${p.ten_san_pham}" onerror="this.onerror=null; this.src='../images/products/hong-tra-mochi-keo-dai.jpg';" style="width: 38px; height: 38px; border-radius: var(--radius-sm); object-fit: cover;">
+                  <span class="font-bold">${p.ten_san_pham}</span>
+                </div>
+              </td>
+              <td><span class="badge badge-secondary">${p.danh_muc || 'Trà Sữa'}</span></td>
+              <td>${Formatters.currency(p.da_ban > 0 ? p.tong_doanh_thu / p.da_ban : 25000)}</td>
+              <td><b>${p.da_ban}</b> ly</td>
+              <td class="font-bold text-primary">${Formatters.currency(Number(p.tong_doanh_thu))}</td>
+            </tr>
+          `).join("");
+        } else if (tbody) {
+          // Fallback nếu chưa có đơn hàng chi tiết
+          const products = DB.getProducts().sort((a, b) => b.sold - a.sold).slice(0, 5);
+          tbody.innerHTML = products.map((p, idx) => `
+            <tr>
+              <td><b class="badge ${idx === 0 ? 'badge-warning' : 'badge-secondary'}">#${idx + 1}</b></td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <img src="${p.image.startsWith('http') || p.image.startsWith('../') ? p.image : '../' + p.image}" alt="${p.name}" onerror="this.onerror=null; this.src='../images/products/hong-tra-mochi-keo-dai.jpg';" style="width: 38px; height: 38px; border-radius: var(--radius-sm); object-fit: cover;">
+                  <span class="font-bold">${p.name}</span>
+                </div>
+              </td>
+              <td><span class="badge badge-secondary">${p.category}</span></td>
+              <td>${Formatters.currency(p.price)}</td>
+              <td><b>${p.sold}</b> ly</td>
+              <td class="font-bold text-primary">${Formatters.currency(p.price * p.sold)}</td>
+            </tr>
+          `).join("");
+        }
+      } catch (err) {
+        console.warn("Lỗi load báo cáo từ API, fallback sang LocalStorage:", err);
+        const orders = DB.getOrders();
+        const revenue = orders.filter(o => o.orderStatus !== "cancelled").reduce((s, o) => s + o.totalAmount, 0);
+        const completed = orders.filter(o => o.orderStatus === "completed").length;
+        const aov = orders.length ? Math.round(revenue / orders.length) : 0;
+
+        document.getElementById("rep-total-revenue").textContent = Formatters.currency(revenue);
+        document.getElementById("rep-aov").textContent = Formatters.currency(aov);
+        document.getElementById("rep-completed-orders").textContent = `${orders.length ? Math.round((completed / orders.length) * 100) : 100}%`;
       }
     }
 
-    function exportReportCSV() {
-      const orders = DB.getOrders();
-      let csv = "Mã Đơn,Khách Hàng,Số Điện Thoại,Tổng Tiền,Hình Thức TT,Trạng Thái,Thời Gian\n";
-      orders.forEach(o => {
-        csv += `"${o.id}","${o.customerName}","${o.customerPhone}",${o.totalAmount},"${o.paymentMethod}","${o.orderStatus}","${o.createdAt}"\n`;
-      });
+    async function exportReportCSV() {
+      try {
+        let orders = [];
+        const res = await fetch('/api/orders');
+        const json = await res.json();
+        if (json.success && json.data) {
+          orders = json.data;
+        } else {
+          orders = DB.getOrders();
+        }
 
-      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `Bao_Cao_DoDo_${new Date().toISOString().split("T")[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      Toast.success("Đã xuất file báo cáo CSV thành công!");
+        let csv = "Mã Đơn,Khách Hàng,Số Điện Thoại,Tổng Tiền,Hình Thức TT,Trạng Thái,Thời Gian\n";
+        orders.forEach(o => {
+          csv += `"${o.ma_don_hang || o.id}","${o.ten_nguoi_nhan || o.customerName}","${o.sdt_nguoi_nhan || o.customerPhone}",${o.tong_thanh_toan || o.totalAmount},"${o.phuong_thuc_thanh_toan || o.paymentMethod}","${o.trang_thai_don_hang || o.orderStatus}","${o.ngay_dat || o.createdAt}"\n`;
+        });
+
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Bao_Cao_DoDo_${new Date().toISOString().split("T")[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        Toast.success("Đã xuất file báo cáo CSV từ cơ sở dữ liệu thành công!");
+      } catch (e) {
+        Toast.error("Lỗi xuất file báo cáo!");
+      }
     }
 
     document.addEventListener("DOMContentLoaded", initReportsPage);

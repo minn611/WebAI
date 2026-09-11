@@ -12,6 +12,8 @@ const reviewRoutes = require('./routes/reviews');
 const customerRoutes = require('./routes/customers');
 const supplierRoutes = require('./routes/suppliers');
 const postRoutes = require('./routes/posts');
+const staffRoutes = require('./routes/staff');
+const reportRoutes = require('./routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -69,7 +71,9 @@ app.get('/api', (req, res) => {
       reviews: '/api/reviews/*',
       customers: '/api/customers/*',
       suppliers: '/api/suppliers/*',
-      posts: '/api/posts/*'
+      posts: '/api/posts/*',
+      staff: '/api/staff/*',
+      reports: '/api/reports/*'
     }
   });
 });
@@ -93,6 +97,8 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Phục vụ toàn bộ giao diện Web Khách hàng & Admin từ thư mục gốc
 const path = require('path');

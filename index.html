@@ -206,6 +206,24 @@
       </div>
     </section>
 
+    <!-- 5.5. Media & News Updates (FR-15 Quản lý truyền thông) -->
+    <section class="container" style="margin-block: 3.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem;">
+        <div>
+          <span class="badge badge-primary" style="margin-bottom: 0.5rem;">TRUYỀN THÔNG & ƯU ĐÃI</span>
+          <h2 style="font-size: 1.8rem; margin: 0;">Tin Tức & Sự Kiện Mới Nhất</h2>
+        </div>
+        <a href="#lucky-wheel-section" class="text-sm font-bold text-primary">Xem ưu đãi ➔</a>
+      </div>
+
+      <div class="grid grid-cols-3 gap-6" id="home-posts-container">
+        <!-- Injected dynamically from /api/posts -->
+        <div class="card text-center" style="padding: 2rem;">
+          <p class="text-muted text-sm">Đang tải tin tức truyền thông mới nhất...</p>
+        </div>
+      </div>
+    </section>
+
     <!-- 6. Features / Why Choose Us -->
     <section class="container" style="margin-block: 4rem;">
       <div class="grid grid-cols-3 gap-6">
@@ -318,6 +336,53 @@
       const products = DB.getProducts().filter(p => p.isBestseller).slice(0, 4);
       if (grid) {
         grid.innerHTML = products.map(p => ClientApp.renderProductCard(p)).join("");
+      }
+
+      // 3. Render Truyền Thông & Tin Tức từ API /api/posts (FR-15)
+      const postsContainer = document.getElementById("home-posts-container");
+      if (postsContainer) {
+        fetch("/api/posts")
+          .then(res => res.json())
+          .then(json => {
+            if (json.success && json.data && json.data.length > 0) {
+              const posts = json.data.slice(0, 3);
+              postsContainer.innerHTML = posts.map(p => `
+                <div class="card" style="padding: 1.25rem; display: flex; flex-direction: column; overflow: hidden;">
+                  <div style="width: 100%; height: 180px; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 1rem; background: var(--primary-bg);">
+                    <img src="${p.anh_dai_dien || 'images/products/hong-tra-mochi-keo-dai.jpg'}" alt="${p.tieu_de}" onerror="this.onerror=null; this.src='images/products/hong-tra-mochi-keo-dai.jpg';" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease;">
+                  </div>
+                  <span class="badge badge-primary" style="align-self: flex-start; margin-bottom: 0.5rem;">${p.loai_bai_viet === 'khuyen_mai' ? '🎟️ Khuyến Mãi' : '📰 Tin Tức'}</span>
+                  <h4 style="font-size: 1.1rem; margin-bottom: 0.5rem; line-height: 1.4;">${p.tieu_de}</h4>
+                  <p class="text-xs text-muted" style="line-height: 1.6; margin-bottom: 1rem; flex: 1;">${p.tom_tat || 'Khám phá ngay hương vị độc đáo và các chương trình ưu đãi hấp dẫn từ Đô Đô.'}</p>
+                  <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+                    <span class="text-xs text-muted">👁️ ${p.luot_xem || 120} lượt xem</span>
+                    <a href="menu.html" class="text-xs font-bold text-primary">Xem Chi Tiết ➔</a>
+                  </div>
+                </div>
+              `).join("");
+            } else {
+              postsContainer.innerHTML = `
+                <div class="card" style="padding: 1.25rem;">
+                  <span class="badge badge-primary">🎟️ ƯU ĐÃI</span>
+                  <h4 style="margin-top: 0.5rem;">Thứ 4 Đồng Giá 21K Toàn Hệ Thống</h4>
+                  <p class="text-xs text-muted" style="margin-top: 0.5rem;">Thưởng thức trà sữa Mochi kéo dài đồng giá 21K vào mỗi thứ Tư hàng tuần.</p>
+                </div>
+                <div class="card" style="padding: 1.25rem;">
+                  <span class="badge badge-warning">🍡 SẢN PHẨM MỚI</span>
+                  <h4 style="margin-top: 0.5rem;">Ra Mắt Dòng Topping Mochi Nếp Lạnh</h4>
+                  <p class="text-xs text-muted" style="margin-top: 0.5rem;">Đột phá trải nghiệm nhai dẻo quánh, vị ngọt bùi hòa quyện cùng hồng trà sữa.</p>
+                </div>
+                <div class="card" style="padding: 1.25rem;">
+                  <span class="badge badge-success">🚚 GIAO HÀNG</span>
+                  <h4 style="margin-top: 0.5rem;">Freeship Đơn Hàng Từ 100K</h4>
+                  <p class="text-xs text-muted" style="margin-top: 0.5rem;">Áp dụng cho mọi đơn hàng đặt trực tiếp trên website Đô Đô toàn quốc.</p>
+                </div>
+              `;
+            }
+          })
+          .catch(err => {
+            console.warn("Lỗi tải tin tức từ API:", err);
+          });
       }
     });
   </script>

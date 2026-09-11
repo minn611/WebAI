@@ -170,47 +170,79 @@
 
   <script>
     const StaffMgmt = {
-      init() {
-        this.renderTable();
+      staffList: [],
+
+      async init() {
+        await this.renderTable();
       },
 
-      renderTable() {
+      async renderTable() {
         const tbody = document.getElementById("admin-staff-tbody");
         if (!tbody) return;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">Đang tải danh sách nhân viên từ máy chủ...</td></tr>`;
 
-        const staff = DB.getUsers().filter(u => u.role === "admin" || u.role === "staff");
-        tbody.innerHTML = staff.map(s => {
+        try {
+          const res = await fetch("/api/staff");
+          const json = await res.json();
+          if (json.success && json.data) {
+            this.staffList = json.data;
+          } else {
+            throw new Error("API không trả về dữ liệu");
+          }
+        } catch (err) {
+          console.warn("Lỗi gọi API /api/staff, dùng dữ liệu fallback:", err);
+          this.staffList = DB.getUsers().filter(u => u.role === "admin" || u.role === "staff").map(u => ({
+            id: u.id,
+            ma_nhan_vien: u.id,
+            ho_ten: u.fullName,
+            ten_dang_nhap: u.username,
+            so_dien_thoai: u.phone,
+            chuc_vu: u.positionTitle || u.position || "Nhân viên",
+            vai_tro: u.role,
+            trang_thai_tai_khoan: u.status === "locked" ? "tam_khoa" : "hoat_dong"
+          }));
+        }
+
+        if (this.staffList.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">Chưa có nhân viên nào trong hệ thống.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = this.staffList.map(s => {
           let roleBadge = '💼 Thu Ngân';
           let badgeClass = 'badge-info';
-          if (s.role === 'admin' || s.position === 'quan_ly') {
+          const pos = (s.chuc_vu || '').toLowerCase();
+          if (s.vai_tro === 'admin' || pos.includes('quản lý') || pos.includes('quan ly')) {
             roleBadge = '👑 Quản Lý';
             badgeClass = 'badge-primary';
-          } else if (s.username === 'phache' || s.position === 'pha_che' || (s.fullName || '').toLowerCase().includes('pha chế')) {
+          } else if (s.ten_dang_nhap === 'phache' || pos.includes('pha chế') || pos.includes('pha che')) {
             roleBadge = '🧋 Pha Chế';
             badgeClass = 'badge-warning';
           }
 
+          const isLocked = s.trang_thai_tai_khoan === 'tam_khoa' || s.status === 'locked';
+
           return `
           <tr>
-            <td class="font-bold text-primary">${s.id}</td>
-            <td class="font-bold">${s.fullName}</td>
-            <td><code>${s.username}</code></td>
+            <td class="font-bold text-primary">${s.ma_nhan_vien || s.id}</td>
+            <td class="font-bold">${s.ho_ten || s.fullName}</td>
+            <td><code>${s.ten_dang_nhap || s.username}</code></td>
             <td>
               <span class="badge ${badgeClass}">
                 ${roleBadge}
               </span>
             </td>
-            <td>${s.phone || 'Chưa có'}</td>
+            <td>${s.so_dien_thoai || s.phone || 'Chưa có'}</td>
             <td>
-              <span class="badge ${s.status === 'locked' ? 'badge-danger' : 'badge-success'}">
-                ${s.status === 'locked' ? 'Tạm Khóa' : 'Đang Làm Việc'}
+              <span class="badge ${isLocked ? 'badge-danger' : 'badge-success'}">
+                ${isLocked ? 'Tạm Khóa' : 'Đang Làm Việc'}
               </span>
             </td>
             <td>
               <div class="table-actions">
                 <button class="action-icon-btn btn-edit" onclick="StaffMgmt.openEditModal('${s.id}')" title="Chỉnh sửa nhân viên">✏️</button>
-                <button class="action-icon-btn" onclick="StaffMgmt.toggleStaff('${s.id}')" title="${s.status === 'locked' ? 'Mở Khóa' : 'Tạm Khóa'}">
-                  ${s.status === 'locked' ? '▶️' : '⏸️'}
+                <button class="action-icon-btn" onclick="StaffMgmt.toggleStaff('${s.id}')" title="${isLocked ? 'Mở Khóa' : 'Tạm Khóa'}">
+                  ${isLocked ? '▶️' : '⏸️'}
                 </button>
                 <button class="action-icon-btn btn-del" onclick="StaffMgmt.deleteStaff('${s.id}')" title="Xóa nhân viên">🗑️</button>
               </div>
@@ -232,26 +264,26 @@
       },
 
       openEditModal(staffId) {
-        const users = DB.getUsers();
-        const s = users.find(u => u.id === staffId);
+        const s = this.staffList.find(u => String(u.id) === String(staffId));
         if (!s) return;
 
-        document.getElementById("staff-modal-title").textContent = `Chỉnh Sửa: ${s.fullName}`;
+        document.getElementById("staff-modal-title").textContent = `Chỉnh Sửa: ${s.ho_ten || s.fullName}`;
         document.getElementById("staff-id").value = s.id;
-        document.getElementById("staff-name").value = s.fullName || "";
-        document.getElementById("staff-username").value = s.username || "";
-        document.getElementById("staff-password").value = s.password || "123456";
-        document.getElementById("staff-phone").value = s.phone || "";
+        document.getElementById("staff-name").value = s.ho_ten || s.fullName || "";
+        document.getElementById("staff-username").value = s.ten_dang_nhap || s.username || "";
+        document.getElementById("staff-password").value = "";
+        document.getElementById("staff-phone").value = s.so_dien_thoai || s.phone || "";
         
         let roleVal = "phache";
-        if (s.role === "admin" || s.position === "quan_ly") roleVal = "admin";
-        else if (s.position === "thu_ngan" || s.username === "thungan") roleVal = "thungan";
+        const pos = (s.chuc_vu || '').toLowerCase();
+        if (s.vai_tro === "admin" || pos.includes("quản lý")) roleVal = "admin";
+        else if (pos.includes("thu ngân") || s.ten_dang_nhap === "thungan") roleVal = "thungan";
         document.getElementById("staff-role").value = roleVal;
 
         Modal.open("staff-modal");
       },
 
-      saveStaffSubmit(e) {
+      async saveStaffSubmit(e) {
         e.preventDefault();
         const staffId = document.getElementById("staff-id").value;
         const name = document.getElementById("staff-name").value.trim();
@@ -260,99 +292,80 @@
         const phone = document.getElementById("staff-phone").value.trim();
         const selectedRole = document.getElementById("staff-role").value;
 
-        let role = "staff";
-        let position = "pha_che";
+        let role = "nhan_vien";
         let positionTitle = "Nhân Viên Pha Chế";
 
         if (selectedRole === "admin") {
           role = "admin";
-          position = "quan_ly";
           positionTitle = "Quản Lý Cửa Hàng";
         } else if (selectedRole === "thungan") {
-          role = "staff";
-          position = "thu_ngan";
+          role = "nhan_vien";
           positionTitle = "Thu Ngân & Bán Hàng";
         } else {
-          role = "staff";
-          position = "pha_che";
+          role = "nhan_vien";
           positionTitle = "Nhân Viên Pha Chế";
         }
 
-        let users = DB.getUsers();
-        if (staffId) {
-          const idx = users.findIndex(user => user.id === staffId);
-          if (idx >= 0) {
-            users[idx] = {
-              ...users[idx],
-              fullName: name,
-              username: u,
-              password: p,
-              phone,
-              role,
-              position,
-              positionTitle
-            };
-          }
-          Toast.success(`Đã cập nhật nhân viên: <b>${name}</b> (${positionTitle})`);
-          if (typeof AuditLogger !== "undefined") {
-            AuditLogger.notifyServer(`CẬP NHẬT NHÂN VIÊN: ${name} (@${u})`, `Chức vụ: ${positionTitle} | SĐT: ${phone}`, "Quản Lý Cửa Hàng", "ADMIN");
-          }
-        } else {
-          const newStaff = {
-            id: `NV-${Date.now().toString().slice(-4)}`,
-            fullName: name,
-            username: u,
-            password: p,
-            phone,
-            role,
-            position,
-            positionTitle,
-            status: "active",
-            createdAt: new Date().toISOString().split("T")[0]
-          };
-          users.push(newStaff);
-          Toast.success(`Đã thêm nhân viên mới: <b>${name}</b> (${positionTitle})`);
-          if (typeof AuditLogger !== "undefined") {
-            AuditLogger.notifyServer(`THÊM NHÂN VIÊN MỚI: ${name} (@${u})`, `Chức vụ: ${positionTitle} | SĐT: ${phone}`, "Quản Lý Cửa Hàng", "ADMIN");
-          }
-        }
+        const payload = {
+          ho_ten: name,
+          ten_dang_nhap: u,
+          mat_khau: p || undefined,
+          so_dien_thoai: phone,
+          chuc_vu: positionTitle,
+          vai_tro: role
+        };
 
-        DB.set(STORAGE_KEYS.USERS, users);
-        Modal.close("staff-modal");
-        this.renderTable();
-      },
-
-      toggleStaff(id) {
-        const users = DB.getUsers();
-        const s = users.find(u => u.id === id);
-        if (s) {
-          s.status = s.status === 'locked' ? 'active' : 'locked';
-          DB.set(STORAGE_KEYS.USERS, users);
-          Toast.success(`Đã ${s.status === 'locked' ? 'khóa' : 'mở khóa'} tài khoản: <b>${s.fullName}</b>`);
-          if (typeof AuditLogger !== "undefined") {
-            AuditLogger.notifyServer(`${s.status === 'locked' ? 'KHÓA' : 'MỞ KHÓA'} TÀI KHOẢN NHÂN VIÊN`, `Nhân viên: ${s.fullName} (@${s.username})`, "Quản Lý Cửa Hàng", "ADMIN");
+        try {
+          let res;
+          if (staffId) {
+            res = await fetch(`/api/staff/${staffId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+          } else {
+            res = await fetch('/api/staff', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
           }
-          this.renderTable();
+          const json = await res.json();
+          if (!json.success) throw new Error(json.message || "Lỗi lưu dữ liệu");
+
+          Toast.success(staffId ? `Đã cập nhật: <b>${name}</b> (${positionTitle})` : `Đã thêm nhân viên mới: <b>${name}</b>`);
+          Modal.close("staff-modal");
+          await this.renderTable();
+        } catch (err) {
+          Toast.error(err.message || "Lỗi khi kết nối với máy chủ!");
         }
       },
 
-      deleteStaff(id) {
-        const users = DB.getUsers();
-        const s = users.find(u => u.id === id);
-        if (!s) return;
-        if (s.role === "admin" && users.filter(u => u.role === "admin").length <= 1) {
-          Toast.warning("Không thể xóa tài khoản Quản Lý Admin duy nhất!");
-          return;
+      async toggleStaff(id) {
+        try {
+          const res = await fetch(`/api/staff/${id}/toggle-status`, { method: 'PUT' });
+          const json = await res.json();
+          if (!json.success) throw new Error(json.message);
+          Toast.success(json.message);
+          await this.renderTable();
+        } catch (err) {
+          Toast.error(err.message || "Lỗi khi thay đổi trạng thái!");
         }
+      },
 
-        if (confirm(`Bạn có chắc muốn xóa nhân viên "${s.fullName}" (${s.username}) khỏi hệ thống?`)) {
-          const updated = users.filter(u => u.id !== id);
-          DB.set(STORAGE_KEYS.USERS, updated);
-          Toast.info(`Đã xóa nhân viên: ${s.fullName}`);
-          if (typeof AuditLogger !== "undefined") {
-            AuditLogger.notifyServer(`XÓA NHÂN VIÊN KHỎI HỆ THỐNG`, `Đã xóa tài khoản: ${s.fullName} (@${s.username})`, "Quản Lý Cửa Hàng", "ADMIN");
-          }
-          this.renderTable();
+      async deleteStaff(id) {
+        const s = this.staffList.find(u => String(u.id) === String(id));
+        const name = s ? (s.ho_ten || s.fullName) : id;
+        if (!confirm(`Bạn có chắc muốn xóa nhân viên "${name}" khỏi cơ sở dữ liệu hệ thống?`)) return;
+
+        try {
+          const res = await fetch(`/api/staff/${id}`, { method: 'DELETE' });
+          const json = await res.json();
+          if (!json.success) throw new Error(json.message);
+          Toast.info(json.message || `Đã xóa nhân viên thành công`);
+          await this.renderTable();
+        } catch (err) {
+          Toast.error(err.message || "Lỗi khi xóa nhân viên!");
         }
       }
     };
