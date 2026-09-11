@@ -13,8 +13,8 @@
    -------------------------------------------------------------------------- */
 .admin-sidebar {
   width: var(--admin-sidebar-width);
-  background-color: var(--bg-surface);
-  border-right: 1px solid var(--border-color);
+  background: linear-gradient(180deg, #180007 0%, #24020B 100%);
+  border-right: 1px solid rgba(196, 21, 53, 0.2);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -23,6 +23,7 @@
   left: 0;
   z-index: 100;
   transition: width var(--transition-normal);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
 }
 
 .admin-sidebar-header {
@@ -31,7 +32,16 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid rgba(196, 21, 53, 0.18);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.admin-sidebar-header h4 {
+  color: #FFF0F3 !important;
+}
+
+.admin-sidebar-header .text-muted {
+  color: #D1B3BA !important;
 }
 
 .admin-sidebar-nav {
@@ -40,30 +50,32 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.4rem;
 }
 
 .sidebar-nav-item {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  padding: 0.75rem 1rem;
+  padding: 0.8rem 1.1rem;
   border-radius: var(--radius-md);
-  color: var(--text-muted);
+  color: #D6BAC0;
   font-weight: 600;
   font-size: 0.925rem;
   transition: all var(--transition-fast);
 }
 
 .sidebar-nav-item:hover {
-  background-color: var(--primary-bg);
-  color: var(--primary);
+  background-color: rgba(196, 21, 53, 0.2);
+  color: #FFF0F3;
+  transform: translateX(4px);
 }
 
 .sidebar-nav-item.active {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  background: var(--gradient-bordeaux);
   color: #fff;
-  box-shadow: 0 4px 12px var(--primary-glow);
+  box-shadow: 0 4px 18px rgba(196, 21, 53, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .sidebar-nav-item .nav-icon {
@@ -76,7 +88,8 @@
 
 .admin-sidebar-footer {
   padding: 1rem 1.25rem;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid rgba(196, 21, 53, 0.18);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* --------------------------------------------------------------------------

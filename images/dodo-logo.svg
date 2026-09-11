@@ -2,8 +2,9 @@
   <defs>
     <!-- Background Gradient -->
     <linearGradient id="dodoBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E60023"/>
-      <stop offset="100%" stop-color="#FF385C"/>
+      <stop offset="0%" stop-color="#6B0018"/>
+      <stop offset="50%" stop-color="#9B0024"/>
+      <stop offset="100%" stop-color="#C41535"/>
     </linearGradient>
 
     <!-- Milk Tea Liquid Gradient -->
@@ -26,7 +27,7 @@
 
     <!-- Drop Shadow Filter -->
     <filter id="badgeShadow" x="-10%" y="-10%" width="120%" height="125%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#E60023" flood-opacity="0.35"/>
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#9B0024" flood-opacity="0.45"/>
     </filter>
   </defs>
 

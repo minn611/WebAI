@@ -1,116 +1,137 @@
 /* ==========================================================================
-   TEAJOY STORE - DESIGN SYSTEM VARIABLES & TOKENS
+   TEAJOY STORE - DESIGN SYSTEM: ROYAL BORDEAUX LUXURY & DYNAMIC EFFECTS
+   Phong cách Đỏ Booc-đô / Đỏ Đô Quý Phái & Trầm Ấm Thượng Hạng
    ========================================================================== */
 
 :root {
-  /* Brand Colors - Bold Crimson Red Palette (ĐÔ ĐÔ Brand Theme) */
-  --primary: #E60023;            /* Premium Crimson Red */
-  --primary-hover: #C4001D;
-  --primary-light: #FF4D6D;
-  --primary-bg: #FFF0F2;
-  --primary-glow: rgba(230, 0, 35, 0.22);
+  /* Brand Colors - Royal Bordeaux / Đỏ Booc-đô & Đỏ Đô Quý Tộc */
+  --primary: #9B0024;            /* Royal Wine Bordeaux */
+  --primary-hover: #7D001D;      /* Deep Velvet Wine */
+  --primary-deep: #5A0014;       /* Darkest Vintage Bordeaux */
+  --primary-light: #C41535;      /* Vibrant Ruby Crimson */
+  --primary-vibrant: #DF1B42;    /* Electric Ruby Red */
+  --primary-bg: #FFF2F4;         /* Soft Velvet Rose Tint */
+  --primary-glow: rgba(155, 0, 36, 0.28);
+  --primary-glow-intense: rgba(196, 21, 53, 0.45);
 
-  --secondary: #2D6A4F;          /* Emerald Tea Accent */
-  --secondary-hover: #1B4332;
-  --secondary-light: #52B788;
-  --secondary-bg: #E8F5E9;
+  /* Gradients */
+  --gradient-bordeaux: linear-gradient(135deg, #680017 0%, #9B0024 45%, #C41535 100%);
+  --gradient-bordeaux-hover: linear-gradient(135deg, #500011 0%, #7D001D 45%, #A80E2B 100%);
+  --gradient-bordeaux-soft: linear-gradient(135deg, #FFF0F2 0%, #FFE3E8 100%);
+  --gradient-gold: linear-gradient(135deg, #FFB703 0%, #E09F3E 50%, #FB8500 100%);
+  --gradient-ruby-gold: linear-gradient(135deg, #9B0024 0%, #C41535 60%, #FFB703 100%);
+  --gradient-aura: radial-gradient(circle at center, rgba(196, 21, 53, 0.22) 0%, rgba(125, 0, 29, 0.06) 60%, transparent 100%);
 
-  --accent-taro: #7D6B90;         /* Taro Milk Tea */
-  --accent-peach: #FF6B6B;        /* Strawberry / Peach */
-  --accent-coral: #E60023;        /* Berry Red */
-  --accent-gold: #FFB703;         /* Gold Pearl */
+  /* Secondary Accents - Trà Xanh Ngọc Bích & Vàng Trân Châu */
+  --secondary: #1F523A;          /* Imperial Emerald */
+  --secondary-hover: #143827;
+  --secondary-light: #388E67;
+  --secondary-bg: #EDF7F2;
 
-  /* Neutral Colors */
-  --bg-main: #FFFDFD;            /* Clean Milk White */
+  --accent-gold: #FFB703;         /* Hạt Trân Châu Hoàng Kim */
+  --accent-peach: #FF6B8B;        /* Đào Tiên & Dâu Tây */
+  --accent-taro: #745C86;         /* Khoai Môn Hoàng Gia */
+  --accent-cream: #FFF9F2;        /* Kem Sữa Macchiato */
+
+  /* Neutral Backgrounds - Sữa Quý Phái & Nền Kính Mờ */
+  --bg-main: #FFF9FA;            /* Sắc sữa phớt hồng rượu ấm áp */
   --bg-surface: #FFFFFF;
   --bg-card: #FFFFFF;
-  --bg-card-hover: #FFF8F9;
-  --bg-subtle: #FFF0F2;
+  --bg-card-hover: #FFF4F6;
+  --bg-subtle: #FFF0F3;
+  --bg-dark-bordeaux: #1A0007;   /* Dành cho Dark/Admin */
 
-  --text-main: #1D1919;          /* Deep Dark Roast */
-  --text-muted: #6B5E5E;
-  --text-subtle: #998C8C;
+  --text-main: #1C1013;          /* Đen ánh vang sâu thẳm */
+  --text-muted: #69565A;         /* Nâu xám khói */
+  --text-subtle: #968186;
   --text-inverse: #FFFFFF;
 
-  --border-color: #F7D6DB;
-  --border-focus: #E60023;
-  --border-subtle: #FCE8EC;
+  --border-color: #F8D5DC;
+  --border-focus: #C41535;
+  --border-subtle: #FDE8ED;
+  --border-glow: rgba(196, 21, 53, 0.35);
 
   /* Status Colors */
-  --status-pending: #E09F3E;
-  --status-pending-bg: #FFF8EB;
-  --status-confirmed: #3A86FF;
-  --status-confirmed-bg: #EEF4FF;
-  --status-preparing: #8338EC;
-  --status-preparing-bg: #F5EEFD;
-  --status-shipping: #FB5607;
-  --status-shipping-bg: #FFF2EB;
-  --status-completed: #2A9D8F;
-  --status-completed-bg: #E8F7F5;
-  --status-cancelled: #E63946;
-  --status-cancelled-bg: #FDE8E9;
+  --status-pending: #D97706;
+  --status-pending-bg: #FEF3C7;
+  --status-confirmed: #2563EB;
+  --status-confirmed-bg: #EFF6FF;
+  --status-preparing: #7C3AED;
+  --status-preparing-bg: #F5F3FF;
+  --status-shipping: #EA580C;
+  --status-shipping-bg: #FFF7ED;
+  --status-completed: #059669;
+  --status-completed-bg: #ECFDF5;
+  --status-cancelled: #DC2626;
+  --status-cancelled-bg: #FEF2F2;
 
-  /* Typography - Chuẩn phông chuyên biệt tiếng Việt Be Vietnam Pro (100% chuẩn dấu) */
-  --font-main: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Typography */
+  --font-main: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-heading: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', Consolas, Monaco, monospace;
 
-  /* Elevations & Shadows */
-  --shadow-sm: 0 2px 6px rgba(43, 33, 24, 0.04), 0 1px 2px rgba(43, 33, 24, 0.06);
-  --shadow-md: 0 6px 16px rgba(43, 33, 24, 0.08), 0 2px 4px rgba(43, 33, 24, 0.04);
-  --shadow-lg: 0 16px 32px rgba(43, 33, 24, 0.12), 0 4px 8px rgba(43, 33, 24, 0.06);
-  --shadow-xl: 0 24px 48px -12px rgba(43, 33, 24, 0.18);
-  --shadow-glow: 0 0 20px rgba(156, 102, 68, 0.25);
+  /* Elevations & Shadows - Hào quang Đỏ Booc-đô quyến rũ */
+  --shadow-sm: 0 2px 8px rgba(104, 0, 23, 0.05), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 20px rgba(104, 0, 23, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 18px 36px rgba(104, 0, 23, 0.12), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 28px 56px -12px rgba(104, 0, 23, 0.22);
+  --shadow-bordeaux: 0 12px 28px -6px rgba(155, 0, 36, 0.32);
+  --shadow-bordeaux-lg: 0 20px 48px -10px rgba(155, 0, 36, 0.42);
+  --shadow-glow: 0 0 28px rgba(196, 21, 53, 0.38);
 
-  /* Glassmorphism */
+  /* Glassmorphism Thượng Hạng */
   --glass-bg: rgba(255, 255, 255, 0.82);
-  --glass-border: rgba(255, 255, 255, 0.6);
-  --glass-blur: blur(14px);
+  --glass-bordeaux: rgba(255, 245, 247, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-border-bordeaux: rgba(196, 21, 53, 0.22);
+  --glass-blur: blur(18px);
 
   /* Radius */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
   --radius-full: 9999px;
 
   /* Transitions */
   --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-smooth: 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Layout Spacing */
-  --header-height: 76px;
-  --admin-sidebar-width: 260px;
+  --header-height: 80px;
+  --admin-sidebar-width: 268px;
   --admin-sidebar-collapsed: 72px;
-  --container-max-width: 1240px;
+  --container-max-width: 1260px;
 }
 
-/* Dark Mode Tokens */
+/* Dark Mode Tokens - Quý Tộc Vang Đỏ Bóng Đêm */
 [data-theme="dark"] {
-  --bg-main: #14110F;
-  --bg-surface: #1E1A17;
-  --bg-card: #25201C;
-  --bg-card-hover: #2D2722;
-  --bg-subtle: #2F2823;
+  --bg-main: #120106;
+  --bg-surface: #1B020A;
+  --bg-card: #23040E;
+  --bg-card-hover: #2F0714;
+  --bg-subtle: #290511;
 
-  --text-main: #F5EFEB;
-  --text-muted: #B8ADA5;
-  --text-subtle: #877B73;
+  --text-main: #FFF0F3;
+  --text-muted: #D1B3BA;
+  --text-subtle: #9E8289;
 
-  --border-color: #38302A;
-  --border-subtle: #2B241E;
+  --border-color: #450919;
+  --border-subtle: #300511;
+  --border-glow: rgba(223, 27, 66, 0.4);
 
-  --primary: #B08968;
-  --primary-hover: #DDB892;
-  --primary-bg: #2B2018;
-  --primary-glow: rgba(176, 137, 104, 0.35);
+  --primary: #C41535;
+  --primary-hover: #DF1B42;
+  --primary-bg: #300511;
+  --primary-glow: rgba(223, 27, 66, 0.35);
 
-  --glass-bg: rgba(30, 26, 23, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(27, 2, 10, 0.88);
+  --glass-border: rgba(223, 27, 66, 0.25);
 
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 35px rgba(223, 27, 66, 0.4);
 }

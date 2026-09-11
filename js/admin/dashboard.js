@@ -99,12 +99,12 @@ const AdminDashboard = {
           datasets: [{
             label: "Doanh thu (VNĐ)",
             data: [0, 0, 0, 0, 0, 0, 0],
-            borderColor: "#E60023",
-            backgroundColor: "rgba(230, 0, 35, 0.12)",
+            borderColor: "#9B0024",
+            backgroundColor: "rgba(155, 0, 36, 0.15)",
             fill: true,
             tension: 0.4,
             borderWidth: 3,
-            pointBackgroundColor: "#E60023",
+            pointBackgroundColor: "#9B0024",
             pointRadius: 5
           }]
         },
@@ -137,7 +137,7 @@ const AdminDashboard = {
           labels: ["Trà Sữa", "Trà Trái Cây", "Cà Phê", "Đá Xay", "Combo"],
           datasets: [{
             data: [40, 30, 15, 10, 5],
-            backgroundColor: ["#E60023", "#FF6B6B", "#2D6A4F", "#FFB703", "#7D6B90"],
+            backgroundColor: ["#9B0024", "#C41535", "#1F523A", "#FFB703", "#745C86"],
             borderWidth: 0
           }]
         },

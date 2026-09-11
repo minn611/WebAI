@@ -27,14 +27,36 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  background: var(--gradient-bordeaux);
   color: var(--text-inverse);
-  box-shadow: 0 4px 14px var(--primary-glow);
+  box-shadow: var(--shadow-bordeaux);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: rotate(30deg);
+  transition: all 0.65s ease;
+  pointer-events: none;
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
-  box-shadow: 0 6px 20px var(--primary-glow);
-  transform: translateY(-1px);
+  background: var(--gradient-bordeaux-hover);
+  box-shadow: var(--shadow-bordeaux-lg), 0 0 20px var(--primary-glow-intense);
+  transform: translateY(-2px) scale(1.02);
+}
+.btn-primary:hover::after {
+  left: 140%;
+}
+
+.btn-pulse {
+  animation: pulseGlow 2.4s infinite ease-in-out;
 }
 
 .btn-secondary {
@@ -183,27 +205,45 @@
 
 .product-card {
   background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--border-color);
   border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-sm);
-  transition: all var(--transition-normal);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.3s ease;
   position: relative;
 }
 
+.product-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: skewX(-25deg);
+  transition: left 0.75s ease;
+  pointer-events: none;
+  z-index: 5;
+}
+
 .product-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-8px) scale(1.015);
+  box-shadow: var(--shadow-bordeaux-lg);
   border-color: var(--primary-light);
+}
+
+.product-card:hover::after {
+  left: 160%;
 }
 
 .product-card .card-img-wrap {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  background-color: #F8EAD6; /* Màu nền studio đồng bộ với bộ ảnh Đô Đô */
+  background: radial-gradient(circle at center, #FFF2F4 0%, #F8E5E8 100%);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -214,11 +254,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform var(--transition-smooth);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .product-card:hover .card-img-wrap img {
-  transform: scale(1.08);
+  transform: scale(1.1);
 }
 
 .product-card .badge-discount {
@@ -226,9 +266,11 @@
   top: 0.75rem;
   left: 0.75rem;
   z-index: 2;
-  background: linear-gradient(135deg, #E63946, #FB5607);
+  background: var(--gradient-bordeaux);
   color: #fff;
-  box-shadow: 0 4px 10px rgba(230, 57, 70, 0.3);
+  font-weight: 800;
+  box-shadow: 0 4px 12px var(--primary-glow);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .product-card .badge-tag {

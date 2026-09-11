@@ -124,23 +124,39 @@ p {
 
 /* Micro-Animations & Keyframes */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes scaleUp {
-  from { opacity: 0; transform: scale(0.94); }
+  from { opacity: 0; transform: scale(0.92); }
   to { opacity: 1; transform: scale(1); }
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-8px) rotate(1.5deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+@keyframes floatPearls {
+  0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+  33% { transform: translateY(-14px) rotate(5deg) scale(1.05); }
+  66% { transform: translateY(8px) rotate(-4deg) scale(0.96); }
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 10px rgba(156, 102, 68, 0.2); }
-  50% { box-shadow: 0 0 24px rgba(156, 102, 68, 0.5); }
+  0%, 100% { 
+    box-shadow: 0 0 14px rgba(155, 0, 36, 0.28), 0 0 4px rgba(255, 183, 3, 0.2); 
+  }
+  50% { 
+    box-shadow: 0 0 32px rgba(196, 21, 53, 0.65), 0 0 12px rgba(255, 183, 3, 0.5); 
+  }
+}
+
+@keyframes auroraBreath {
+  0% { transform: scale(1) translate(0, 0); opacity: 0.65; }
+  50% { transform: scale(1.2) translate(-20px, 15px); opacity: 0.95; }
+  100% { transform: scale(1) translate(0, 0); opacity: 0.65; }
 }
 
 @keyframes shimmer {
@@ -162,7 +178,12 @@ p {
 }
 
 .animate-float {
-  animation: float 4s ease-in-out infinite;
+  animation: float 4.5s ease-in-out infinite;
+}
+
+.animate-pearl {
+  animation: floatPearls 5s ease-in-out infinite;
+}
 }
 
 /* Custom Scrollbar */
