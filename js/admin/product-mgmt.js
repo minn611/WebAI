@@ -193,6 +193,14 @@ const ProductMgmt = {
 
     DB.saveToppings(toppings);
     Toast.success(`Đã lưu topping <b>${name}</b> thành công!`);
+    if (typeof AuditLogger !== "undefined") {
+      AuditLogger.notifyServer(
+        id ? `CẬP NHẬT TOPPING: [${id}] ${name}` : `THÊM TOPPING MỚI: ${name}`,
+        `Giá thêm: ${Formatters.currency(price)} | Phục vụ: ${inStock ? 'Còn hàng' : 'Tạm hết'}`,
+        "Quản Lý Cửa Hàng",
+        "ADMIN"
+      );
+    }
     Modal.close("topping-form-modal");
     this.renderToppingsTable();
   },
@@ -208,6 +216,9 @@ const ProductMgmt = {
         });
       } catch (err) {}
       Toast.info("Đã xóa topping.");
+      if (typeof AuditLogger !== "undefined") {
+        AuditLogger.notifyServer(`XÓA TOPPING: [${toppingId}]`, `Đã xóa topping khỏi hệ thống`, "Quản Lý Cửa Hàng", "ADMIN");
+      }
       this.renderToppingsTable();
     }
   },
@@ -309,6 +320,14 @@ const ProductMgmt = {
     } catch (err) {}
 
     Toast.success(`Đã lưu sản phẩm <b>${name}</b> thành công!`);
+    if (typeof AuditLogger !== "undefined") {
+      AuditLogger.notifyServer(
+        editId ? `CHỈNH SỬA MÓN: [${editId}] ${name}` : `THÊM MÓN MỚI: [${sku}] ${name}`,
+        `Giá bán: ${Formatters.currency(price)} | Danh mục: ${cat} | Tồn kho: ${stockQty}`,
+        "Quản Lý Cửa Hàng",
+        "ADMIN"
+      );
+    }
     Modal.close("product-form-modal");
     this.renderProductsTable();
   },
@@ -322,6 +341,9 @@ const ProductMgmt = {
         });
       } catch (err) {}
       Toast.info("Đã xóa sản phẩm.");
+      if (typeof AuditLogger !== "undefined") {
+        AuditLogger.notifyServer(`XÓA MÓN KHỎI THỰC ĐƠN: [${productId}]`, `Đã xóa sản phẩm khỏi hệ thống`, "Quản Lý Cửa Hàng", "ADMIN");
+      }
       this.renderProductsTable();
     }
   },

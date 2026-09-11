@@ -122,10 +122,10 @@
       if (res.success) {
         Toast.success(`Chào mừng <b>${res.user.fullName}</b>!`);
         setTimeout(() => {
-          if (res.user.username === "phache" || res.user.position === "pha_che") {
-            window.location.href = "admin/orders.html";
-          } else if (res.user.role === "admin" || res.user.role === "staff") {
+          if (res.user.role === "admin" || res.user.position === "quan_ly") {
             window.location.href = "admin/index.html";
+          } else if (res.user.role === "staff") {
+            window.location.href = "admin/orders.html";
           } else {
             window.location.href = "index.html";
           }
@@ -160,10 +160,10 @@
       if (res.success) {
         Toast.success(`Đã đăng nhập vai trò: <b>${res.user.fullName}</b>`);
         setTimeout(() => {
-          if (res.user.username === "phache" || res.user.position === "pha_che") {
-            window.location.href = "admin/orders.html";
-          } else if (res.user.role === "admin" || res.user.role === "staff") {
+          if (res.user.role === "admin" || res.user.position === "quan_ly") {
             window.location.href = "admin/index.html";
+          } else if (res.user.role === "staff") {
+            window.location.href = "admin/orders.html";
           } else {
             window.location.href = "index.html";
           }

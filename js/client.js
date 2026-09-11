@@ -196,9 +196,7 @@ const ClientApp = {
     if (sizeObj && typeof sizeObj.extraPrice === "number") {
       sizePrice = sizeObj.extraPrice;
     } else if (this.customizerState.size === "L") {
-      sizePrice = 6000;
-    } else if (this.customizerState.size === "XL") {
-      sizePrice = 12000;
+      sizePrice = 10000;
     }
 
     // Toppings total
@@ -315,7 +313,7 @@ const ClientApp = {
     const segments = [
       { label: "Giảm 10%", code: "BANMOI10", color: "#FF758F" },
       { label: "Free Ship", code: "FREESHIP", color: "#FFB703" },
-      { label: "Giảm 20k", code: "TRAXANH20", color: "#52B788" },
+      { label: "Giảm 20k", code: "DODO20", color: "#52B788" },
       { label: "Chúc Bạn May Mắn", code: "", color: "#ADB5BD" },
       { label: "Giảm 15%", code: "LUCKYSPIN", color: "#9C6644" },
       { label: "Free Topping", code: "LUCKYSPIN", color: "#48CAE4" }
@@ -380,6 +378,13 @@ const ClientApp = {
         } else {
           Toast.info("Cảm ơn bạn đã tham gia! Chúc bạn may mắn lần sau nhé! 🍀");
         }
+
+        if (typeof AuditLogger !== "undefined") {
+          AuditLogger.notifyServer(
+            `QUAY VÒNG MAY MẮN`,
+            `Kết quả: ${prize.label} ${prize.code ? `(Mã quà tặng: ${prize.code})` : '(Chúc may mắn lần sau)'}`
+          );
+        }
       }, 4000);
     };
   },
@@ -431,9 +436,8 @@ const ClientApp = {
                 <div>
                   <label class="form-label" style="margin-bottom: 0.5rem; display: block;">1. Chọn Size Cốc</label>
                   <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-sm btn-outline cust-size-btn active" data-size="M" onclick="ClientApp.selectSize('M', 0)">Size M (Vừa)</button>
-                    <button class="btn btn-sm btn-outline cust-size-btn" data-size="L" onclick="ClientApp.selectSize('L', 6000)">Size L (+6k)</button>
-                    <button class="btn btn-sm btn-outline cust-size-btn" data-size="XL" onclick="ClientApp.selectSize('XL', 12000)">Size XL (+12k)</button>
+                    <button class="btn btn-sm btn-outline cust-size-btn active" data-size="M" onclick="ClientApp.selectSize('M', 0)">Size M — Tiêu Chuẩn</button>
+                    <button class="btn btn-sm btn-outline cust-size-btn" data-size="L" onclick="ClientApp.selectSize('L', 10000)">Size L — Lớn (+10k)</button>
                   </div>
                 </div>
 

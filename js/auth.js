@@ -149,14 +149,14 @@ const Auth = {
       DB.setCurrentUser(targetUser);
       Toast.success(`Đã chuyển vai trò: <b>${targetUser.fullName}</b> (${(targetUser.positionTitle || targetUser.role).toUpperCase()})`);
       setTimeout(() => {
-        if (targetUser.username === "phache" || targetUser.position === "pha_che") {
-          window.location.href = window.location.pathname.includes("/admin/") ? "orders.html" : "admin/orders.html";
-        } else if (targetUser.role === "admin" || targetUser.role === "staff") {
+        if (targetUser.role === "admin" || targetUser.position === "quan_ly") {
           if (!window.location.pathname.includes("/admin/")) {
             window.location.href = "admin/index.html";
           } else {
             window.location.reload();
           }
+        } else if (targetUser.role === "staff") {
+          window.location.href = window.location.pathname.includes("/admin/") ? "orders.html" : "admin/orders.html";
         } else {
           if (window.location.pathname.includes("/admin/")) {
             window.location.href = "../index.html";
@@ -221,12 +221,19 @@ const Auth = {
       Toast.success(`Chào mừng <b>${res.user.fullName}</b>!`);
       this.updateHeaderAuthUI();
       setTimeout(() => {
-        if (res.user.role === "admin" || res.user.role === "staff") {
+        if (res.user.role === "admin" || res.user.position === "quan_ly") {
           const isInsideAdmin = window.location.pathname.includes("/admin/");
           if (!isInsideAdmin) {
             window.location.href = "admin/index.html";
           } else {
             window.location.reload();
+          }
+        } else if (res.user.role === "staff") {
+          const isInsideAdmin = window.location.pathname.includes("/admin/");
+          if (!isInsideAdmin) {
+            window.location.href = "admin/orders.html";
+          } else {
+            window.location.href = "orders.html";
           }
         } else {
           const isInsideAdmin = window.location.pathname.includes("/admin/");
@@ -417,7 +424,7 @@ const Auth = {
     if (!isInsideAdmin) return;
 
     const user = this.getCurrentUser();
-    const isManager = user && user.role === "admin";
+    const isManager = user && (user.role === "admin" || user.position === "quan_ly");
     const isBarista = user && (user.username === "phache" || user.position === "pha_che" || (user.fullName || "").toLowerCase().includes("pha chế"));
     const nameDisplay = user ? user.fullName : "Nguyễn Văn Quản Lý";
     const roleDisplay = user ? (isManager ? "QUẢN LÝ" : (isBarista ? "PHA CHẾ" : "THU NGÂN")) : "QUẢN LÝ";
@@ -448,7 +455,55 @@ const Auth = {
       topbar.appendChild(actionsDiv);
     }
 
-    // 2. Update Sidebar Footer
+    // 2. Update Sidebar Links & Filter by Role
+    const isCashier = user && (user.username === "thungan" || user.position === "thu_ngan" || (user.fullName || "").toLowerCase().includes("thu ngân"));
+    const navLinks = document.querySelectorAll(".admin-sidebar-nav a, .admin-nav a, .sidebar-nav-item");
+    navLinks.forEach(link => {
+      const href = (link.getAttribute("href") || "").toLowerCase();
+      if (!isManager) {
+        if (isBarista) {
+          // Pha chế: Chỉ xem trang Đơn hàng (orders.html)
+          if (!href.includes("orders.html")) {
+            link.style.display = "none";
+          }
+        } else {
+          // Thu ngân: Chỉ xem Đơn hàng (orders.html) & Khách hàng (customers.html)
+          // Tuyệt đối không xem: staff.html, suppliers.html, reports.html, marketing.html, products.html, index.html
+          if (!href.includes("orders.html") && !href.includes("customers.html")) {
+            link.style.display = "none";
+          }
+        }
+      }
+    });
+
+    // 3. Page Access Guard Enforcement
+    const currentPage = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+    if (!user) {
+      console.warn(`[Role Guard] Unauthenticated access to ${currentPage}, redirecting to auth.html`);
+      window.location.href = "../auth.html";
+      return;
+    }
+
+    if (user.role === "customer") {
+      console.warn(`[Role Guard] Customer attempted to access ${currentPage}, redirecting to store`);
+      window.location.href = "../index.html";
+      return;
+    }
+
+    if (!isManager) {
+      let allowed = false;
+      if (isBarista && currentPage === "orders.html") allowed = true;
+      if (isCashier && (currentPage === "orders.html" || currentPage === "customers.html")) allowed = true;
+
+      if (!allowed) {
+        console.warn(`[Role Guard] Access denied for role: ${roleDisplay} on page: ${currentPage}`);
+        alert(`Tài khoản vai trò [${roleDisplay}] không có quyền truy cập trang ${currentPage}!\nHệ thống chuyển bạn về màn hình Đơn hàng.`);
+        window.location.href = "orders.html";
+        return;
+      }
+    }
+
+    // 4. Update Sidebar Footer
     const sidebarFooter = document.querySelector(".admin-sidebar-footer");
     if (sidebarFooter) {
       sidebarFooter.style.display = "flex";

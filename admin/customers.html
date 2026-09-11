@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản Lý Khách Hàng & Điểm Thành Viên - TeaJoy Admin</title>
+  <title>Quản Lý Khách Hàng & Điểm Thành Viên - Đô Đô POS Admin</title>
 
   <!-- Google Fonts for Vietnamese Support -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -183,18 +183,43 @@
         document.getElementById("admin-cust-search")?.addEventListener("input", () => this.renderTable());
       },
 
-      renderTable() {
+      async renderTable() {
         const tbody = document.getElementById("admin-customers-tbody");
         if (!tbody) return;
 
-        let users = DB.getUsers().filter(u => u.role === "customer");
-        const q = document.getElementById("admin-cust-search")?.value.trim().toLowerCase();
+        let customers = [];
+        const q = document.getElementById("admin-cust-search")?.value.trim() || "";
 
-        if (q) {
-          users = users.filter(u => (u.fullName && u.fullName.toLowerCase().includes(q)) || (u.phone && u.phone.includes(q)) || (u.email && u.email.toLowerCase().includes(q)));
+        try {
+          const url = q ? `http://localhost:5000/api/customers?search=${encodeURIComponent(q)}` : `http://localhost:5000/api/customers`;
+          const response = await fetch(url);
+          const data = await response.json();
+          if (data.success && data.data) {
+            customers = data.data.map(item => ({
+              id: `CUST-${item.id}`,
+              fullName: item.ho_ten,
+              phone: item.so_dien_thoai,
+              email: item.email || 'Chưa có email',
+              points: item.diem_tich_luy,
+              tier: item.hang_thanh_vien === 'kim_cuong' ? 'VIP Kim Cương' : (item.hang_thanh_vien === 'vang' ? 'VIP Vàng' : (item.hang_thanh_vien === 'bac' ? 'VIP Bạc' : 'VIP Đồng')),
+              createdAt: item.ngay_tao ? item.ngay_tao.split('T')[0] : '2026-01-01',
+              status: 'active'
+            }));
+          }
+        } catch (err) {
+          console.warn("Backend API offline, falling back to LocalStorage...");
         }
 
-        if (users.length === 0) {
+        if (customers.length === 0) {
+          let users = DB.getUsers().filter(u => u.role === "customer");
+          if (q) {
+            const term = q.toLowerCase();
+            users = users.filter(u => (u.fullName && u.fullName.toLowerCase().includes(term)) || (u.phone && u.phone.includes(term)) || (u.email && u.email.toLowerCase().includes(term)));
+          }
+          customers = users;
+        }
+
+        if (customers.length === 0) {
           tbody.innerHTML = `
             <tr>
               <td colspan="8" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
@@ -207,7 +232,7 @@
           return;
         }
 
-        tbody.innerHTML = users.map(u => `
+        tbody.innerHTML = customers.map(u => `
           <tr>
             <td class="font-bold text-primary">${u.id}</td>
             <td>

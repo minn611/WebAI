@@ -1,7 +1,7 @@
 {
-  "name": "teajoy-backend-api",
+  "name": "dodo-milktea-backend-api",
   "version": "1.0.0",
-  "description": "Node.js Express MySQL 8.0 RESTful Backend API for TeaJoy Store",
+  "description": "Node.js Express MySQL 8.0 RESTful Backend API cho Hệ thống Bán hàng Trà Sữa Đô Đô",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -22,7 +22,7 @@
     "mysql",
     "api"
   ],
-  "author": "TeaJoy Dev Team",
+  "author": "Trà Sữa Đô Đô Dev Team",
   "license": "ISC",
   "devDependencies": {
     "docx": "^9.7.1"

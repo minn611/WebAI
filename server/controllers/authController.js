@@ -58,7 +58,13 @@ const authController = {
 
       const token = jwt.sign({ id: taiKhoanId, username: user.username, role: 'customer' }, JWT_SECRET, { expiresIn: '7d' });
 
-      console.log(`✨ [MySQL DB] Created new Customer account in TAI_KHOAN (ID: ${taiKhoanId}) and KHACH_HANG (ID: ${custResult.insertId})`);
+      const time = new Date().toLocaleTimeString('vi-VN');
+      console.log(`\n========================================================================`);
+      console.log(`👤 [THÔNG BÁO MÁY CHỦ] [${time}]`);
+      console.log(`   ✨ ĐĂNG KÝ TÀI KHOẢN MỚI: ${user.fullName} (@${user.username})`);
+      console.log(`   📱 Số điện thoại: ${user.phone}`);
+      console.log(`   🎁 Tặng điểm:     50 Điểm Thưởng`);
+      console.log(`========================================================================\n`);
 
       return res.status(201).json({
         success: true,
@@ -143,6 +149,13 @@ const authController = {
 
       const token = jwt.sign({ id: dbUser.id, username: user.username, role }, JWT_SECRET, { expiresIn: '7d' });
 
+      const time = new Date().toLocaleTimeString('vi-VN');
+      console.log(`\n========================================================================`);
+      console.log(`🔑 [THÔNG BÁO MÁY CHỦ] [${time}]`);
+      console.log(`   👤 ĐĂNG NHẬP THÀNH CÔNG: ${user.fullName} (@${user.username})`);
+      console.log(`   💼 Vai trò:       [${(user.position || user.role).toUpperCase()}]`);
+      console.log(`========================================================================\n`);
+
       return res.json({
         success: true,
         message: `Đăng nhập thành công! Chào mừng ${fullName}`,
@@ -172,7 +185,7 @@ const authController = {
         [userId]
       );
 
-      if (users.length === 0) return res.status(440).json({ success: false, message: 'Tài khoản không tồn tại' });
+      if (users.length === 0) return res.status(401).json({ success: false, message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại' });
 
       const dbUser = users[0];
       const roleMap = { 'admin': 'admin', 'nhan_vien': 'staff', 'khach_hang': 'customer' };

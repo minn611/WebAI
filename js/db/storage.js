@@ -18,30 +18,31 @@ const STORAGE_KEYS = {
   VERSION: "teajoy_version"
 };
 
-const DODO_VERSION = "dodo_v7_size_xl_synced";
+const DODO_VERSION = "dodo_v2026_full_menu_24_drinks";
 
 const DB = {
-  // Initialize and Seed LocalStorage if empty or outdated
+  hasMojibake(text) {
+    if (!text || typeof text !== "string") return false;
+    // Chỉ bắt các chuỗi lỗi byte thực sự của UTF-8 (không bao giờ bắt các chữ cái tiếng Việt hợp lệ như Ô, Ê, Â, Ã)
+    const mojibakePatterns = ["├á", "S├Я", "β╗", "N├г", "├─", "»a", "Tr ├á", "Ã¡", "Ã ", "Ã£", "Ã¢", "Ã©", "Ã¨", "Ãª", "Ã¬", "Ã³", "Ã²", "Ã´", "Ã¹", "Ãº"];
+    return mojibakePatterns.some(pat => text.includes(pat));
+  },
+
+  // Initialize and Seed LocalStorage if empty or version updated
   init() {
     const currentVer = localStorage.getItem(STORAGE_KEYS.VERSION);
     const needRefresh = currentVer !== DODO_VERSION;
 
-    if (!localStorage.getItem(STORAGE_KEYS.PRODUCTS) || needRefresh) {
+    if (needRefresh) {
+      console.log("⚡ [Data Engine] Cập nhật phiên bản thực đơn Đô Đô mới nhất (24 món & 10 topping)...");
       this.set(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.CATEGORIES) || needRefresh) {
       this.set(STORAGE_KEYS.CATEGORIES, INITIAL_CATEGORIES);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.TOPPINGS) || needRefresh) {
       this.set(STORAGE_KEYS.TOPPINGS, INITIAL_TOPPINGS);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.SIZES) || needRefresh) {
       this.set(STORAGE_KEYS.SIZES, INITIAL_SIZES);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.ORDERS)) {
-      this.set(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.USERS) || needRefresh) {
+      this.set(STORAGE_KEYS.VOUCHERS, INITIAL_VOUCHERS);
+      this.set(STORAGE_KEYS.SUPPLIERS, INITIAL_SUPPLIERS);
+      this.set(STORAGE_KEYS.BANNERS, INITIAL_BANNERS);
+
       const existingUsers = this.get(STORAGE_KEYS.USERS, []);
       const mergedUsers = [...INITIAL_USERS];
       existingUsers.forEach(u => {
@@ -50,6 +51,26 @@ const DB = {
         }
       });
       this.set(STORAGE_KEYS.USERS, mergedUsers);
+      localStorage.setItem(STORAGE_KEYS.VERSION, DODO_VERSION);
+    }
+
+    if (!localStorage.getItem(STORAGE_KEYS.PRODUCTS)) {
+      this.set(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.CATEGORIES)) {
+      this.set(STORAGE_KEYS.CATEGORIES, INITIAL_CATEGORIES);
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.TOPPINGS)) {
+      this.set(STORAGE_KEYS.TOPPINGS, INITIAL_TOPPINGS);
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.SIZES)) {
+      this.set(STORAGE_KEYS.SIZES, INITIAL_SIZES);
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.ORDERS)) {
+      this.set(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
+    }
+    if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
+      this.set(STORAGE_KEYS.USERS, INITIAL_USERS);
     }
     if (!localStorage.getItem(STORAGE_KEYS.VOUCHERS)) {
       this.set(STORAGE_KEYS.VOUCHERS, INITIAL_VOUCHERS);
@@ -64,7 +85,6 @@ const DB = {
       this.set(STORAGE_KEYS.CART, []);
     }
     if (localStorage.getItem(STORAGE_KEYS.CURRENT_USER) === null) {
-      // Default to guest (not logged in)
       this.set(STORAGE_KEYS.CURRENT_USER, null);
     }
 
@@ -74,6 +94,13 @@ const DB = {
   get(key, defaultValue = []) {
     try {
       const data = localStorage.getItem(key);
+      if (data && this.hasMojibake(data)) {
+        console.warn(`[Mojibake Guard] Detected corrupted encoding in key "${key}", auto-repairing...`);
+        localStorage.removeItem(key);
+        this.init();
+        const fresh = localStorage.getItem(key);
+        return fresh ? JSON.parse(fresh) : defaultValue;
+      }
       return data ? JSON.parse(data) : defaultValue;
     } catch (e) {
       console.error("Storage parse error for key:", key, e);
@@ -181,3 +208,25 @@ const DB = {
 
 // Auto initialize on script load
 DB.init();
+
+/* ==========================================================================
+   REAL-TIME SERVER AUDIT LOGGER
+   Gửi thông báo thao tác từ mọi tác nhân về hiển thị trực tiếp trên máy chủ
+   ========================================================================== */
+const AuditLogger = {
+  notifyServer(action, detail = '', customActor = null, customRole = null) {
+    try {
+      const user = DB.getCurrentUser();
+      let actor = customActor || (user ? user.fullName : "Khách Hàng Trực Tuyến");
+      let role = customRole || (user ? (user.positionTitle || user.role).toUpperCase() : "KHÁCH HÀNG");
+
+      fetch("http://localhost:5000/api/audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actor, role, action, detail })
+      }).catch(() => {});
+    } catch (e) {}
+  }
+};
+
+window.AuditLogger = AuditLogger;

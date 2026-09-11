@@ -239,6 +239,12 @@ const OrderMgmt = {
       // Offline mode fallback
     }
     Toast.success(`Đã cập nhật đơn #${orderId} sang: <b>${newStatus.toUpperCase()}</b>`);
+    if (typeof AuditLogger !== "undefined") {
+      AuditLogger.notifyServer(
+        `CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG #${orderId}`,
+        `Trạng thái mới: [${newStatus.toUpperCase()}]`
+      );
+    }
     this.renderOrdersTable();
     this.updateStatusCounts();
     this.openOrderDetail(orderId);
@@ -313,7 +319,7 @@ const OrderMgmt = {
 
       <div class="receipt-footer">
         <div>Cảm ơn quý khách & Hẹn gặp lại!</div>
-        <div>Wifi: TeaJoy_Free / Pass: 88888888</div>
+        <div>Wifi: DoDo_Milktea_Free / Pass: 88888888</div>
       </div>
     `;
 
@@ -334,6 +340,12 @@ const OrderMgmt = {
       } catch (err) {}
 
       Toast.info(`Đã xóa đơn hàng #${orderId}.`);
+      if (typeof AuditLogger !== "undefined") {
+        AuditLogger.notifyServer(
+          `XÓA ĐƠN HÀNG #${orderId}`,
+          `Đã xóa đơn hàng #${orderId} khỏi cơ sở dữ liệu`
+        );
+      }
       this.renderOrdersTable();
       this.updateStatusCounts();
       Modal.close("order-detail-modal");
@@ -480,6 +492,12 @@ const OrderMgmt = {
     } catch (err) {}
 
     Toast.success(`🎉 Đã tạo thành công đơn hàng tại quầy: <b>#${orderId}</b>!`);
+    if (typeof AuditLogger !== "undefined") {
+      AuditLogger.notifyServer(
+        `TẠO ĐƠN HÀNG TẠI QUẦY POS #${orderId}`,
+        `1x ${productName} (x${quantity}) | Khách: ${customerName} | Tổng: ${Formatters.currency(totalAmount)} | PT: ${paymentMethod.toUpperCase()}`
+      );
+    }
     Modal.close("order-create-modal");
     this.renderOrdersTable();
     this.updateStatusCounts();

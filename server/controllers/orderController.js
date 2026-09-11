@@ -80,7 +80,7 @@ const orderController = {
       // 3. Insert into THANH_TOAN
       const payMethodMap = { 'vietqr': 'vietqr', 'cod': 'cod' };
       const method = payMethodMap[paymentMethod] || 'cod';
-      const initialStatus = method === 'vietqr' ? 'da_thanh_toan' : 'cho_thanh_toan';
+      const initialStatus = method === 'vietqr' ? 'cho_thanh_toan' : 'cho_thanh_toan';
 
       await connection.query(
         `INSERT INTO THANH_TOAN (don_hang_id, phuong_thuc, so_tien, trang_thai, ngay_tao)
@@ -91,7 +91,15 @@ const orderController = {
       await connection.commit();
       connection.release();
 
-      console.log(`✨ [MySQL DB] Created Order ${finalOrderCode} (DB ID: ${dbOrderId}) for ${clientName}`);
+      const time = new Date().toLocaleTimeString('vi-VN');
+      console.log(`\n========================================================================`);
+      console.log(`🔔 [THÔNG BÁO MÁY CHỦ] [${time}]`);
+      console.log(`   👤 Tác nhân:  Khách Hàng: ${clientName} (SĐT: ${clientPhone})`);
+      console.log(`   ⚡ Thao tác:  ĐẶT ĐƠN HÀNG MỚI #${finalOrderCode}`);
+      console.log(`   💰 Tổng tiền: ${parseFloat(totalAmount).toLocaleString('vi-VN')} ₫ | Phương thức: ${method.toUpperCase()}`);
+      console.log(`   📍 Địa chỉ:   ${clientAddress}`);
+      console.log(`   🧋 Danh sách: ${items.map(i => `${i.name} (${i.size || 'M'}, x${i.quantity || 1})`).join(', ')}`);
+      console.log(`========================================================================\n`);
 
       return res.status(201).json({
         success: true,
@@ -298,9 +306,107 @@ const orderController = {
         [status, orderId, orderId]
       );
 
+      const time = new Date().toLocaleTimeString('vi-VN');
+      console.log(`\n========================================================================`);
+      console.log(`🔔 [THÔNG BÁO MÁY CHỦ] [${time}]`);
+      console.log(`   👤 Tác nhân:  Nhân Viên Quản Lý / Pha Chế / Thu Ngân`);
+      console.log(`   ⚡ Thao tác:  CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG #${orderId}`);
+      console.log(`   📊 Trạng thái: [${status.toUpperCase()}]`);
+      console.log(`========================================================================\n`);
+
       return res.json({ success: true, message: `Cập nhật trạng thái đơn hàng sang ${status} thành công!` });
 
     } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
+  // DELETE /api/orders/:id -> Xóa đơn hàng khỏi MySQL
+  async delete(req, res) {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      const orderId = req.params.id;
+
+      // Tìm DB id từ mã đơn hoặc id số
+      const [orderRows] = await connection.query(
+        'SELECT id FROM DON_HANG WHERE ma_don_hang = ? OR id = ?',
+        [orderId, orderId]
+      );
+
+      if (orderRows.length === 0) {
+        connection.release();
+        return res.status(404).json({ success: false, message: `Không tìm thấy đơn hàng "${orderId}"` });
+      }
+
+      const dbId = orderRows[0].id;
+
+      // Xóa theo cascade (THANH_TOAN và CHI_TIET_DON_HANG đã có ON DELETE CASCADE)
+      await connection.query('DELETE FROM DON_HANG WHERE id = ?', [dbId]);
+
+      await connection.commit();
+      connection.release();
+
+      const time = new Date().toLocaleTimeString('vi-VN');
+      console.log(`\n========================================================================`);
+      console.log(`🔔 [THÔNG BÁO MÁY CHỦ] [${time}]`);
+      console.log(`   👤 Tác nhân:  Quản Lý (Admin)`);
+      console.log(`   ⚡ Thao tác:  XÓA ĐƠN HÀNG KHỎI HỆ THỐNG`);
+      console.log(`   🗑️ Đơn hàng:  #${orderId} (DB ID: ${dbId})`);
+      console.log(`========================================================================\n`);
+
+      return res.json({ success: true, message: `Đã xóa đơn hàng ${orderId} thành công!` });
+    } catch (error) {
+      await connection.rollback();
+      connection.release();
+      console.error('Error deleting order:', error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
+  // GET /api/orders/customer/:phone -> Lấy toàn bộ đơn hàng theo SĐT
+  async getByPhone(req, res) {
+    try {
+      const phone = req.params.phone.trim();
+
+      const [orders] = await pool.query(
+        `SELECT dh.*, tt.phuong_thuc, tt.trang_thai as trang_thai_tt
+         FROM DON_HANG dh
+         LEFT JOIN THANH_TOAN tt ON dh.id = tt.don_hang_id
+         WHERE dh.sdt_nguoi_nhan = ?
+         ORDER BY dh.ngay_dat DESC
+         LIMIT 20`,
+        [phone]
+      );
+
+      if (orders.length === 0) {
+        return res.status(404).json({ success: false, message: `Chưa có đơn hàng nào cho số điện thoại ${phone}` });
+      }
+
+      const formattedOrders = orders.map(dh => ({
+        id: dh.ma_don_hang,
+        orderId: dh.ma_don_hang,
+        dbId: dh.id,
+        customerName: dh.ten_nguoi_nhan,
+        phone: dh.sdt_nguoi_nhan,
+        customerPhone: dh.sdt_nguoi_nhan,
+        address: dh.dia_chi_giao_hang,
+        customerAddress: dh.dia_chi_giao_hang,
+        note: dh.ghi_chu,
+        itemsTotal: parseFloat(dh.tong_tien_mon || 0),
+        shippingFee: parseFloat(dh.phi_van_chuyen || 0),
+        discount: parseFloat(dh.so_tien_giam_gia || 0),
+        totalAmount: parseFloat(dh.tong_thanh_toan || 0),
+        status: dh.trang_thai_don_hang,
+        orderStatus: dh.trang_thai_don_hang,
+        paymentMethod: dh.phuong_thuc || 'cod',
+        paymentStatus: (dh.trang_thai_tt === 'da_thanh_toan' || dh.trang_thai_tt === 'thanh_cong') ? 'paid' : 'pending',
+        createdAt: dh.ngay_dat
+      }));
+
+      return res.json({ success: true, count: formattedOrders.length, orders: formattedOrders, data: formattedOrders });
+    } catch (error) {
+      console.error('Error fetching orders by phone:', error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }

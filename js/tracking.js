@@ -56,17 +56,28 @@ const OrderTracking = {
   async lookupOrder(query) {
     let found = null;
 
+    const isPhone = /^[0-9]{9,11}$/.test(query.replace(/\s+/g, ''));
+
     // 1. Thử tra cứu trực tiếp thời gian thực từ Backend API Server (MySQL)
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 1800);
-      const res = await fetch(`http://localhost:5000/api/orders/${encodeURIComponent(query)}`, { signal: controller.signal });
+      let endpoint = `http://localhost:5000/api/orders/${encodeURIComponent(query)}`;
+      if (isPhone) {
+        endpoint = `http://localhost:5000/api/orders/customer/${encodeURIComponent(query)}`;
+      }
+      const res = await fetch(endpoint, { signal: controller.signal });
       clearTimeout(timeoutId);
       const data = await res.json();
-      if (data.success && (data.order || data.data)) {
-        found = data.order || data.data;
-        // Cập nhật trạng thái mới nhất từ server vào local
-        DB.saveOrder(found);
+      if (data.success) {
+        if (data.order || data.data) {
+          found = Array.isArray(data.data) ? data.data[0] : (data.order || data.data);
+        } else if (Array.isArray(data.orders) && data.orders.length > 0) {
+          found = data.orders[0];
+        }
+        if (found) {
+          DB.saveOrder(found);
+        }
       }
     } catch (e) {
       // Backend offline hoặc timeout -> fallback sang LocalStorage
@@ -171,7 +182,7 @@ const OrderTracking = {
             <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem;">
               <div style="width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-bg); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🛵</div>
               <div>
-                <div class="text-sm font-semibold">Nguyễn Hữu Tài (TeaJoy Express)</div>
+                <div class="text-sm font-semibold">Nguyễn Hữu Tài (Đô Đô Express)</div>
                 <div class="text-xs text-muted">SĐT: 0909.888.777 | Biển số: 59-P1 988.22</div>
               </div>
             </div>
@@ -179,9 +190,9 @@ const OrderTracking = {
         </div>
 
         <!-- Ordered Items -->
-        <h5 style="margin-bottom: 0.75rem;">Món đã đặt (${order.items.length})</h5>
+        <h5 style="margin-bottom: 0.75rem;">Món đã đặt (${(order.items || []).length})</h5>
         <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
-          ${order.items.map(item => `
+          ${(order.items || []).map(item => `
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.6rem; border-bottom: 1px dashed var(--border-subtle);">
               <div>
                 <span class="font-semibold text-sm">${item.name}</span>

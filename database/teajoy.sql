@@ -109,7 +109,7 @@ CREATE TABLE `SAN_PHAM` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `ma_sku` VARCHAR(30) NOT NULL UNIQUE,
     `nha_cung_cap_id` BIGINT UNSIGNED NULL,
-    `danh_muc` ENUM('mochi', 'tiramisu', 'tra-sua', 'tra-trai-cay', 'da-xay', 'ca-phe', 'combo') NOT NULL,
+    `danh_muc` VARCHAR(30) NOT NULL DEFAULT 'tra-sua',
     `ten_san_pham` VARCHAR(150) NOT NULL,
     `mo_ta` TEXT NULL,
     `gia_goc` DECIMAL(12, 2) NOT NULL COMMENT 'Gia size M chuan',
@@ -133,6 +133,7 @@ CREATE TABLE `TOPPING` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `ma_topping` VARCHAR(30) NOT NULL UNIQUE,
     `ten_topping` VARCHAR(100) NOT NULL,
+    `hinh_anh_url` VARCHAR(255) NULL,
     `gia_them` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `trang_thai` BOOLEAN NOT NULL DEFAULT TRUE,
     `ngay_tao` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -196,7 +197,7 @@ CREATE TABLE `CHI_TIET_DON_HANG` (
     `don_hang_id` BIGINT UNSIGNED NOT NULL,
     `san_pham_id` BIGINT UNSIGNED NOT NULL,
     `ten_san_pham` VARCHAR(150) NOT NULL,
-    `kich_thuoc` ENUM('M', 'L', 'XL') NOT NULL DEFAULT 'M',
+    `kich_thuoc` ENUM('M', 'L') NOT NULL DEFAULT 'M',
     `muc_duong` VARCHAR(10) NOT NULL DEFAULT '100%',
     `muc_da` VARCHAR(10) NOT NULL DEFAULT '100%',
     `danh_sach_topping` JSON NULL COMMENT 'Luu mang JSON cac topping va gia',
@@ -289,39 +290,50 @@ INSERT INTO `NHA_CUNG_CAP` (`id`, `ma_ncc`, `ten_nha_cung_cap`, `nguoi_dai_dien`
 
 -- 4. SEED SAN_PHAM (Menu Đô Đô Đầy Đủ 16 Món)
 INSERT INTO `SAN_PHAM` (`id`, `ma_sku`, `nha_cung_cap_id`, `danh_muc`, `ten_san_pham`, `mo_ta`, `gia_goc`, `gia_khuyen_mai`, `hinh_anh_url`, `so_luong_ton`, `da_ban`, `danh_gia_tb`, `trang_thai`) VALUES
-(1, 'TS-01', 1, 'mochi', 'Hồng Trà Mochi Kéo Dài', 'Món Signature trứ danh của Đô Đô với lớp topping Mochi dẻo quánh kéo dài độc quyền kết hợp nền hồng trà sữa thơm bùi chuẩn vị.', 25000.00, 30000.00, 'images/products/hong-tra-mochi-keo-dai.jpg', 100, 3420, 5.0, TRUE),
-(2, 'TS-02', 1, 'mochi', 'Matcha Mochi Kéo Dài', 'Matcha thanh mát nguyên chất nhập khẩu quyện cùng sữa béo và lớp mochi dẻo mềm kéo sợi dai ngọt thơm lừng.', 25000.00, 30000.00, 'images/products/matcha-mochi-keo-dai.jpg', 85, 2280, 4.9, TRUE),
-(3, 'TS-03', 1, 'mochi', 'Sữa Tươi Đường Đen Mochi Kéo Dài', 'Sữa tươi thanh trùng béo ngậy sốt đường đen đậm vị cùng lớp mochi dẻo dai béo ngậy gây nghiện ngay ngụm đầu tiên.', 25000.00, 32000.00, 'images/products/sua-tuoi-duong-den-mochi.jpg', 90, 2750, 4.9, TRUE),
-(4, 'TS-04', 1, 'mochi', 'Matcha Mochi Nếp Lạnh', 'Vị matcha thanh mát kết hợp cùng mochi nếp lạnh dẻo quánh nhai mát lạnh cực cuốn.', 25000.00, 30000.00, 'images/products/matcha-mochi-nep-lanh.jpg', 70, 1650, 4.8, TRUE),
-(5, 'TS-05', 1, 'mochi', 'Socola Mochi Nếp Lạnh', 'Vị cacao socola đậm đà hòa quyện cùng mochi nếp lạnh dẻo quánh mềm tan trong miệng.', 25000.00, 30000.00, 'images/products/socola-mochi-nep-lanh.jpg', 65, 1420, 4.8, TRUE),
-(6, 'TS-06', 1, 'tiramisu', 'Hồng Trà Tiramisu Ovaltine', 'Hồng trà sữa thơm phức phủ lớp kem Tiramisu phô mai béo mặn chuẩn Ý và rắc bột Ovaltine giòn rụm trên bề mặt.', 25000.00, 32000.00, 'images/products/hong-tra-tiramisu-ovaltine.jpg', 95, 1980, 4.9, TRUE),
-(7, 'TS-07', 1, 'tiramisu', 'Matcha Tiramisu Ovaltine', 'Vị chát dịu của matcha phối cùng kem Tiramisu béo mặn và vụn Ovaltine thơm lừng đánh thức vị giác.', 25000.00, 32000.00, 'images/products/matcha-tiramisu-ovaltine.jpg', 60, 1420, 4.8, TRUE),
-(8, 'TS-08', 1, 'tiramisu', 'Socola Tiramisu Ovaltine', 'Socola béo đậm kết hợp kem Tiramisu mặn ngọt và lớp bột Ovaltine giòn thơm nức mũi.', 25000.00, 30000.00, 'images/products/socola-tiramisu-ovaltine.jpg', 85, 2150, 4.9, TRUE),
-(9, 'TS-09', 1, 'tiramisu', 'Hồng Trà Sữa Cookies', 'Hồng trà sữa đậm đà rắc vụn bánh cookies giòn rụm tạo cảm giác nhai vui miệng thích thú.', 25000.00, 30000.00, 'images/products/hong-tra-sua-cookies.jpg', 75, 1780, 4.8, TRUE),
-(10, 'TS-10', 1, 'tra-sua', 'Trà Sữa Đô Đô Truyền Thống', 'Vị trà sữa nguyên bản Đô Đô thơm nồng đượm vị lá trà, béo ngậy vừa vặn với mức giá sinh viên chỉ 21K.', 21000.00, 25000.00, 'images/products/tra-sua-dodo-truyen-thong.jpg', 150, 4120, 4.9, TRUE),
-(11, 'TS-11', 1, 'tra-sua', 'Olong Nhài Sữa Đô Đô', 'Trà Olong thanh khiết quyện cùng hương hoa nhài thơm thoang thoảng và sữa béo thanh tao.', 25000.00, 30000.00, 'images/products/olong-nhai-sua-dodo.jpg', 80, 2310, 4.9, TRUE),
-(12, 'TS-12', 1, 'tra-sua', 'Trà Sữa Socola Đậm Đà', 'Cacao nguyên chất hòa cùng sữa thơm nồng đậm đà, vị ngọt đắng quyến rũ.', 23000.00, 28000.00, 'images/products/tra-sua-socola-dam-da.jpg', 70, 1350, 4.7, TRUE),
-(13, 'TC-01', 1, 'tra-trai-cay', 'Trà Khế Thạch Đào', 'Vị chua thanh dịu ngọt từ trái khế mọng nước hòa quyện cùng thạch đào giòn sần sật đã khát ngày hè.', 23000.00, 28000.00, 'images/products/tra-khe-thach-dao.png', 90, 1560, 4.9, TRUE),
-(14, 'TC-02', 1, 'tra-trai-cay', 'Trà Chanh Thơm Thạch Đào', 'Vị chanh vàng thơm mát kết hợp vị dứa nhiệt đới và thạch đào giòn thơm sảng khoái.', 23000.00, 28000.00, 'images/products/tra-chanh-thom-thach-dao.png', 80, 1220, 4.8, TRUE),
-(15, 'TC-03', 1, 'tra-trai-cay', 'Trà Xoài Đào Thanh Mát', 'Hương vị trà xoài nhiệt đới kết hợp cốt đào thơm lừng mang đến cảm giác sảng khoái mát lạnh.', 23000.00, 28000.00, 'images/products/tra-xoai-dao-thanh-mat.jpg', 75, 1340, 4.8, TRUE),
-(16, 'TC-04', 1, 'tra-trai-cay', 'Trà Mơ Xanh Muối', 'Trà xanh hương lài kết hợp cốt mơ ngâm muối mằn mặn chua ngọt độc đáo thanh lọc cơ thể.', 23000.00, 28000.00, 'images/products/tra-mo-xanh-muoi.jpg', 70, 1180, 4.7, TRUE);
+(1,'TS-01',1,'mochi','Hồng Trà Mochi Kéo Dài','Món Signature trứ danh của Đô Đô với lớp topping Mochi dẻo quánh kéo dài độc quyền kết hợp nền hồng trà sữa thơm bùi chuẩn vị.',25000.00,35000.00,'images/products/hong-tra-mochi-keo-dai.jpg',100,3420,5.0,TRUE),
+(2,'TS-02',1,'mochi','Matcha Mochi Kéo Dài','Matcha thanh mát nguyên chất nhập khẩu quyện cùng sữa béo và lớp mochi dẻo mềm kéo sợi dai ngọt thơm lừng.',25000.00,35000.00,'images/products/matcha-mochi-keo-dai.jpg',85,2280,4.9,TRUE),
+(3,'TS-03',1,'mochi','Sữa Tươi Đường Đen Mochi Kéo Dài','Sữa tươi thanh trùng béo ngậy sốt đường đen đậm vị cùng lớp mochi dẻo dai béo ngậy gây nghiện ngay ngụm đầu tiên.',25000.00,35000.00,'images/products/sua-tuoi-duong-den-mochi.jpg',90,2750,4.9,TRUE),
+(4,'TS-04',1,'mochi','Ô Long Mochi Kéo Dài','Trà Ô long nhài thanh thoát phối cùng mochi dẻo quánh kéo dài đặc trưng Đô Đô thơm lừng hấp dẫn.',25000.00,35000.00,'images/products/olong-nhai-sua-dodo.jpg',75,1320,4.8,TRUE),
+(5,'TS-05',1,'mochi-lanh','Matcha Mochi Nếp Lạnh','Vị matcha thanh mát kết hợp cùng mochi nếp lạnh dẻo quánh nhai mát lạnh cực cuốn.',25000.00,35000.00,'images/products/matcha-mochi-nep-lanh.jpg',70,1650,4.8,TRUE),
+(6,'TS-06',1,'mochi-lanh','Socola Mochi Nếp Lạnh','Vị cacao socola đậm đà hòa quyện cùng mochi nếp lạnh dẻo quánh mềm tan trong miệng.',25000.00,35000.00,'images/products/socola-mochi-nep-lanh.jpg',65,1420,4.8,TRUE),
+(7,'TS-07',1,'tiramisu','Hồng Trà Tiramisu Ovaltine','Hồng trà sữa thơm phức phủ lớp kem Tiramisu phô mai béo mặn chuẩn Ý và rắc bột Ovaltine giòn rụm trên bề mặt.',25000.00,35000.00,'images/products/hong-tra-tiramisu-ovaltine.jpg',95,1980,4.9,TRUE),
+(8,'TS-08',1,'tiramisu','Matcha Tiramisu Ovaltine','Vị chát dịu của matcha phối cùng kem Tiramisu béo mặn và vụn Ovaltine thơm lừng đánh thức vị giác.',25000.00,35000.00,'images/products/matcha-tiramisu-ovaltine.jpg',60,1420,4.8,TRUE),
+(9,'TS-09',1,'tiramisu','Socola Tiramisu Ovaltine','Socola béo đậm kết hợp kem Tiramisu mặn ngọt và lớp bột Ovaltine giòn thơm nức mũi.',25000.00,35000.00,'images/products/socola-tiramisu-ovaltine.jpg',85,2150,4.9,TRUE),
+(10,'TS-10',1,'tiramisu','Ô Long Nhài Sữa Tiramisu','Olong nhài thanh tao hòa cùng sữa tươi và kem Tiramisu phô mai béo ngậy Ovaltine.',25000.00,35000.00,'images/products/olong-nhai-sua-dodo.jpg',70,1100,4.8,TRUE),
+(11,'TS-11',1,'tra-sua','Trà Sữa Đô Đô Truyền Thống','Vị trà sữa nguyên bản Đô Đô thơm nồng đượm vị lá trà, béo ngậy vừa vặn với mức giá sinh viên chỉ 21K.',21000.00,NULL,'images/products/tra-sua-dodo-truyen-thong.jpg',150,4120,4.9,TRUE),
+(12,'TS-12',1,'tra-sua','Ô Long Nhài Sữa Đô Đô','Trà Olong thanh khiết quyện cùng hương hoa nhài thơm thoang thoảng và sữa béo thanh tao.',25000.00,NULL,'images/products/olong-nhai-sua-dodo.jpg',80,2310,4.9,TRUE),
+(13,'TS-13',1,'tra-sua','Trà Sữa Socola Đậm Đà','Cacao nguyên chất hòa cùng sữa thơm nồng đậm đà, vị ngọt đắng quyến rũ.',23000.00,NULL,'images/products/tra-sua-socola-dam-da.jpg',70,1350,4.7,TRUE),
+(14,'TS-14',1,'tra-sua','Trà Sữa Matcha Nguyên Chất','Matcha nguyên chất Nhật Bản hòa cùng sữa tươi thanh trùng béo nhẹ thơm ngon thanh mát.',25000.00,NULL,'images/products/matcha-mochi-keo-dai.jpg',80,1580,4.8,TRUE),
+(15,'TS-15',1,'tra-sua','Sữa Tươi Trân Châu Đường Đen','Sữa tươi thanh trùng béo ngậy quyện vị caramel đường đen ngọt đậm cùng trân châu đen dẻo bùi.',25000.00,NULL,'images/products/sua-tuoi-duong-den-mochi.jpg',100,2100,4.9,TRUE),
+(16,'TS-16',1,'cookies','Hồng Trà Sữa Cookies','Hồng trà sữa đậm đà rắc vụn bánh cookies giòn rụm tạo cảm giác nhai vui miệng thích thú.',25000.00,35000.00,'images/products/hong-tra-sua-cookies.jpg',75,1780,4.8,TRUE),
+(17,'TS-17',1,'cookies','Socola Cookies Đậm Vị','Trà sữa socola đậm đà rắc vụn bánh cookies giòn thơm tạo lớp phủ ngọt ngào hấp dẫn.',25000.00,35000.00,'images/products/hong-tra-sua-cookies.jpg',60,980,4.7,TRUE),
+(18,'TS-18',1,'cookies','Matcha Cookies Thơm Bùi','Matcha thanh mát hòa cùng vụn cookies thơm bùi giòn tan tạo sự kết hợp tuyệt vời.',25000.00,35000.00,'images/products/hong-tra-sua-cookies.jpg',65,850,4.7,TRUE),
+(19,'TS-19',1,'matcha-special','Matcha Kem Pink Caramel','Matcha nguyên chất xay mịn kết hợp lớp kem caramel hồng đặc biệt béo ngậy thơm lừng.',35000.00,NULL,'images/products/matcha-tiramisu-ovaltine.jpg',50,620,4.9,TRUE),
+(20,'TS-20',1,'matcha-special','Matcha Trân Châu Bạch Ngọc','Matcha thanh mát kết hợp trân châu bạch ngọc trong suốt dẻo mướt đẹp mắt tinh tế.',30000.00,NULL,'images/products/matcha-mochi-nep-lanh.jpg',60,780,4.8,TRUE),
+(21,'TC-01',1,'tra-trai-cay','Trà Xoài Đào Thanh Mát','Hương vị trà xoài nhiệt đới kết hợp cốt đào thơm lừng mang đến cảm giác sảng khoái mát lạnh.',23000.00,NULL,'images/products/tra-xoai-dao-thanh-mat.jpg',90,1560,4.9,TRUE),
+(22,'TC-02',1,'tra-trai-cay','Trà Mơ Xanh Muối','Trà mơ xanh chua ngọt đậm vị chấm phá chút vị mặn thanh độc đáo giải nhiệt tức thì.',23000.00,NULL,'images/products/tra-mo-xanh-muoi.jpg',70,1180,4.7,TRUE),
+(23,'TC-03',1,'tra-trai-cay','Trà Khế Thạch Đào','Vị chua thanh dịu ngọt từ trái khế mọng nước hòa quyện cùng thạch đào giòn sần sật đã khát ngày hè.',23000.00,NULL,'images/products/tra-khe-thach-dao.png',90,1340,4.8,TRUE),
+(24,'TC-04',1,'tra-trai-cay','Trà Chanh Thơm Thạch Đào','Vị chanh vàng thơm mát kết hợp vị dứa nhiệt đới và thạch đào giòn thơm sảng khoái.',23000.00,NULL,'images/products/tra-chanh-thom-thach-dao.png',80,1220,4.8,TRUE);
 
 -- 5. SEED TOPPING (Topping Đô Đô)
-INSERT INTO `TOPPING` (`id`, `ma_topping`, `ten_topping`, `gia_them`, `trang_thai`) VALUES
-(1, 'top-1', 'Mochi Kéo Dài (Signature Đô Đô)', 6000.00, TRUE),
-(2, 'top-2', 'Mochi Nếp Lạnh Dẻo', 6000.00, TRUE),
-(3, 'top-3', 'Kem Tiramisu Phô Mai', 8000.00, TRUE),
-(4, 'top-4', 'Vụn Bánh Cookies Ovaltine', 5000.00, TRUE),
-(5, 'top-5', 'Trân Châu Hoàng Kim', 5000.00, TRUE),
-(6, 'top-6', 'Pudding Trứng Mịn Dẻo', 6000.00, TRUE),
-(7, 'top-7', 'Thạch Đào Giòn', 5000.00, TRUE),
-(8, 'top-8', 'Kem Cheese Macchiato', 8000.00, TRUE);
+INSERT INTO `TOPPING` (`id`, `ma_topping`, `ten_topping`, `gia_them`, `hinh_anh_url`, `trang_thai`) VALUES
+(1,'top-1','Mochi Kéo Dài (Signature Đô Đô)',6000.00,'images/toppings/mochi-keo-dai.jpg',TRUE),
+(2,'top-2','Mochi Nếp Lạnh Dẻo',6000.00,'images/toppings/mochi-nep-lanh.png',TRUE),
+(3,'top-3','Kem Tiramisu Phô Mai',8000.00,'images/toppings/kem-tiramisu.png',TRUE),
+(4,'top-4','Vụn Kẹo Ovaltine Giòn Rụm',5000.00,'images/toppings/vun-cookies.jpg',TRUE),
+(5,'top-5','Vụn Bánh Cookies Thơm Bùi',5000.00,'images/toppings/vun-cookies.jpg',TRUE),
+(6,'top-6','Trân Châu Đen Dẻo',5000.00,'images/toppings/tran-chau-den.jpg',TRUE),
+(7,'top-7','Trân Châu Hoàng Kim / Bạch Ngọc',5000.00,'images/toppings/tran-chau-trang.jpg',TRUE),
+(8,'top-8','Pudding Trứng Mịn Dẻo',5000.00,'images/toppings/pudding-trung.jpg',TRUE),
+(9,'top-9','Thạch Đào Giòn / Thạch Thủy Tinh',5000.00,'images/toppings/tran-chau-trang.jpg',TRUE),
+(10,'top-10','Kem Sữa Macchiato',8000.00,'images/toppings/kem-sua.jpg',TRUE);
 
 -- 6. SEED VOUCHERS
 INSERT INTO `VOUCHERS` (`id`, `ma_voucher`, `loai_giam`, `gia_tri_giam`, `giam_toi_da`, `don_hang_toi_thieu`, `so_luong_phat_hanh`, `so_luong_da_dung`, `ngay_bat_dau`, `ngay_ket_thuc`, `mo_ta`, `trang_thai`) VALUES
 (1, 'BANMOI10', 'phan_tram', 10.00, 20000.00, 50000.00, 1000, 142, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 'Giảm 10% cho bạn mới', TRUE),
 (2, 'FREESHIP', 'tien_mat', 15000.00, NULL, 80000.00, 2000, 560, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 'Miễn phí vận chuyển 15k', TRUE),
-(3, 'TRAXANH20', 'tien_mat', 20000.00, NULL, 100000.00, 500, 89, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 'Giảm ngay 20.000đ cho đơn từ 100k', TRUE);
+(3, 'DODO20', 'tien_mat', 20000.00, NULL, 100000.00, 500, 89, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 'Giảm ngay 20.000đ cho đơn từ 100k', TRUE),
+(4, 'UPSIZET4', 'tien_mat', 6000.00, NULL, 25000.00, 1000, 0, '2026-01-01 00:00:00', '2026-12-31 23:59:59', 'Ưu đãi Thứ 4: Free Upsize Size M lên Size L', TRUE);
 
 -- 7. SEED BAI_VIET
 INSERT INTO `BAI_VIET` (`id`, `tac_gia_id`, `tieu_de`, `slug`, `loai_bai_viet`, `anh_dai_dien`, `tom_tat`, `noi_dung`, `trang_thai`) VALUES

@@ -78,7 +78,7 @@
           <p style="color: #DDB892; font-size: 0.9rem;" id="user-phone-display">0987654321</p>
         </div>
         <div style="text-align: right;">
-          <div style="font-size: 0.85rem; color: #DDB892;">ĐIỂM TÍCH LŨY TEAJOY</div>
+          <div style="font-size: 0.85rem; color: #DDB892;">ĐIỂM TÍCH LŨY ĐÔ ĐÔ</div>
           <div style="font-size: 2.4rem; font-weight: 800; color: #E9C46A; font-family: var(--font-heading);" id="user-points-display">320</div>
         </div>
       </div>
@@ -144,7 +144,7 @@
   <footer class="site-footer">
     <div class="container">
       <div class="footer-bottom">
-        <div>© 2026 TeaJoy Store. All rights reserved.</div>
+        <div>© 2026 Trà Sữa Đô Đô. All rights reserved.</div>
       </div>
     </div>
   </footer>
@@ -204,9 +204,12 @@
               <div class="text-xs text-muted" style="margin-bottom: 0.5rem;">
                 ${Formatters.dateTime(o.createdAt)} • ${o.items ? o.items.length : 0} món
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                 <span class="font-bold" style="color: var(--primary);">${Formatters.currency(o.totalAmount)}</span>
-                <a href="order-tracking.html?id=${o.id}" class="btn btn-outline btn-sm">Xem chi tiết ➔</a>
+                <div style="display: flex; gap: 0.4rem;">
+                  <button class="btn btn-primary btn-sm" onclick="reOrderFromHistory('${o.id}')" title="Đưa toàn bộ món vào giỏ để mua lại">🔄 Mua Lại Món</button>
+                  <a href="order-tracking.html?id=${o.id}" class="btn btn-outline btn-sm">Chi tiết ➔</a>
+                </div>
               </div>
             </div>
           `).join("");
@@ -239,6 +242,34 @@
       DB.setCurrentUser(user);
       Toast.success("Cập nhật thông tin thành công!");
       initProfilePage();
+    }
+
+    function reOrderFromHistory(orderId) {
+      const orders = DB.getOrders();
+      const order = orders.find(o => o.id === orderId);
+      if (!order || !order.items || order.items.length === 0) {
+        Toast.error("Không tìm thấy thông tin sản phẩm trong đơn hàng này!");
+        return;
+      }
+
+      order.items.forEach(item => {
+        Cart.addItem({
+          productId: item.productId || 'TS-01',
+          name: item.name,
+          image: item.image,
+          size: item.size || 'M',
+          sugar: item.sugar || '100%',
+          ice: item.ice || '100%',
+          toppings: item.toppings || [],
+          quantity: item.quantity || 1,
+          unitPrice: item.unitPrice || 25000
+        });
+      });
+
+      Toast.success(`Đã thêm ${order.items.length} món vào giỏ hàng! Chuyển tới trang thanh toán...`);
+      setTimeout(() => {
+        window.location.href = "cart.html";
+      }, 800);
     }
 
     document.addEventListener("DOMContentLoaded", initProfilePage);

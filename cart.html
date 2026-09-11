@@ -117,7 +117,7 @@
   <footer class="site-footer">
     <div class="container">
       <div class="footer-bottom">
-        <div>© 2026 TeaJoy Store. All rights reserved.</div>
+        <div>© 2026 Trà Sữa Đô Đô. All rights reserved.</div>
         <div style="display: flex; gap: 1.25rem;">
           <a href="index.html" class="text-muted">Trang chủ</a>
           <a href="menu.html" class="text-muted">Thực đơn</a>
@@ -227,7 +227,14 @@
 
       const checkoutBtn = document.getElementById("cart-checkout-btn");
       if (checkoutBtn) {
-        checkoutBtn.href = appliedVoucher ? `checkout.html?voucher=${encodeURIComponent(appliedVoucher.code)}` : "checkout.html";
+        if (appliedVoucher) {
+          // Persist voucher to sessionStorage so checkout.html can pick it up
+          sessionStorage.setItem('dodo_pending_voucher', JSON.stringify(appliedVoucher));
+          checkoutBtn.href = `checkout.html?voucher=${encodeURIComponent(appliedVoucher.code)}`;
+        } else {
+          sessionStorage.removeItem('dodo_pending_voucher');
+          checkoutBtn.href = "checkout.html";
+        }
       }
     }
 

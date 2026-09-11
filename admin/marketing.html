@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản Lý Truyền Thông & Khuyến Mãi - TeaJoy Admin</title>
+  <title>Quản Lý Truyền Thông & Khuyến Mãi - Đô Đô POS Admin</title>
 
   <!-- Google Fonts for Vietnamese Support -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -248,11 +248,33 @@
         this.renderBanners();
       },
 
-      renderVouchers() {
+      async renderVouchers() {
         const tbody = document.getElementById("admin-vouchers-tbody");
         if (!tbody) return;
 
-        const vouchers = DB.getVouchers();
+        let vouchers = [];
+
+        try {
+          const response = await fetch("http://localhost:5000/api/vouchers");
+          const data = await response.json();
+          if (data.success && data.data) {
+            vouchers = data.data.map(v => ({
+              code: v.ma_voucher,
+              discountPercent: v.loai_giam === 'phan_tram' ? v.gia_tri_giam : null,
+              discountAmount: v.loai_giam === 'tien_mat' ? v.gia_tri_giam : null,
+              minOrder: v.don_hang_toi_thieu,
+              desc: v.mo_ta || `Mã giảm giá ${v.ma_voucher}`,
+              expiry: v.ngay_ket_thuc ? v.ngay_ket_thuc.split('T')[0] : 'Vô thời hạn'
+            }));
+          }
+        } catch (err) {
+          console.warn("Backend API offline, falling back to LocalStorage...");
+        }
+
+        if (vouchers.length === 0) {
+          vouchers = DB.getVouchers();
+        }
+
         if (vouchers.length === 0) {
           tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Chưa có voucher nào.</td></tr>`;
           return;

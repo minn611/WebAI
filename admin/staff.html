@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản Lý Nhân Viên & Phân Quyền - TeaJoy Admin</title>
+  <title>Quản Lý Nhân Viên & Phân Quyền - Đô Đô POS Admin</title>
 
   <!-- Google Fonts for Vietnamese Support -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -294,6 +294,9 @@
             };
           }
           Toast.success(`Đã cập nhật nhân viên: <b>${name}</b> (${positionTitle})`);
+          if (typeof AuditLogger !== "undefined") {
+            AuditLogger.notifyServer(`CẬP NHẬT NHÂN VIÊN: ${name} (@${u})`, `Chức vụ: ${positionTitle} | SĐT: ${phone}`, "Quản Lý Cửa Hàng", "ADMIN");
+          }
         } else {
           const newStaff = {
             id: `NV-${Date.now().toString().slice(-4)}`,
@@ -309,6 +312,9 @@
           };
           users.push(newStaff);
           Toast.success(`Đã thêm nhân viên mới: <b>${name}</b> (${positionTitle})`);
+          if (typeof AuditLogger !== "undefined") {
+            AuditLogger.notifyServer(`THÊM NHÂN VIÊN MỚI: ${name} (@${u})`, `Chức vụ: ${positionTitle} | SĐT: ${phone}`, "Quản Lý Cửa Hàng", "ADMIN");
+          }
         }
 
         DB.set(STORAGE_KEYS.USERS, users);
@@ -323,6 +329,9 @@
           s.status = s.status === 'locked' ? 'active' : 'locked';
           DB.set(STORAGE_KEYS.USERS, users);
           Toast.success(`Đã ${s.status === 'locked' ? 'khóa' : 'mở khóa'} tài khoản: <b>${s.fullName}</b>`);
+          if (typeof AuditLogger !== "undefined") {
+            AuditLogger.notifyServer(`${s.status === 'locked' ? 'KHÓA' : 'MỞ KHÓA'} TÀI KHOẢN NHÂN VIÊN`, `Nhân viên: ${s.fullName} (@${s.username})`, "Quản Lý Cửa Hàng", "ADMIN");
+          }
           this.renderTable();
         }
       },
@@ -340,6 +349,9 @@
           const updated = users.filter(u => u.id !== id);
           DB.set(STORAGE_KEYS.USERS, updated);
           Toast.info(`Đã xóa nhân viên: ${s.fullName}`);
+          if (typeof AuditLogger !== "undefined") {
+            AuditLogger.notifyServer(`XÓA NHÂN VIÊN KHỎI HỆ THỐNG`, `Đã xóa tài khoản: ${s.fullName} (@${s.username})`, "Quản Lý Cửa Hàng", "ADMIN");
+          }
           this.renderTable();
         }
       }

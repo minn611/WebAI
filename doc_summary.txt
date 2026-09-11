@@ -1,0 +1,1323 @@
+TRƯỜNG ĐẠI HỌC CÔNG NGHỆ GTVT
+KHOA CÔNG NGHỆ THÔNG TIN
+BÀI TẬP LỚN
+ĐỒ ÁN HỆ THỐNG THÔNG TIN
+Tên đề tài:
+Xây dựng hệ thống quản lý quán trà sữa
+Giảng viên hướng dẫn: Lê Thị Chi
+Họ và tên thành viên:  Nguyễn Trần Trung Hiếu
+Ngô Mạnh Hiếu
+Vũ Bình An
+Phan Viết Thế
+Lớp: 74DCHT21
+Hà Nội, ngày   tháng    năm 2026
+MỤC LỤC
+MỤC LỤC1
+NHẬN XÉT3
+BẢNG PHÂN CÔNG NHIỆM VỤ NHÓM4
+CHƯƠNG 1. TỔNG QUAN5
+1.1. Lý do chọn đề tài5
+1.2. Mục tiêu của đề tài5
+1.3. Giới hạn và phạm vi đề tài5
+1.4. Kết quả dự kiến đạt được6
+CHƯƠNG 2. KIẾN THỨC NỀN TẢNG7
+2.1. Cơ sở lý thuyết7
+2.1.1. Kiến trúc website hiện đại7
+2.1.2. CSS (Cascading Style Sheets)7
+2.1.3. HTML (HyperText Markup Language)7
+2.2. Công cụ sử dụng8
+2.2.1. React.js8
+2.2.2. Framework Laravel8
+2.2.3. MySQL8
+CHƯƠNG 3. PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG10
+3.1. Khảo sát hệ thống10
+3.1.1. Tổng quan về hệ thống10
+3.1.2. Đánh giá hiện trạng13
+3.1.3. Xác định yêu cầu hệ thống20
+3.1.4. Kế hoạch thực hiện21
+3.2. Phân tích hệ thống22
+3.2.1. Xác định các tác nhân (Actor) và chức năng (Usecase)22
+3.2.2. Biểu đồ UseCase23
+3.2.2.1 Biểu đồ usecase tổng quát23
+3.2.2.2 Biểu đồ usecase chi tiết và kịch bản23
+3.2.3. Biểu đồ hoạt động58
+3.2.4. Biểu đồ trình tự98
+3.2.5. Biểu đồ lớp và biểu đồ trạng thái139
+3.2.5.1 Biểu đồ lớp139
+3.2.5.2 Biểu đồ trạng thái140
+CHƯƠNG 4. XÂY DỰNG CHƯƠNG TRÌNH143
+4.1. Công nghệ và môi trường xây dựng143
+4.2. Giao diện chương trình143
+NHẬN XÉT
+BẢNG PHÂN CÔNG NHIỆM VỤ NHÓM
+Thành viên
+Nhiệm vụ
+Đánh giá kết quả
+Ngô Mạnh Hiếu
+(Nhóm trưởng)
+Nguyễn Trần Trung Hiếu
+Vũ Bình An
+Phan Viết Thế
+CHƯƠNG 1. TỔNG QUAN
+1.1. Lý do chọn đề tài
+Trà sữa Đô Đô là chuỗi cửa hàng kinh doanh đồ uống theo mô hình đồng giá và bán mang đi, ra mắt tại miền Bắc từ năm 2021 và hiện đã phát triển hơn 70 cửa hàng trên toàn quốc. Quy mô mở rộng nhanh khiến khối lượng công việc quản lý tại từng cửa hàng — từ bán hàng, kiểm soát nguyên liệu, chăm sóc khách hàng đến thống kê tài chính — ngày càng lớn.
+Qua khảo sát thực tế tại cơ sở số 17 Lương Thế Vinh, phường Đại Mỗ, Hà Nội, nhóm nhận thấy cửa hàng vẫn quản lý nhân viên qua tin nhắn, ghi chép tồn kho thủ công bằng sổ sách, chưa có công cụ thống nhất để quản lý khách hàng, đơn hàng và xử lý phản hồi trên các kênh mạng xã hội. Những hạn chế này dễ dẫn tới sai sót, chậm trễ và khó kiểm soát khi quy mô cửa hàng ngày càng tăng.
+Xuất phát từ thực tế đó, nhóm lựa chọn đề tài “Phân tích và thiết kế hệ thống quản lý quán trà sữa” nhằm vận dụng kiến thức đã học trong học phần Đồ án Hệ thống thông tin để khảo sát, phân tích nghiệp vụ và xây dựng một hệ thống phần mềm hỗ trợ cửa hàng quản lý hoạt động kinh doanh một cách khoa học, chính xác và hiệu quả hơn.
+1.2. Mục tiêu của đề tài
+Đề tài hướng tới xây dựng một hệ thống hỗ trợ giới thiệu, bán sản phẩm và quản lý hoạt động của cửa hàng trà sữa, đảm bảo các mục tiêu sau đối với từng nhóm đối tượng sử dụng:
+-Đối với khách hàng: có thể tìm kiếm, xem thông tin chi tiết sản phẩm; đặt hàng và lựa chọn phương thức thanh toán phù hợp; tương tác, phản hồi hoặc khiếu nại với cửa hàng.
+-Đối với quản lý và nhân viên: đăng nhập hệ thống bằng tài khoản được cấp; quản lý nhân viên, sản phẩm, khách hàng, đơn hàng và truyền thông (đăng bài quảng bá, tương tác, xử lý bình luận).
+-Đối với kế toán: lập bảng lương, thống kê tài chính, thanh toán hóa đơn nhập kho và quyết toán.
+Từ đó, hệ thống giúp cửa hàng số hóa các nghiệp vụ đang thực hiện thủ công, giảm sai sót, tiết kiệm thời gian quản lý và nâng cao trải nghiệm của khách hàng.
+1.3. Giới hạn và phạm vi đề tài
+Hệ thống được xây dựng dưới dạng ứng dụng web, phục vụ cho một cơ sở kinh doanh của chuỗi trà sữa Đô Đô, với phạm vi chức năng cụ thể như sau:
+Đối với nhóm Quản lý – Nhân viên, hệ thống cho phép:
+Quản lý tài khoản
+Quản lý nhân viên
+Quản lý sản phẩm
+Quản lý khách hàng
+Quản lý đơn hàng
+Quản lý truyền thông
+Quản lý nhà cung cấp
+Báo cáo, thống kê
+Đối với Khách hàng, hệ thống cho phép:
+Xem sản phẩm
+Quản lý giỏ hàng
+Đặt hàng
+Thanh toán
+Tương tác (bình luận, đánh giá, khiếu nại)
+-Về môi trường triển khai, hệ thống hoạt động trên hệ điều hành Windows, sử dụng trình duyệt Chrome, cơ sở dữ liệu MySQL, và giới hạn trong phạm vi một cửa hàng — chưa xử lý bài toán quản lý đa chi nhánh hay tích hợp các cổng thanh toán trực tuyến của bên thứ ba.
+1.4. Kết quả dự kiến đạt được
+Sau khi hoàn thành đề tài, nhóm dự kiến đạt được các kết quả sau:
+Bộ tài liệu khảo sát và phân tích yêu cầu hệ thống (yêu cầu chức năng, phi chức năng) dựa trên khảo sát thực tế tại cửa hàng.
+Bộ biểu đồ UML mô tả thiết kế hệ thống: biểu đồ use case, biểu đồ hoạt động, biểu đồ trình tự, biểu đồ lớp.
+Thiết kế cơ sở dữ liệu MySQL lưu trữ thông tin tài khoản, nhân viên, khách hàng, sản phẩm, đơn hàng, hóa đơn, bài viết truyền thông và voucher.
+Chương trình demo với giao diện web cho các nhóm chức năng: tài khoản, sản phẩm, giỏ hàng – đặt hàng – thanh toán, quản lý nhân viên/khách hàng/đơn hàng, truyền thông và thống kê.
+CHƯƠNG 2. KIẾN THỨC NỀN TẢNG
+2.1. Cơ sở lý thuyết
+2.1.1. Kiến trúc website hiện đại
+Hệ thống quản lý quán trà sữa được thiết kế theo mô hình Client – Server, một kiến trúc phổ biến của website hiện đại:
+Phía Client (trình duyệt): là phần giao diện mà người dùng nhìn thấy và tương tác trực tiếp, được xây dựng bằng HTML, CSS và JavaScript (thông qua thư viện React.js). Client có nhiệm vụ hiển thị dữ liệu và gửi yêu cầu (request) tới server.
+Phía Server: xử lý các nghiệp vụ như đăng nhập, phân quyền, truy vấn cơ sở dữ liệu và trả kết quả (response) về cho client, được xây dựng trên nền tảng framework Laravel.
+Cơ sở dữ liệu: lưu trữ toàn bộ dữ liệu của hệ thống (tài khoản, sản phẩm, đơn hàng...), sử dụng hệ quản trị MySQL.
+Mô hình này thường được mô tả theo kiến trúc 3 lớp (3-tier): tầng trình diễn (Presentation) phụ trách giao diện, tầng nghiệp vụ (Business Logic) xử lý các quy tắc nghiệp vụ, và tầng dữ liệu (Data) lưu trữ, truy xuất dữ liệu. Việc tách riêng ba tầng giúp hệ thống dễ bảo trì, dễ mở rộng và cho phép nhiều lập trình viên cùng phát triển song song phần giao diện và phần xử lý phía server, hai phần này giao tiếp với nhau chủ yếu qua các API dạng RESTful, trả dữ liệu theo định dạng JSON.
+2.1.2. CSS (Cascading Style Sheets)
+CSS là ngôn ngữ định kiểu dùng để mô tả cách trình bày của một tài liệu HTML: màu sắc, bố cục (layout), phông chữ, khoảng cách, kích thước... CSS hoạt động dựa trên các bộ chọn (selector) áp dụng thuộc tính định dạng cho từng phần tử HTML, và tuân theo mô hình hộp (box model) gồm nội dung (content), khoảng đệm (padding), viền (border) và lề (margin).
+Trong hệ thống, CSS (kết hợp với các tiện ích như Flexbox, Grid) được dùng để xây dựng giao diện web đáp ứng (responsive), đảm bảo trang bán hàng và các trang quản trị hiển thị hợp lý trên nhiều kích thước màn hình khác nhau.
+2.1.3. HTML (HyperText Markup Language)
+HTML là ngôn ngữ đánh dấu siêu văn bản dùng để xây dựng cấu trúc, nội dung của trang web thông qua hệ thống các thẻ (tag) như tiêu đề, đoạn văn, bảng, biểu mẫu, hình ảnh... HTML kết hợp với CSS để định dạng và với JavaScript để xử lý tương tác, tạo thành bộ ba công nghệ nền tảng của một trang web.
+Trong hệ thống, các thẻ HTML ngữ nghĩa (semantic tags) và các biểu mẫu (form) được sử dụng để xây dựng các giao diện đăng nhập, đăng ký, đặt hàng, thanh toán và các trang quản trị sản phẩm, đơn hàng, khách hàng.
+2.2. Công cụ sử dụng
+2.2.1. React.js
+React.js là thư viện JavaScript mã nguồn mở do Meta phát triển, dùng để xây dựng giao diện người dùng (UI) theo hướng thành phần (component-based). Mỗi phần giao diện (thanh menu, danh sách sản phẩm, giỏ hàng...) được tách thành các component độc lập, có thể tái sử dụng, giúp mã nguồn dễ quản lý và dễ mở rộng.
+React sử dụng cơ chế Virtual DOM để cập nhật giao diện một cách nhanh chóng khi dữ liệu thay đổi, cùng với các Hook (useState, useEffect...) để quản lý trạng thái và vòng đời của component. Trong hệ thống, React.js được sử dụng để xây dựng phần giao diện phía khách hàng (xem sản phẩm, giỏ hàng, đặt hàng, thanh toán) và giao diện quản trị (quản lý sản phẩm, nhân viên, khách hàng, đơn hàng, truyền thông).
+2.2.2. Framework Laravel
+Laravel là framework PHP mã nguồn mở, được xây dựng theo mô hình MVC (Model – View – Controller), giúp tách biệt rõ ràng giữa dữ liệu (Model), giao diện (View) và logic xử lý (Controller). Laravel cung cấp sẵn các công cụ mạnh mẽ như Eloquent ORM để thao tác cơ sở dữ liệu, hệ thống định tuyến (routing) linh hoạt, cơ chế xác thực và phân quyền người dùng (authentication/authorization), cùng khả năng xây dựng API RESTful nhanh chóng.
+Trong hệ thống, Laravel đóng vai trò phía server (backend): xử lý đăng nhập, phân quyền theo vai trò (quản lý, nhân viên, kế toán, khách hàng), xử lý nghiệp vụ tạo/cập nhật đơn hàng, hóa đơn, sản phẩm, bài viết truyền thông, và cung cấp dữ liệu cho phần giao diện React.js thông qua API.
+2.2.3. MySQL
+MySQL là hệ quản trị cơ sở dữ liệu quan hệ (RDBMS) mã nguồn mở, sử dụng ngôn ngữ truy vấn SQL để lưu trữ, truy xuất và quản lý dữ liệu theo các bảng có quan hệ với nhau.
+Cơ sở dữ liệu của hệ thống được thiết kế trên MySQL với các thực thể chính: TAI_KHOAN, NHAN_VIEN, KHACH_HANG, SAN_PHAM, NHA_CUNG_CAP, DON_HANG, CHI_TIET_DON_HANG, THANH_TOAN, BAI_VIET, REVIEWS và VOUCHERS, được trình bày chi tiết ở mục 3.3.2 của báo cáo.
+CHƯƠNG 3. PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG
+3.1. Khảo sát hệ thống
+3.1.1. Tổng quan về hệ thống
+Đơn vị khảo sát: Cửa hàng trà sữa Đô Đô.
+Đơn vị chủ quản: Công ty TNHH Black Pearl Việt Nam.
+Trụ sở chính: Lô A21, ngõ 91 Trần Duy Hưng, Hà Nội.
+Cơ sở khảo sát: Số 17 Lương Thế Vinh, phường Đại Mỗ, Hà Nội.
+Hotline: 097.696.9086.
+Website bán hàng: https://trasuadodo.vn/
+Mô hình kinh doanh: Kinh doanh thức uống – trà sữa và các loại đồ uống giải khát. Trà sữa Đô Đô nổi bật trên thị trường nhờ mô hình kinh doanh trà sữa đồng giá và take away (mang đi).
+Tinh thần thương hiệu: mong muốn mang lại sự vui vẻ, lạc quan cho khách hàng qua hương vị trà sữa.
+Hình thức kinh doanh: bán tại chỗ, kết hợp mang đi và giao hàng trực tuyến qua các ứng dụng như ShopeeFood, GrabFood, beFood...
+Thời gian hình thành: ra mắt tại thị trường miền Bắc khoảng năm 2021 với mô hình trà sữa đồng giá take away, nhanh chóng tạo tiếng vang.
+Quy mô: đã phát triển hơn 70 cửa hàng trên toàn quốc, ban đầu tập trung ở khu vực miền Bắc (Hà Nội, Hải Phòng, Vĩnh Phúc, Bắc Ninh, Nam Định...), sau đó mở rộng ra nhiều tỉnh thành khác.
+Cơ cấu tổ chức của một cửa hàng: 1 quản lý và khoảng 7–8 nhân viên bán hàng, chia 3 ca Sáng – Chiều – Tối, mỗi ca 2 nhân viên (nếu đông có thể 3 nhân viên).
+Hình 3.1. Cửa hàng trà sữa Đô Đô
+Hình 3.2. Menu của cửa hàng
+Hình 3.3. Một cơ sở khác của Đô Đô
+Quy trình nghiệp vụ hiện tại của cửa hàng gồm ba nhóm chính:
+a) Quy trình bán hàng
+Nhân viên thu ngân tiếp nhận order của khách hàng.
+Nếu khách lần đầu mua hoặc chưa biết chọn món, nhân viên giới thiệu sản phẩm best seller hoặc sản phẩm mới. Nếu món khách muốn tạm hết, nhân viên giới thiệu món tương tự hoặc hẹn khách quay lại.
+Nhập món khách order vào máy, xác nhận lại món, áp dụng mã khuyến mãi (nếu có).
+Xin thông tin khách hàng (tên, số điện thoại) để tích điểm, hỏi phương thức thanh toán.
+Sau khi thanh toán, tem được in và dán trên cốc, chuyển vào khu vực pha chế; nhân viên pha chế làm theo tem và đưa ra quầy; nhân viên thu ngân đóng gói và giao cho khách.
+b) Quy trình quản lý nguyên liệu
+Đầu ca, nhân viên kiểm kê hàng hóa cho khớp với sổ kiểm đồ; nếu lệch số lượng sẽ đối chiếu với ca trước.
+Trong ca, nếu có hàng nhập về, nhân viên kiểm và ghi số lượng vào sổ kiểm đồ.
+Cuối ca, nhân viên kiểm kê, ghi nhận nguyên liệu đã dùng và tính lại số lượng tồn.
+c) Quy trình xử lý khiếu nại
+Khách hàng phản hồi về chất lượng sản phẩm/dịch vụ, nhân viên tiếp nhận và xử lý.
+Nếu khách chưa thỏa đáng, nhân viên báo lại quản lý để giải quyết nhanh chóng, hợp lý.
+3.1.2. Đánh giá hiện trạng
+Hình thức khảo sát: phỏng vấn trực tiếp tại cơ sở số 17 Lương Thế Vinh, phường Đại Mỗ, Hà Nội, ngày 24/8/2026. Kết quả phỏng vấn quản lý, nhân viên bán hàng được tổng hợp như sau:
+Phỏng vấn quản lý cửa hàng : Nguyễn Diệu Linh  (người phỏng vấn: Vũ Bình An)
+STT
+Câu hỏi
+Câu trả lời
+1
+Công việc thường làm là gì?
+Phụ trách quản lý cửa hàng, bàn giao và lên kế hoạch công việc cho nhân viên, thống kê và kiểm tra báo cáo tài chính.
+2
+Phân công công việc cho nhân viên theo hình thức nào?
+Phân công qua nhóm tin nhắn của cửa hàng trên Messenger.
+3
+Quản lý đơn hàng theo hình thức nào?
+Qua quầy thu ngân, chỉ có thông tin cơ bản của khách hàng như tên, số điện thoại.
+4
+Thống kê, kiểm tra báo cáo tài chính bao lâu một lần?
+Khoảng 1 tuần/lần, dựa trên báo cáo Excel do kế toán lập.
+5
+Nhân viên gồm bao nhiêu người một ca, quản lý ra sao?
+Mỗi ca 2–3 người, chấm công bằng máy quét vân tay, tổng hợp cuối tháng.
+6
+Mong muốn gì với hệ thống sắp tới?
+Dễ dàng quản lý thông tin khách hàng và quản lý nhân viên.
+Phỏng vấn nhân viên bán hang: Mai Phương Thuý (người phỏng vấn: Phan Viết Thế)
+STT
+Câu hỏi
+Câu trả lời
+1
+Các sản phẩm tại cửa hàng là gì?
+Trà sữa các vị, trà hoa quả...; topping thêm: kem sữa, thạch dừa, trân châu, mochi nếp lạnh...
+2
+Khách hàng thuộc đối tượng nào, hay gọi đồ gì?
+Học sinh, sinh viên, nhân viên văn phòng; hay gọi series trà sữa Tiramisu và trà sữa cookies.
+3
+Cửa hàng bán qua các kênh nào?
+Bán tại cửa hàng, Facebook, ShopeeFood, Now, website Trà sữa Đô Đô.
+4
+Hiểu biết gì về quản lý nguyên liệu, kiểm soát tồn kho?
+Ghi chép lượng nguyên liệu còn lại mỗi ca vào sổ, báo trước khi hết để chuẩn bị kịp; chú ý pha đúng định lượng để tránh lãng phí.
+5
+Khách hàng thường thanh toán bằng hình thức gì?
+Tiền mặt và chuyển khoản.
+6
+Nếu phát hiện chênh lệch giữa thực tế và số liệu, xử lý ra sao?
+Kiểm tra lại khu vực lưu trữ, đối chiếu phiếu nhập – xuất; nếu vẫn chênh lệch thì báo quản lý hoặc kế toán kho.
+7
+Các quy trình làm việc có khó khăn gì?
+Khó theo dõi đơn hàng nhập nếu không được quản lý thông báo; mong hệ thống mới có tính năng kiểm đồ trên phần mềm.
+Phỏng vấn khách hàng : khảo sát bằng google form
+Qua đánh giá khảo sát thì nhóm nhận về được 35 phản hồi với tỉ lệ nam nữ khá ngang nhau cùng với đó là độ tuổi thường nằm trong 18-22 tuổi , khách hàng hầu như là học sinh sinh viên , đánh giá về đồ uống trải nghiệm về quán cũng rất tích cực chắc hẳn đồ uống khá là ngon. Và kết quả cuối cùng mọi người đều chấp nhận sử dụng 1 web riêng để cập nhật về quán trà sữa.
+Từ kết quả khảo sát, nhóm rút ra đánh giá ưu, nhược điểm của hệ thống hiện tại như sau:
+Ưu điểm
+Phân chia công việc rõ ràng giữa các bộ phận: mỗi vị trí (quản lý, nhân viên, kế toán) đều có mô tả công việc và nhiệm vụ cụ thể, giảm chồng chéo, dễ kiểm soát quy trình vận hành.
+Hệ thống theo dõi – báo cáo tài chính khá chặt chẽ: có thống kê, kiểm tra báo cáo theo tháng bằng file Excel, giúp cửa hàng nắm được tình hình thu chi thường xuyên.
+Có kênh bán hàng đa dạng: ngoài bán trực tiếp còn bán qua Facebook, ShopeeFood, GrabFood, giúp tăng doanh thu và độ nhận diện thương hiệu.
+Nhược điểm
+Chưa có hệ thống quản lý nhân viên: giao việc qua Messenger nên khó điều phối, không kiểm soát được tiến độ công việc.
+Quản lý đơn hàng và thông tin khách hàng còn sơ sài.
+Chưa có hệ thống kiểm soát tồn kho, nguyên liệu: nhân viên tự chép tay lượng nguyên liệu còn lại, không có phần mềm cảnh báo thiếu hàng hay tồn kho cao, dễ sai sót, mất thời gian.
+Chưa có quy trình tự động hóa xử lý phản hồi khách hàng: quản lý và nhân viên phải lọc, xử lý thủ công từng phản ánh trên Facebook, TikTok.
+3.1.3. Xác định yêu cầu hệ thống
+Trên cơ sở khảo sát và đánh giá hiện trạng, hệ thống mới cần đáp ứng các yêu cầu chức năng (FR) và phi chức năng sau.
+a) Yêu cầu chức năng
+Nhóm chức năng
+Mã
+Mô tả
+Quản lý tài khoản
+FR-01 → FR-03
+Đăng nhập/Đăng ký; Cập nhật thông tin; Bảo mật tài khoản (tạo/sửa mật khẩu).
+Quản lý nhân viên
+FR-04 → FR-06
+Tạo, quản lý tài khoản nhân viên; xem, cập nhật tài khoản; phân quyền nhiệm vụ nhân viên.
+Quản lý sản phẩm
+FR-07 → FR-09
+Thêm, sửa, xóa thông tin sản phẩm; quản lý số lượng hàng; quản lý hàng hóa.
+Quản lý khách hàng
+FR-10 → FR-13
+Xem thông tin khách hàng; cập nhật tích điểm; khiếu nại khách hàng; cập nhật voucher cho khách.
+Quản lý đơn hàng
+FR-14
+Tạo, cập nhật, hủy đơn hàng.
+Quản lý truyền thông
+FR-15
+Đăng, xóa, sửa bài viết.
+Quản lý nhà cung cấp
+FR-16
+Thêm, sửa, xóa nhà cung cấp.
+Báo cáo – Thống kê
+FR-17
+Báo cáo doanh thu ngày.
+Quản lý đặt hàng (khách hàng)
+FR-18 → FR-21
+Tìm kiếm, xem chi tiết sản phẩm; thêm/xóa sản phẩm trong giỏ; chỉnh sửa thông tin giao hàng; theo dõi tình trạng đơn hàng.
+Quản lý thanh toán
+FR-22
+Lựa chọn phương thức thanh toán, xác nhận đặt hàng.
+Quản lý tương tác
+FR-23, FR-24
+Tương tác với sản phẩm/bài đăng bằng bình luận; khiếu nại, phản ánh chất lượng dịch vụ.
+b) Yêu cầu phi chức năng
+Hiệu năng: thời gian phản hồi ≤ 5 giây; hỗ trợ tối thiểu 100 người dùng đồng thời.
+Bảo mật: đăng nhập bằng tài khoản/mật khẩu; mật khẩu được mã hóa; phân quyền truy cập; sao lưu dữ liệu định kỳ.
+Độ tin cậy: hoạt động theo giờ làm việc của cửa hàng; không mất dữ liệu khi mất điện.
+Khả năng sử dụng: giao diện thân thiện dễ sử dụng.
+Khả năng mở rộng: hỗ trợ nhiều chi nhánh; dễ tích hợp thanh toán online.
+Khả năng bảo trì: mã nguồn có chú thích rõ ràng, thiết kế theo chuẩn hướng đối tượng (OOP), dễ nâng cấp.
+3.1.4. Kế hoạch thực hiện
+Nhóm xây dựng kế hoạch thực hiện đề tài theo các bước sau:
+Bước 1 – Khảo sát: khảo sát thực tế và phỏng vấn trực tiếp quản lý, nhân viên,  tại cơ sở số 17 Lương Thế Vinh, phường Đại Mỗ, Hà Nội (ngày 24/8/2026); khảo sát ý kiến khách hàng qua bảng hỏi trực tuyến.
+Bước 2 – Phân tích yêu cầu: tổng hợp kết quả khảo sát, xác định yêu cầu chức năng, phi chức năng, xác định tác nhân và danh sách use case.
+Bước 3 – Thiết kế hệ thống: xây dựng biểu đồ use case, biểu đồ hoạt động, biểu đồ trình tự, biểu đồ lớp và thiết kế cơ sở dữ liệu.
+Bước 4 – Xây dựng chương trình: lập trình giao diện , xử lý nghiệp vụ phía server  và cơ sở dữ liệu .
+Bước 5 – Kiểm thử và hoàn thiện báo cáo: kiểm thử các chức năng chính, tổng hợp và hoàn thiện tài liệu báo cáo.
+3.2. Phân tích hệ thống
+3.2.1. Xác định các tác nhân (Actor) và chức năng (Usecase)
+Hệ thống có 3 nhóm tác nhân chính: Quản lý, Nhân viên và Khách hàng. Quản lý có toàn quyền trên hệ thống; Nhân viên được phân quyền một phần nghiệp vụ của Quản lý; Khách hàng sử dụng các chức năng đặt hàng, thanh toán và tương tác.
+Dành cho Quản lý / Nhân viên (nếu được phân quyền)
+Chức năng 1 –Quản lý tài khoản: đăng nhập; cập nhật thông tin; bảo mật tài khoản (tạo/sửa mật khẩu).
+Chức năng 2 – Quản lý sản phẩm: thêm, sửa, xóa thông tin sản phẩm; quản lý số lượng hàng, quản lý hàng hóa.
+Chức năng 3 – Quản lý khách hàng: xem thông tin khách hàng; cập nhật tích điểm; xử lý khiếu nại; cập nhật voucher cho khách.
+Chức năng 4 – Quản lý nhân viên: tạo, quản lý tài khoản nhân viên; xem, cập nhật tài khoản; quản lý ca làm, phân quyền nhiệm vụ.
+Chức năng 5 – Quản lý truyền thông: đăng, xóa, sửa bài; quản lý bình luận, phản hồi.
+Chức năng 6 – Quản lý đơn hàng: tạo, cập nhật, hủy đơn hàng.
+Chức năng 7 – Báo cáo-Thống kê: thống kê doanh thu, đơn hàng, sản phẩm, nhiệm vụ.
+Chức năng 8 – Quản lý nhà cung cấp : Thêm, sửa , xoá các nhà cung cấp cho cửa hàng
+Dành cho Khách hàng
+Chức năng 1 – Xem sản phẩm: Tìm kiếm sản phẩm theo tên/danh mục; xem thông tin chi tiết, hình ảnh và giá sản phẩm; xem danh sách đánh giá/bình luận của khách hàng về sản phẩm.
+Chức năng 2 – Quản lý giỏ hàng: Thêm sản phẩm vào giỏ hàng (kèm tùy chọn số lượng, ghi chú topping/đường/đá); xem danh sách món trong giỏ; cập nhật số lượng hoặc xóa sản phẩm khỏi giỏ hàng.
+Chức năng 3 – Đặt hàng: Tiến hành tạo đơn hàng từ giỏ; chỉnh sửa thông tin người nhận và địa chỉ giao hàng; nhắn tin/ghi chú với cửa hàng; theo dõi trạng thái đơn hàng (đang chuẩn bị, đang giao...); hủy đơn hàng khi chưa xử lý.
+Chức năng 4 – Thanh toán: Áp dụng mã giảm giá/voucher ưu đãi; lựa chọn các hình thức thanh toán (tiền mặt khi nhận hàng, chuyển khoản ngân hàng, quét thẻ, ví điện tử) và hoàn tất giao dịch.
+Chức năng 5 – Tương tác: Gửi đánh giá và bình luận về sản phẩm đã mua; chỉnh sửa hoặc xóa đánh giá cá nhân; gửi phản hồi, khiếu nại về chất lượng dịch vụ của quán.
+3.2.2. Biểu đồ UseCase
+3.2.2.1 Biểu đồ usecase tổng quát
+3.2.2.2 Biểu đồ usecase chi tiết và kịch bản
+3.2.2.2.1 Nhân viên.
+a)Usecase tài khoản
+*Đặc tả chức năng “Đăng nhập”.
+Bảng đặc tả chức năng Đăng nhập
+Tên UC
+Đăng nhập.
+Actor
+Nhân viên, quản lý.
+Mô tả UC
+Cho phép nhân viên đăng nhập hệ thống bằng cách đăng nhập tài khoản và mật khẩu mà quản lý cấp
+Tiền điều kiện
+Nhân viên chọn chức năng ” Đăng nhập” từ giao diện hệ thống. Nhân viên đã được cấp tài khoản trong hệ thống.
+Luồng sự kiện chính
+Hệ thống hiển thị form đăng nhập và yêu cầu người dung nhập tài khoản, password.
+Hệ thống kiểm tra tính xác thực của thông tin của người dùng có hợp lệ hay không.
+Hệ thống thông báo đăng nhập thành công và chuyển hướng đến trang chức năng.
+Luồng sự kiện phụ
+Hệ thống thông báo nhập username, password không đúng.
+Yêu cầu người dùng nhập lại.
+b)Usecase Quản lý sản phẩm
+*Đặc tả chức năng “Thêm sản phẩm”.
+Bảng đặc tả chức năng thêm sản phẩm
+Tên UC
+Thêm sản phẩm.
+Actor
+Nhân viên , quản lý .
+Mô tả UC
+Quản lý, Nhân viên có thể đăng nhập vào hệ thống và thêm mới một sản phẩm.
+Tiền điều kiện
+Quản lý, Nhân viên phải đăng nhập vào hệ thống và có yêu cầu được thêm một sản phẩm mới.
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ.
+Chọn “Quản lý sản phẩm”.
+Sau khi chọn “Thêm sản phẩm”, hệ thống sẽ chuyển hướng nhân viên đến mục thêm sản phẩm.
+Trong mục thêm sản phẩm này nhân viên phải điền đầy đủ thông tin hệ thống yêu cầu như (mã sản phẩm, tên sản phẩm, danh mục, giá nhập, giá bán, số lượng, nhà cung cấp, mô tả và trạng thái,..).
+Nếu thành công: Sản phẩm mới sẽ được thêm vào cơ sở dữ liệu và cập nhập lại hệ thống,hệ thống sẽ hiển thị ”Thêm thành công”.
+Luồng sự kiện phụ
+Không thành công: Hệ thống sẽ báo lỗi hệ thống hiển thị “Thêm không thành công”,và yêu cầu nhập lại.
+Nếu nhập sai hay thiếu trường nào cũng hiển thị lỗi ngay ở trường đó và cầu Nhân viên nhập lại.
+*Đặc tả chức năng “Sửa sản phẩm”.
+Bảng đặc tả chức năng sửa sản phẩm
+Tên UC
+Sửa sản phẩm.
+Actor
+Nhân viên , quản lý.
+Mô tả UC
+Nhân viên có thể đăng nhập vào hệ thống và sửa sản phẩm của cửa hàng.
+Tiền điều kiện
+Nhân viên phải đăng nhập vào hệ thống và có yêu cầu sửa lại sản phẩm của cửa hàng.
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ.
+Nhân viên chọn “Quản lý sản phẩm”
+Chọn một sản phẩm cần sửa,hệ thống sẽ điều hướng nhân viên đến mục sửa sản phẩm
+Trong mục sửa sản phẩm sẽ có thông tin của sản phẩm muốn sửa như (mã sản phẩm, tên sản phẩm, danh mục, giá nhập, giá bán, số lượng, nhà cung cấp, mô tả và trạng thái,..).
+Nhân viên muốn sửa thông tin mình muốn.
+Sau khi sửa lại thông tin, Nhân viên ấn “ Cập nhập” hệ thống sẽ kiểm tra tất cả các thông tin.
+Nếu thành công: Sản phẩm sẽ được cập nhập lại trong cơ sở dữ liệu và hiển thị lên hệ thống, hệ thống hiển thị  “Sửa thành công”.
+Luồng sự kiện phụ
+Không thành công: Hệ thống sẽ báo lỗi hệ thống hiển thị “Sửa không thành công”,và yêu cầu nhập lại.
+Nếu nhập sai hay thiếu trường nào cũng hiển thị lỗi ngay ở trường đó và cầu Nhân viên nhập lại.
+*Đặc tả chức năng “Xóa sản phẩm”.
+Bảng đặc tả chức năng xóa sản phẩm
+Tên UC
+Xóa sản phẩm.
+Actor
+Nhân viên, quản lý.
+Mô tả UC
+Nhân viên có thể xóa một sản phẩm không còn sử dụng nữa.
+Tiền điều kiện
+Nhân viên phải đăng nhập vào hệ thống và kiểm tra sản phẩm không dùng nữa thì có thể xóa đi.
+Luồng sự kiện chính
+Nhân viên vào hệ thống chọn mục “Quản lý sản phẩm”.
+Chọn sản phẩm muốn xóa.
+Nhân viên thực hiện xóa sản phẩm, hệ thống sẽ hiển thị xác nhận rằng nhân viên có chắc chắn muốn xóa sản phẩm này không.
+Nếu “Đồng ý” thì hệ thống sẽ xóa bỏ sản phẩm ra khỏi cơ sở dữ liệu và cập nhập lại hệ thống, hệ thống hiển thị “xóa thành công”.
+Nếu “Không đồng ý” thì sẽ được tắt và hệ thống giữ nguyên không thay đổi.
+Luồng sự kiện phụ
+Nếu xóa thất bại thì hệ thống sẽ báo lỗi.
+*Đặc tả chức năng “Quản lý hàng hóa”.
+Bảng đặc tả chức năng quản lý hàng hóa
+Tên UC
+Quản lý hàng hóa.
+Actor
+Nhân viên , quản lý.
+Mô tả UC
+Nhân viên có thể quản lý được hàng hóa của cửa hàng của mình.
+Tiền điều kiện
+Nhân viên phải đăng nhập vào hệ thống và yêu cầu quản lý hàng hóa cửa hàng.
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ.
+Nhân viên chọn “Quản lý sản phẩm”.
+Chọn mục quản lý hàng hóa, hệ thống sẽ điều hướng nhân viên đến mục quản lý hàng hóa.
+Trong mục quản lý hàng hóa bao gồm các chức năng: “ thêm, sửa, xóa sản phẩm, xem danh sách và chi tiết sản phẩm; quản lý tồn kho và danh mục.”
+Khi chỉnh sửa thông tin, nhân viên cập nhật lại các thông tin  và nhấn “Cập nhật”. Hệ thống sẽ kiểm tra toàn bộ dữ liệu.
+Nếu thành công: Sản phẩm sẽ được cập nhập lại trong cơ sở dữ liệu và hiển thị lên hệ thống, hệ thống hiển thị  “Cập nhập thành công”.
+Luồng sự kiện phụ
+Không thành công: Hệ thống sẽ báo lỗi hệ thống hiển thị “Cập nhập không thành công”,và yêu cầu nhập lại.
+c)Usecase Quản lý hóa đơn
+*Đặc tả chức năng “Tạo hóa đơn”.
+Bảng đặc tả chức năng Tạo hóa đơn
+Tên UC
+Tạo hóa đơn
+Actor
+Nhân viên , quản lý .
+Mô tả UC
+Nhân viên đăng nhập vào hệ thống và tạo mới hóa đơn bán hàng bằng cách chọn khách hàng, thêm sản phẩm, xác nhận số lượng và lưu hóa đơn vào hệ thống.
+Tiền điều kiện
+Nhân viên phải đăng nhập vào hệ thống và yêu cầu tạo hóa đơn cho khách hàng.
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ.
+Nhân viện chọn “Quản lý hóa đơn”.
+Sau khi chọn “Tạo hóa đơn”, hệ thống sẽ chuyển hướng nhân viên đến mục tạo hóa đơn.
+Tại giao diện tạo hóa đơn, nhân viên thực hiện:
++ Chọn khách hàng.
++ Tìm và thêm sản phẩm vào hóa đơn.
++ Nhập số lượng cho từng sản phẩm.
++ Kiểm tra lại thông tin hóa đơn.
+Nhân viên nhấn “Lưu” để hoàn tất. Nếu thành công: Hóa đơn sẽ được ghi vào cơ sở dữ liệu và hệ thống hiển thị thông báo “Tạo hóa đơn thành công”.
+Luồng sự kiện phụ
+Không thành công: Hệ thống sẽ báo lỗi hệ thống hiển thị “Tạo hóa đơn không thành công”,và yêu cầu nhập lại.
+Nếu nhập sai hay thiếu trường nào cũng hiển thị lỗi ngay ở trường đó và cầu Nhân viên nhập lại
+*Đặc tả chức năng “Cập nhập hóa đơn”
+Bảng đặc tả chức năng Cập nhập hóa dơn
+Tên UC
+Cập nhập hóa đơn.
+Actor
+Nhân viên , quản lý.
+Mô tả UC
+Cho phép nhân viên chỉnh sửa thông tin hóa đơn.
+Tiền điều kiện
+Nhân viên đăng nhập vào hệ thống và chọn chức năng "Chỉnh sửa hóa đơn" từ giao diện tài khoản.
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ.
+Nhân viên chọn “Quản lý hóa đơn”.
+Sau khi chọn “Cập nhập hóa đơn”, hệ thống sẽ chuyển hướng nhân viên đến mục cập nhập hóa đơn.
+Hệ thống hiển thị form quản lý hóa đơn bao gồm các trường(mã hóa đơn, ngày lập, tên khách hàng, địa chỉ, số điện thoại, danh sách sản phẩm, tổng tiền,..)
+Nhân viên chọn một trường để sửa và sửa lại thông tin trường đó.
+Sau khi chọn “Lưu” hệ thống sẽ lưu thông tin hóa đơn mới vào cơ sở dữ liệu và hiển thị thông báo lưu thành công.
+Luồng sự kiện phụ
+Hệ thống hiển thị lưu thất bại nếu thông tin sai với quy định.
+*Đặc tả chức năng “Hủy đơn hàng”
+Bảng đặc tả chức năng hủy đơn hàng
+Tên UC
+Hủy đơn hàng.
+Actor
+Nhân viên , quản lý.
+Mô tả UC
+Cho phép nhân viên hủy đơn hàng.
+Tiền điều kiện
+Nhân viên đăng nhập vào hệ thống và chọn chức năng "Hủy đơn hàng" từ giao diện tài khoản.
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ.
+Nhân viên chọn “Quản lý hóa đơn”.
+Sau khi chọn “Hủy đơn hàng”, hệ thống sẽ chuyển hướng nhân viên đến mục hủy đơn hàng.
+Hệ thống hiển thị form quản lý hóa đơn bao gồm các trường(mã hóa đơn, ngày lập, tên khách hàng, địa chỉ, số điện thoại, danh sách sản phẩm, tổng tiền,..).
+Nhân viên chọn hóa đơn cần hủy và nhấn “Hủy đơn”.
+Hệ thống xác nhận hành động và, nếu đồng ý, cập nhật trạng thái hóa đơn là đã hủy.
+Luồng sự kiện phụ
+Không thành công: Hệ thống sẽ báo lỗi hệ thống hiển thị  “Hủy không thành công”, và yêu cầu nhập lại.
+d)Usecase Quản lý truyền thông
+* Đặc tả chức năng “Đăng bài viết”.
+Bảng đặc tả chức năng Đăng bài viết
+Tên UC
+Đăng bài viết.
+Actor
+Nhân viên , quản lý.
+Mô tả UC
+Nhân viên bán hàng co thể đăng nhập vào hệ thống và đăng một bài viết mới.
+Tiền điều kiện
+Nhân viên bán hàng phải đăng nhập vào hệ thống và có yêu cầu được thêm bài viết.
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ.
+Nhân viên bán hàng chọn “Quản lý truyền thông”
+Sau khi ấn “Đăng bài viết”, hệ thống sẽ chuyển nhân viên đến mục đăng bài viết.
+Tại giao diện này,nhân viên nhập đầy đủ các trường thông tin mà hệ thống yêu cầu (tiêu đề, nội dung, hình ảnh, mô tả,..).
+Sau khi hoàn tất thông tin, nhân viên nhấn “Đăng”.Hệ thống sẽ thực hiện kiểm tra tính hợp lệ của tất cả các trường dữ liệu.
+Nếu thành công: Bài viết được lưu vào cơ sở dữ liệu và hiển thị trong danh sách bài viết truyền thông.
+Luồng sự kiện phụ
+Nếu không thành công: Hệ thống thông báo lỗi và yêu cầu nhân viên kiểm tra và bổ sung thông tin.
+* Đặc tả chức năng “Chỉnh sửa bài viết”.
+Bảng đặc tả chức năng Chỉnh sửa bài viết
+Tên UC
+Chỉnh sửa bài viết.
+Actor
+Quản lý.
+Mô tả UC
+Nhân viên bán hàng có thể đăng nhập vào hệ thống và sửa một bài viết của nhân viên khác.
+Tiền điều kiện
+Nhân viên bán hàng phải đăng nhập vào hệ thống và có yêu cầu sửa lại thông tin cho bài viết.
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ.
+Nhân viên chọn “Quản lý truyền thông”.
+Chọn một bài viết cần sửa, hệ thống sẽ điều hướng nhân viên bán hàng đến mục sửa bài viết.
+Luồng sự kiện phụ
+Không thành công: website sẽ báo lỗi và hiển thị “sửa không thành công”, yêu cầu nhân viên bán hàng nhập lại
+Nếu nhập sai hay thiếu trường nào cũng phải hiển thị lỗi ngay ở trường đó và yêu cầu nhân viên bán hàng nhập lại.
+* Đặc tả chức năng “Xóa bài viết”.
+Bảng đặc tả chức năng Xóa bài viết
+Tên UC
+Xóa bài viết.
+Actor
+Nhân viên , quản lý .
+Mô tả UC
+Nhân viên bán hàng có thể xóa một bài viết không còn sử dụng nữa.
+Tiền điều kiện
+Nhân viên bán hàng phải đăng nhập vào hệ thống và kiểm tra bài viết nào của nhân viên không dùng nữa thì có thể xóa đi.
+Luồng sự kiện chính
+Nhân viên bán hàng vào hệ thống chọn mục “Quản lý truyền thông”.
+Chọn bài viết xóa.
+Nhân viên bán hàng thực hiện xóa bài viết, hệ thống sẽ hiển thị xác nhận rằng nhân viên bán hàng có chắc chắn muốn xóa bài viết này không.
+Nếu “Đồng ý” thì hệ thống sẽ xóa bài biết ra khỏi cơ sở dữ liệu và cập nhập lại hệ thống, hệ thống sẽ hiển thị  “xóa thành công”.
+Nếu “Không đồng ý” thì sẽ được tắt và hệ thống sẽ giữ nguyên không thay đổi.
+Luồng sự kiện phụ
+Nếu xóa thất bại hệ thống sẽ báo lỗi.
+e)Usecase Quản lý khách hàng.
+* Đặc tả chức năng “ Thêm khách hàng ”.
+Bảng đặc tả chức năng Thêm khách hàng
+Tên UC
+Thêm khách hàng
+Actor
+Nhân viên , Quản lý .
+Mô tả UC
+Nhân viên thêm thông tin khách hàng mới gồm : Họ tên , sđt ,  email , năm sinh ,  sở thích v.v. vào tập dữ liệu khách hàng .
+Tiền điều kiện
+Nhân viên phải đăng nhập vào hệ thống .
+Luồng sự kiện chính
+-Tác nhân đăng nhập vào hệ thống , chọn chức năng quản lý khách hàng .  Hệ thống hiển thị danh sách khách hàng .
+- Tác nhân chọn chức năng Thêm khách hàng . Hệ thống hiển thị giao diện Thêm khách hàng .
+- Tác nhân nhập các thông tin của khách hàng mới . Hệ thống kiểm tra định dạng của các thông tin khách hàng .
+- Nếu các thông tin này đúng thì hệ thống lưu thông tin khách hàng vào CSDL và thông báo Thêm khách hàng thành công.
+Luồng sự kiện phụ
+Khi tác nhân nhập thiếu thông tin , sai định dạng hoặc khách đã được lưu trước đó thì hệ thống sẽ yêu cầu nhập lại .
+* Đặc tả chức năng “ Cập nhập thông khách hàng ”.
+Bảng đặc tả chức năng Cập nhập thông tin khách hàng
+Tên UC
+Cập nhập thông tin khách hàng .
+Actor
+Nhân viên.
+Mô tả UC
+Nhân viên có thể vào hệ thống và cập nhập thông tin của khách hàng .
+Tiền điều kiện
+Nhân viên phải đăng nhập vào hệ thống và yêu cầu cập nhập thông tin khách hàng .
+Luồng sự kiện chính
+- Hệ thống hiển thị trang chủ quản lý khách hàng.
+- Nhân viên chọn Cập nhập thông tin khách hàng
+- Hệ thống hiển thị giao diện thông tin của khách hàng. Yêu cầu chọn thông tin cần sửa .
+- Nhân viên chọn thông tin cần sửa và nhập thông tin mới .
+- Nếu nhập thông tin mới đúng định dạng hệ thống sẽ cập nhập lại thông tin khách hàng trong tập dữ liệu khách hàng và thông “ “báo cập nhập thành công ”.
+Luồng sự kiện phụ
+Nếu sai định dạng , hệ thống sẽ hiển thị “ Cập nhập  không thành công” và thông tin sẽ được giữ nguyên .
+* Đặc tả chức năng “ Tìm kiếm khách hàng ”.
+Bảng đặc tả chức năng Tìm kiếm khách hàng
+Tên UC
+Tìm kiếm khách hàng
+Actor
+Nhân viên .
+Mô tả UC
+Nhân viên có thể tìm kiếm bất kì khách hàng nào trên hệ thống nếu đã Thêm thông tin khách hàng trước đó .
+Tiền điều kiện
+Nhân viên phải đăng nhập vào hệ thống .
+Luồng sự kiện chính
+Nhân viên đăng nhập vào hệ thống , chọn chức năng tìm kiếm khách hàng . Hệ thống hiển thị giao diện tìm kiếm . Nhân viên nhập thông tin khách hàng để tìm kiếm ( có thể tìm kiếm dựa trên : Họ tên , sđt , email ) . Hệ thống kiểm tra thông tin . Nếu thông tin khách hàng tìm kiếm trùng khớp với thông tin trong tập CSDL khách hàng thì hệ thống sẽ hiện đầy đủ thông tin của khách hàng.
+Luồng sự kiện phụ
+Thông tin tìm kiếm không có trong CSDL khách hàng thì hệ thống sẽ thông báo “ Không tìm thấy khách hàng ”.
+* Đặc tả chức năng “ Xóa khách hàng ”.
+Bảng đặc tả chức năng Xóa khách hàng
+Tên UC
+Xóa khách hàng
+Actor
+Nhân viên
+Mô tả UC
+Nhân viên có thể xóa thông tin khách hàng .
+Tiền điều kiện
+Nhân viên phải đăng nhập vào hệ thống và chọn quản lý khách hàng .
+Luồng sự kiện chính
+- Tại giao diện quản lý khách hàng , nhân viên chọn Xóa khách hàng .
+- Hệ thống yêu cầu chọn khách hàng cần xóa.
+- Nhân viên chọn khách hàng muốn xóa.
+- Hệ thống sẽ thông báo “ Có chắc chắn muốn xóa khách hàng không ” Và hiển thị 2 lựa chọn “ Có ” hoặc “ Không ”.
+- Nhân viên xác nhận lại , nếu chọn có thông tin khách hàng sẽ được xóa .
+- Hệ thống sẽ hiển thị thông báo “ Xóa thành công ”.
+Luồng sự kiện phụ
+Nếu nhân viện chọn không hệ thông sẽ quay lại giao diện ban đầu và giữ lại giữ liệu khách hàng.
+3.2.2.2.2 Quản lý
+a)Usecase tài khoản
+Đặc tả chức năng “Đăng nhập”.
+Bảng đặc tả chức năng Đăng nhập
+Tên UC
+Đăng nhập.
+Actor
+Quản lý.
+Mô tả UC
+Cho phép quản lý đăng nhập hệ thống bằng cách đăng nhập tài khoản và mật khẩu
+Tiền điều kiện
+chọn chức năng ”Đăng nhập” từ giao diện hệ thống. Quản lý đã có tài khoản riêng trong hệ thống.
+Luồng sự kiện chính
+Hệ thống hiển thị form đăng nhập và yêu cầu người dung nhập tài khoản, password.
+Hệ thống kiểm tra tính xác thực của thông tin của người dùng có hợp lệ hay không.
+Hệ thống thông báo đăng nhập thành công và chuyển hướng đến trang chức năng.
+Luồng sự kiện phụ
+Hệ thống thông báo nhập username,password không đúng.
+Yêu cầu người dùng nhập lại.
+b) Usecase quản lý nhân viên
+Đặc tả chức năng “Thêm nhân viên”.
+Bảng đặc tả chức năng Thêm nhân viên
+Tên UC
+Thêm nhân viên
+Actor
+Quản lý
+Mô tả UC
+Quản lý có thể đăng nhập vào hệ thống và thêm mới một nhân viên và tạo tài khoản cho nhân viên đó
+Tiền điều kiện
+Quản lý phải đăng nhập vào hệ thống và có yêu cầu được thêm tài khoản cho nhân viên mới
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ
+Quản lý chọn “Quản lý nhân viên”
+Sau khi chọn “Thêm nhân viên”, hệ thống sẽ chuyển hướng quản lý đến mục thêm nhân viên
+Trong mục thêm tài khoản này quản lý phải điền tất cả [field] đầy đủ thông tin hệ thống yêu cầu như (sđt, tên, tuổi, ngày sinh, quê quán, ảnh….).
+Sau khi thêm đủ tất cả các trường dữ liệu, quản lý ấn “Thêm” để hệ thống kiểu tra tất cả các [field].
+Nếu thành công: Nhân viên mới sẽ được thêm vào cơ sở dữ liệu và cập nhật lại hệ thống, hệ thống hiển thị [toastmessage] = “thêm thành công”. Hệ thống sẽ gửi email xác nhận đến gmail của nhân viên được thêm.
+Luồng sự kiện phụ
+Không thành công: Hệ thống sẽ báo lỗi hệ thống hiển thị [toastmessage] = “Thêm không thành công”, và yêu cầu nhập lại.
+Nếu nhập sai hay thiếu trường nào cũng hiển thị lỗi ngay ở trường đó và yêu cầu Quản lý nhập lại
+Đặc tả chức năng “Cập nhật thông tin ”.
+Bảng đặc tả chức năng Cập nhật thông tin
+Tên UC
+Cập nhật thông tin
+Actor
+Quản lý
+Mô tả UC
+Quản lý có thể đăng nhập vào hệ thống và sửa một tài khoản của nhân viên
+Tiền điều kiện
+Quản lý phải đăng nhập vào hệ thống và có yêu cầu sửa lại thông tin cho nhân viên
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ
+Quản lý chọn “Quản lý tài khoản”
+Chọn một tài khoản cần sửa, hệ thống sẽ điều hướng Quản lý đến mục sửa tài khoản.
+Trong mục sửa tài khoản sẽ có thông tin của tài khoản muốn sửa cầu như (sđt, tên, tuổi, ngày sinh, quê quán, ảnh, ...).
+Quản lý sửa thông tin mình muốn.
+Sau khi sửa lại thông tin, Quản lý ấn “cập nhật” hệ thống sẽ kiểm tra tất cả các thông tin.
+Nếu thành công: Tài khoản sẽ được cập nhật lại trong cơ sở dữ liệu và hiển thị lại hệ thống, hệ thống hiển thị “sửa thành công”.
+Luồng sự kiện phụ
+Không thành công: website sẽ báo lỗi và hiển thị “sửa không thành công”, yêu cầu Quản lý nhập lại.
+Nếu nhập sai hay thiếu trường nào cũng phải hiển thị lỗi ngay ở trường đó và yêu cầu Quản lý nhập lại.
+Đặc tả chức năng “Xóa nhân viên”.
+Bảng đặc tả chức năng xóa tài khoản
+Tên UC
+Xóa nhân viên
+Actor
+Quản lý
+Mô tả UC
+Quản lý có thể xóa một tài khoản không còn sử dụng nữa.
+Tiền điều kiện
+Quản lý phải đăng nhập vào hệ thống và kiểm tra tài khoản nào của nhân viên không dùng nữa thì có thể xóa đi.
+Luồng sự kiện chính
+Quản lý vào hệ thống chọn mục Quản lý tài khoản.
+Chọn tài khoản muốn xóa.
+Quản lý thực hiện xóa tài khoản, hệ thống sẽ hiển thị xác nhận rằng quản lý có chắc chắn muốn xóa tài khoản này không.
+Nếu “Đồng ý” thì hệ thống sẽ xóa bỏ tài khoản ra khỏi cơ sở dữ liệu và cập nhập lại hệ thống, hệ thống hiển thị “xóa thành công”.
+Nếu “Không đồng ý” thì hệ thống giữ nguyên không thay đổi.
+Luồng sự kiện phụ
+Nếu xóa thất bại hệ thống sẽ báo lỗi.
+Usecase phân nhiệm vụ
+Đặc tả chức năng “Thêm nhiệm vụ”.
+Bảng đặc tả chức năng Thêm nhiệm vụ
+Tên UC
+Thêm nhiệm vụ
+Actor
+Quản lý
+Mô tả UC
+Quản lý có thể đăng nhập vào hệ thống và thêm mới một nhiệm vụ cho nhân viên.
+Tiền điều kiện
+Quản lý phải đăng nhập vào hệ thống và có yêu cầu được thêm nhiệm vụ cho nhân viên.
+Luồng sự kiện chính
+Quản lý chọn “phân nhiệm vụ”.
+Sau khi ấn “Thêm nhiệm vụ”, hệ thống sẽ chuyển hướng quản lý đến mục thêm nhiệm vụ.
+Trong mục thêm nhiệm vụ này quản lý phải điền tất cả [field] đầy đủ thông tin hệ thống yêu cầu như (tên nhiệm vụ, nhân viên nhận nhiệm vụ, …).
+Sau khi thêm đủ tất cả các trường dữ liệu, quản lý ấn “Thêm” để hệ thống kiểm tra tất cả thông tin.
+Nếu thành công: Nhiệm vụ mới sẽ được thêm vào cơ sở dữ liệu và cập nhật lại hệ thống, hệ thống hiển thị “thêm thành công”.
+Luồng sự kiện phụ
+Không thành công: Hệ thống sẽ báo lỗi hệ thống hiển thị  “Thêm không thành công” và yêu cầu nhập lại.
+Nếu nhập sai hay thiếu trường nào cũng hiển thị lỗi ngay ở trường đó và yêu cầu Quản lý nhập lại.
+Đặc tả chức năng “Sửa nhiệm vụ”.
+Bảng đặc tả chức năng Sửa nhiệm vụ
+Tên UC
+Sửa nhiệm vụ
+Actor
+Quản lý
+Mô tả UC
+Quản lý có thể đăng nhập vào hệ thống và sửa thông tin một nhiệm vụ.
+Tiền điều kiện
+Quản lý phải đăng nhập vào hệ thống và có yêu cầu sửa lại thông tin cho nhân viên
+Luồng sự kiện chính
+Quản lý chọn “Phân nhiệm vụ”.
+Chọn một nhiệm vụ cần sửa, hệ thống sẽ điều hướng Quản lý đến mục sửa nhiệm vụ.
+Trong mục sửa nhiệm vụ sẽ có thông tin của nhiệm vụ muốn sửa.
+Quản lý sửa thông tin mình muốn.
+Sau khi sửa lại thông tin, Quản lý ấn “Sửa” hệ thống sẽ kiểm tra tất cả các thông tin.
+Nếu thành công: Nhiệm vụ sẽ được cập nhật lại trong cơ sở dữ liệu và hiển thị lại hệ thống, hệ thống hiển thị “Cập nhật thành công”.
+Luồng sự kiện phụ
+Không thành công: website sẽ báo lỗi và hiển thị  “Cập nhật không thành công”, yêu cầu Quản lý nhập lại.
+Nếu nhập sai hay thiếu trường nào cũng phải hiển thị lỗi ngay ở trường đó và yêu cầu Quản lý nhập lại.
+Đặc tả chức năng “Xóa nhiệm vụ”.
+Bảng đặc tả chức năng Xóa nhiệm vụ
+Tên UC
+Xóa nhiệm vụ
+Actor
+Quản lý
+Mô tả UC
+Quản lý có thể xóa một nhiệm vụ đã hoàn thành.
+Tiền điều kiện
+Quản lý phải đăng nhập vào hệ thống và kiểm tra nhiệm vụ nào của nhân viên đã hoàn thành thì có thể xóa đi.
+Luồng sự kiện chính
+Quản lý vào hệ thống chọn mục phân nhiệm vụ.
+Chọn nhiệm vụ muốn xóa.
+Quản lý thực hiện xóa nhiệm vụ, hệ thống sẽ hiển thị xác nhận rằng quản lý có chắc chắn muốn xóa nhiệm vụ này không.
+Nếu “Đồng ý” thì hệ thống sẽ xóa bỏ nhiệm vụ ra khỏi cơ sở dữ liệu và cập nhập lại hệ thống, hệ thống hiển thị “Xóa thành công”.
+Nếu “Không đồng ý” thì hệ thống giữ nguyên không thay đổi.
+Luồng sự kiện phụ
+Nếu xóa thất bại hệ thống sẽ báo lỗi.
+c)Usecase quản lý nhà cung cấp
+Đặc tả chức năng “Thêm nhà cung cấp”.
+Bảng đặc tả chức năng Thêm nhà cung cấp
+Tên UC
+Thêm nhà cung cấp
+Actor
+Quản lý
+Mô tả UC
+Quản lý có thể đăng nhập vào hệ thống và thêm mới một nhà cung cấp
+Tiền điều kiện
+Quản lý phải đăng nhập vào hệ thống và có yêu cầu được thêm nhà cung cấp mới.
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ.
+Quản lý chọn “Quản lý nhà cung cấp”.
+Sau khi ấn “Thêm nhà cung cấp”, hệ thống sẽ chuyển hướng quản lý đến mục thêm nhà cung cấp..
+Trong mục thêm nhà cung cấp này quản lý phải điền tất cả đầy đủ thông tin hệ thống yêu cầu như (sđt, tên, địa chỉ, ….).
+Sau khi thêm đủ tất cả các trường dữ liệu, quản lý ấn “Thêm” để hệ thống kiểu tra tất cả các thông tin.
+Nếu thành công: Nhà cung cấp mới sẽ được thêm vào cơ sở dữ liệu và cập nhật lại hệ thống, hệ thống hiển thị “thêm thành công”.
+Luồng sự kiện phụ
+Không thành công: Hệ thống sẽ báo lỗi hệ thống hiển thị “Thêm không thành công” và yêu cầu nhập lại.
+Nếu nhập sai hay thiếu trường nào cũng hiển thị lỗi ngay ở trường đó và yêu cầu Quản lý nhập lại.
+Đặc tả chức năng “Cập nhật thông tin nhà cung cấp”.
+Bảng đặc tả chức năng Cập nhật thông tin nhà cung cấp
+Tên UC
+Cập nhật thông tin nhà cung cấp
+Actor
+Quản lý
+Mô tả UC
+Quản lý có thể đăng nhập vào hệ thống và sửa thông tin một nhà cung cấp.
+Tiền điều kiện
+Quản lý phải đăng nhập vào hệ thống và có yêu cầu sửa lại thông tin cho nhân viên
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ.
+Quản lý chọn “Quản lý nhà cung cấp”.
+Chọn một nhà cung cấp cần sửa, hệ thống sẽ điều hướng Quản lý đến mục sửa nhà cung cấp.
+Trong mục sửa nhà cung cấp sẽ có thông tin của nhà cung cấp muốn sửa cầu như (sđt, tên, địa chỉ, ….).
+Quản lý sửa thông tin mình muốn.
+Sau khi sửa lại thông tin, Quản lý ấn “cập nhật” hệ thống sẽ kiểm tra tất cả các thông tin.
+Nếu thành công: Nhà cung cấp sẽ được cập nhật lại trong cơ sở dữ liệu và hiển thị lại hệ thống, hệ thống hiển thị “sửa thành công”.
+Luồng sự kiện phụ
+Không thành công: website sẽ báo lỗi và hiển thị “sửa không thành công”, yêu cầu Quản lý nhập lại.
+Nếu nhập sai hay thiếu trường nào cũng phải hiển thị lỗi ngay ở trường đó và yêu cầu Quản lý nhập lại.
+Đặc tả chức năng “Xóa nhà cung cấp”.
+Bảng đặc tả chức năng Xóa nhà cung cấp
+Tên UC
+Xóa nhà cung cấp
+Actor
+Quản lý
+Mô tả UC
+Quản lý có thể xóa một nhà cung cấp không còn sử dụng nữa.
+Tiền điều kiện
+Quản lý phải đăng nhập vào hệ thống và kiểm tra nhà cung cấp nào của nhân viên không dùng nữa thì có thể xóa đi.
+Luồng sự kiện chính
+Quản lý vào hệ thống chọn mục Quản lý nhà cung cấp.
+Chọn nhà cung cấp muốn xóa.
+Quản lý thực hiện xóa nhà cung cấp, hệ thống sẽ hiển thị xác nhận rằng quản lý có chắc chắn muốn xóa nhà cung cấp này không.
+Nếu “Đồng ý” thì hệ thống sẽ xóa bỏ nhà cung cấp ra khỏi cơ sở dữ liệu và cập nhập lại hệ thống, hệ thống hiển thị “xóa thành công”.
+Nếu “Không đồng ý” thì hệ thống giữ nguyên không thay đổi.
+Luồng sự kiện phụ
+Nếu xóa thất bại hệ thống sẽ báo lỗi.
+Biểu đồ hoạt động Xóa nhà cung cấp:
+d)Usecase thống kê
+Đặc tả chức năng “Thống kê”.
+Bảng đặc tả chức năng Thống kê
+Tên UC
+Thống kê
+Actor
+Quản lý
+Mô tả UC
+Bảng thống kê báo cáo tổng quan hệ thống quán
+Tiền điều kiện
+Người dùng đã đăng nhập vào hệ thống
+Luồng sự kiện chính
+Hệ thống hiển thị trang chủ.
+Quản lý chọn “Thống kê”.
+Giao diện thống kê hiện lên, quản lý thực hiện chọn mục thống kê như số lương khách,số lượng giao dịch,hay mức độ sử dụng dịch vụ.
+Hệ thống tự động cập nhật từ cơ sở dữ liệu và hiển thị dưới dạng biểu đồ, bảng.
+.
+Luồng sự kiện phụ
+Không có
+3.2.2.2.3 Khách hàng.
+a) Usecase tài khoản
+Đặc tả chức năng “Đăng ký tài khoản”
+Tên UC
+Đăng ký tài khoản
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng có thể đăng ký tài khoản trên hệ thống
+Tiền điều kiện
+Không có
+Luồng sự kiện chính
+-Khách hàng chọn chức năng đăng ký ở trang chủ.
+-Hệ thống sẽ hiện thị ra giao diện của chức năng đăng ký.
+-Khách hàng sẽ điền các thông tin như: Tên, số điện thoại, địa chỉ, email,...
+-Hệ thống sẽ kiểm tra các thông tin khách hàng nhập nếu hợp lệ sẽ gửi mã OTP về số điện thoại của khách hàng.
+-Khách hàng sẽ nhập mã OTP xác nhận.
+-Nếu mã OTP đúng hệ thông sẽ lưu thông tin tài khoản vào CSDL và hiển thị”Đăng ký thành công”.
+Luồng sự kiện phụ
+-Nếu thông tin tài khoản sai,hệ thống yêu cầu nhập lại.
+-Nhập mã OTP sai hệ thống sẽ yêu cầu nhập lại mã OTP.
+Đặc tả chức năng “Đăng nhập”
+Tên UC
+Đăng nhập
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng đăng nhập tài khoản để sử dụng các chức năng của hệ thống
+Tiền điều kiện
+Khách hàng phải đăng ký tài khoản
+Luồng sự kiện chính
+-Khách hàng chọn chức năng đăng nhập ở trang chủ hệ thống.
+-Hệ thống sẽ hiện thị giao diện đăng nhập
+-Khách hàng nhập tên đăng nhập và mật khẩu của khách hàng .
+-Hệ thống sẽ đối chiếu với CSDL nếu hợp lệ sẽ hiển thị “Đăng nhập thành công” và hiện thị giao diện sau khi đăng nhập
+Luồng sự kiện phụ
+-Nếu khách hàng nhập sai tên đăng nhập hoặc mật khẩu sẽ hiện thị”Tên đăng nhập hoặc mật khẩu không đúng” và yêu cầu khách hàng nhập lại.
+Đặc tả chức năng “Quên mật khẩu”
+Tên UC
+Quên mật khẩu
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng tạo mật khẩu mới khi quên
+Tiền điều kiện
+Đã có tài khoản trong hệ thống
+Luồng sự kiện chính
+-Khách hàng chọn chức năng Quên mật khẩu.
+-Hệ thống sẽ hiện thị giao diện lấy lại mật khẩu yêu cầu nhập thông tin.
+-Khách hàng sẽ nhập thông tin số điện thoại.
+-Hệ thống sẽ kiểm tra thông tin đối chiếu với CSDL nếu hợp lệ sẽ gửi mã OTP tới số điện thoại.
+-Khách hàng nhập mã OTP.
+-Hệ thống sẽ kiểm tra mã OTP nếu hợp lệ sẽ yêu cầu khách hàng tạo mật khẩu mới
+-Khách hàng tạo mật khẩu mới và ấn nút”Tạo mật khẩu”
+-Sau khi khách hàng tạo thành công hệ thống trở về giao diện đăng nhập.
+Luồng sự kiện phụ
+-Nếu thông tin số điện thoại không hợp lệ,hệ thống yêu cầu nhập lại.
+-Nếu khách hàng nhập mã OTP không hợp lệ hệ thống sẽ yêu cầu nhập lại.
+Đặc tả chức năng “Cập nhật thông tin”
+Tên UC
+Cập nhật thông tin
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng có thể cập nhật thông tin tài khoản
+Tiền điều kiện
+Đăng nhập vào hệ thống
+Luồng sự kiện chính
+-Khách hàng chọn chức năng”Tài khoản”
+-Sau đó chọn chức năng”Cập nhật thông tin”, hệ thống hiển thị giao diện cập nhật thông tin khách hàng.
+-Khách hàng nhập những thông tin muốn cập nhật như:Tên,số điện thoại,địa chỉ,... và ấn nút”Cập nhật”
+-Hê thống sẽ kiểm tra thông tin nếu đúng định dạng thì lưu thông tin mới vào CSDL và hiển thị màn hình”Cập nhật thành công”.
+Luồng sự kiện phụ
+-Nếu nhập sai định dạng hệ thống yêu cầu nhập lại và hiển thị”Cập nhật không thành công”.
+Đặc tả chức năng “Đổi mật khẩu”
+Tên UC
+Đổi mật khẩu
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng có thể đổi mật khẩu mới.
+Tiền điều kiện
+Đăng nhập vào hệ thống
+Luồng sự kiện chính
+-Khách hàng chọn chức năng”Tài khoản”
+-Sau đó chọn chức năng”Đổi mật khẩu”,hệ thống sẽ hiển thị giao diện chức năng “Đổi mật khẩu”.
+-Khách hàng nhập mật khẩu cũ và mật khẩu mới sau đó ấn”Đổi mật khẩu”.
+-Hệ thống lưu mật khẩu mới vào CSDL và hiển thị”Đổi mật khẩu thành công”.
+Luồng sự kiện phụ
+Không có
+Đặc tả chức năng “Liên kết tài khoản”
+Tên UC
+Liên kết tài khoản
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng có thể liên kết tài khoản
+Tiền điều kiện
+Đăng nhập vào hệ thống
+Luồng sự kiện chính
+-Khách hàng chọn chức năng”Tài khoản”
+-Sau đó chọn chức năng”Liên kết tài khoản”,hệ thống sẽ hiển thị giao diện chức năng “Liên kết tài khoản”.
+-Khách hàng chọn tài khoản muốn liên kết như: Facebook, Zalo, Google,..
+-Hệ thống kiểm tra thông tin tài khoản liên kết nếu hợp lệ và hiển thị”Liên kết thành công”.
+Luồng sự kiện phụ
+-Nếu tài khoản liên kết không hợp lệ,hệ thống hiển thị”Liên kết không thành công” và yêu cầu chọn lại tài khoản.
+b) Usecase xem sản phẩm
+Đặc tả chức năng “Xem sản phẩm”
+Tên UC
+Xem sản phẩm
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng xem thông tin sản phẩm
+Tiền điều kiện
+Không có
+Luồng sự kiện chính
+-Khách hàng sẽ chọn thanh tìm kiếm ở trang chủ hệ thống và nhập tên sản phẩm muốn tìm hoặc khách hàng có thể chọn các sản phẩm được đề xuất ở trang chủ.
+-Hệ thống sẽ hiện thị sản phẩm mà khách hàng cần tìm kiếm.
+-Khách hàng chọn sản phẩm sau đó xem các thông tin chi tiết và hình ảnh của sản phẩm.
+-Khách hàng chọn chức năng ”Xem đánh giá sản phẩm”.
+-Hệ thống sẽ hiện thị các đánh giá mà những khách hàng trước đã mua hàng và đánh giá.
+Luồng sự kiện phụ
+-Nếu khách hàng nhập tên sản phẩm không tồn tại, hệ thống hiển thị”Sản phẩm không tồn tại”.
+c) Usecase quản lý giỏ hàng
+Đặc tả chức năng “Thêm sản phẩm vào giỏ hàng”
+Tên UC
+Thêm sản phẩm vào giỏ hàng
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng thêm sản phẩm muốn mua vào giỏ hàng
+Tiền điều kiện
+Đăng nhập vào hệ thống
+Luồng sự kiện chính
+-Khách hàng chọn sản phẩm muốn mua hàng và số lượng sau đó chọn”Thêm vào giỏ hàng”.
+-Hệ thống hiển thị”Thêm giỏ hàng thành công” và đẩy những sản phẩm được chọn vào giỏ hàng.
+-Khách hàng chọn chức năng”Quản lý giỏ hàng”
+-Hệ thống hiển thị ra giỏ hàng
+-Khách hàng có thể kiểm tra lại sản phẩm được thêm vào giỏ hàng và note ghi chú cho nhân viên khi đặt hàng ví dụ:giảm đường hoặc đá.
+Luồng sự kiện phụ
+Không có
+Đặc tả chức năng “Cập nhật giỏ hàng”
+Tên UC
+Cập nhật giỏ hàng
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng cập nhật giỏ hàng
+Tiền điều kiện
+Đăng nhập vào hệ thống
+Luồng sự kiện chính
+-Khách hàng chọn chức năng”Quản lý giỏ hàng”.
+-Hệ thống hiển thị giỏ hàng.
+-Khách hàng thay đổi và thêm những sản phẩm trong giỏ hàng hoặc chỉnh sửa số lượng và ấn”Cập nhật”.
+-Hệ thống sẽ lưu lại thay đổi và hiển thị”Cập nhật giỏ hàng thành công”.
+Luồng sự kiện phụ
+Không có
+Đặc tả chức năng “Xóa giỏ hàng”
+Tên UC
+Xóa giỏ hàng
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng xóa giỏ hàng
+Tiền điều kiện
+Đăng nhập vào hệ thống
+Luồng sự kiện chính
+-Khách hàng chọn chức năng”Quản lý giỏ hàng”.
+-Hệ thống hiển thị giỏ hàng.
+-Khách hàng chọn  “Xóa giỏ hàng”.
+-Hệ thống sẽ hiển thị”Bạn có muốn xóa giỏ hàng”.
+-Khách hàng chọn “Có”.
+-Hệ thống  sẽ xóa giỏ hàng và hiển thị”Xóa giỏ hàng thành công”.
+Luồng sự kiện phụ
+Không có
+d) Usecase đặt hàng
+Đặc tả chức năng “Sửa thông tin giao hàng”
+Tên UC
+Sửa thông tin giao hàng
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng sửa thông tin giao hàng
+Tiền điều kiện
+Đăng nhập vào hệ thống
+Luồng sự kiện chính
+-Khách hàng chọn Giỏ hàng .
+-Hệ thống hiển thị ra giỏ hàng đã có sẵn những sản phẩm mà khách hàng đã thêm.
+-Khách hàng chọn chức năng”Đặt hàng”.
+-Hệ thống sẽ hiển thị giao diện của chức năng đặt hàng.
+-Khách hàng chọn chức năng " Sửa thông tin giao hàng”.
+-Hệ thống hiển thị giao diện”Sửa thông tin giao hàng”.
+-Khách hàng sửa thông tin như:Tên,Số điện thoại,Địa chỉ giao hàng và ấn “Thay đổi”.
+-Nếu đúng định dạng các dữ liệu thì hệ thống sẽ lưu vào CSDL và hiển thị”Thay đổi thành công”.
+Luồng sự kiện phụ
+-Nếu sai định dạng,hệ thống sẽ hiển thị”Thay đổi không thành công” và thông tin sẽ được giữ nguyên.
+Đặc tả chức năng “Nhắn tin với cửa hàng”
+Tên UC
+Nhắn tin với cửa hàng
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng trao đổi thông tin với cửa hàng
+Tiền điều kiện
+Đăng nhập vào hệ thống
+Luồng sự kiện chính
+-Khách hàng chọn chức năng”Nhắn tin với cửa hàng”.
+-Hệ thống hiển thị giao diện đoạn chat với cửa hàng.
+-Khách hàng nhập tin nhắn và ấn “Gửi”.
+-Hệ thống sẽ lưu lại tin nhắn và gửi tới nhân viên cửa hàng.
+Luồng sự kiện phụ
+Không có
+Đặc tả chức năng “Theo dõi tình trạng đơn hàng”
+Tên UC
+Theo dõi tình trạng đơn hàng
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng có thể theo dõi tình trạng đơn hàng
+Tiền điều kiện
+-Đăng nhập vào hệ thống.
+-Đặt đơn hàng
+Luồng sự kiện chính
+-Sau khi khách hàng đặt đơn hàng.
+-Hệ thống sẽ hiển thị giao diện “Đơn hàng”.
+-Khách hàng chọn xem "Theo dõi đơn hàng”.
+-Hệ thống hiển thị trạng thái đơn hàng như:Đang chuẩn bị,Đang giao hàng,....
+-Khách hàng có thể xem đơn hàng đang trong trạng thái nào.
+Luồng sự kiện phụ
+Không có
+Đặc tả chức năng “Hủy đơn hàng”
+Tên UC
+Hủy đơn hàng
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng hủy đơn hàng khi không còn nhu cầu
+Tiền điều kiện
+-Đăng nhập vào hệ thống.
+-Đặt đơn hàng
+Luồng sự kiện chính
+-Khách hàng chọn “Đơn hàng”.
+-Hệ thống sẽ hiển thị giao diện “Đơn hàng”.
+-Khách hàng chọn chức năng”Hủy đơn hàng”.
+-Hệ thống yêu cầu người dùng chọn lý do hủy.
+-Khách hàng chọn lý do và ấn “Xác nhận”.
+-Hệ thống sẽ kiểm tra tình trạng đơn hàng,nếu đơn hàng ở trạng thái”Đang chuẩn bị” thì đơn hàng sẽ được hủy và hiển thị”Hủy đơn hàng thành công”
+Luồng sự kiện phụ
+Nếu đơn hàng ở trạng thái”Đang giao hàng” thì đơn hàng sẽ không được hủy và hiển thị”Hủy đơn hàng không thành công”
+e) Usecase thanh toán
+Đặc tả chức năng “Sử dụng voucher”
+Tên UC
+Sử dụng voucher
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng sử dụng voucher để giảm giá cho hóa đơn của mình
+Tiền điều kiện
+Đăng nhập vào hệ thống
+Luồng sự kiện chính
+-Khách hàng chọn chọn chức năng”Thanh toán”
+-Hệ thống hiển thị ra giao diện”Thanh toán”
+-Khách hàng chọn “Sử dụng voucher” sau đó chọn voucher muốn sử dụng và ấn”Áp dụng”
+-Hệ thống kiểm tra voucher hợp lệ thì sẽ hiển thị”Đã sử dụng voucher”.
+Luồng sự kiện phụ
+Nếu voucher không hợp lệ hệ thống yêu cầu chọn voucher khác
+Đặc tả chức năng “Chọn phương thức thanh toán”
+Tên UC
+Chọn phương thức thanh toán
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng chọn phương thức thanh toán
+Tiền điều kiện
+Đăng nhập hệ thống
+Luồng sự kiện chính
+-Khách hàng chọn chọn chức năng”Thanh toán”
+-Hệ thống hiển thị ra giao diện”Thanh toán”
+-Khách hàng chọn “Chọn phương thức thanh toán” sau đó chọn phương thức muốn sử dụng như:Tiền mặt,Chuyển khoản,...
+-Nếu khách hàng chọn các phương thức thanh toán online hệ thống sẽ yêu cầu nhập mã PIN
+-Khách hàng nhập mã PIN
+-Hệ thống sẽ kiểm tra mã PIN nếu hợp lẽ sẽ hiển thị”Thanh toán thành công”.
+Luồng sự kiện phụ
+Mã PIN không hợp lệ,hệ thống yêu cầu nhập lại,nếu quá 5 lần sẽ bị khóa
+f) Usecase lịch sử mua hàng
+Đặc tả chức năng “Xem đơn đã mua”
+Tên UC
+Xem đơn đã mua
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng có thể xem lại những đơn mình đã mua .
+Tiền điều kiện
+Khách hàng phải đăng nhập vào hệ thống .
+Luồng sự kiện chính
+- Khi đã đăng nhập vào hệ thống, khách hàng chọn lịch sử mua hàng
+- Hệ thống hiển thị giao diện LSMH.
+- Khách hàng chọn Xem đơn đã mua .
+- Hệ thống hiển thị danh sách các đơn đã mua kèm ngày cụ thể .
+- Khách hàng có thể ấn vào đơn hàng để xem chi tiết .
+- Hệ thống sẽ hiện ra chi tiết đơn hàng “ giờ mua hàng , số lượng , yêu cầu riêng  v.v. ”
+Luồng sự kiện phụ
+Không có .
+Đặc tả chức năng “Mua lại đơn hàng”
+Tên UC
+Mua lại đơn hàng
+Actor
+Khách hàng
+Mô tả UC
+Khách hàng có thể mua lại đơn mình đã mua trước đó .
+Tiền điều kiện
+Khách hàng phải đăng nhập vào hệ thống .
+Luồng sự kiện chính
+- Khách hàng đăng nhập vào và chọn mua lại đơn hàng . Hệ thống hiển thị giao diện mua lại đơn hàng .
+- Khách hàng có thể tìm kiếm theo ngày hoặc tên sản phẩm trong đơn để tối ưu . Hệ thống hiển thị chi tiết đơn hàng đó.
+- Khi đã chọn được đơn hàng muốn mua lại . Hệ thống sẽ hiển thị  giá hiện tại khách cần thanh toán và thông báo “ xác nhận mua lại ” và “ hủy bỏ”.
+-Nếu khách hàng xác nhận mua hàng . Hệ thống sẽ thông báo “ mua hàng thành công ”
+Luồng sự kiện phụ
+- Nếu “ hủy bỏ “ hệ thống sẽ báo “mua hàng không thành công”, và về lại giao diện trước đó.
+g) Usecase tương tác
+Đặc tả chức năng “Thêm đánh giá”
+Tên UC
+Thêm đánh giá .
+Actor
+Khách hàng .
+Mô tả UC
+Khách hàng có thể thêm đánh giá đối với mỗi sản phẩm .
+Tiền điều kiện
+Khách hàng phải đăng nhập hệ thống .
+Luồng sự kiện chính
+- Sau khi đăng nhâp vào hệ thống , khách hàng chọn tương tác.
+- Tại giao diện tương tác , khách hàng chọn thêm đánh giá .
+- Hệ thống hiển thị những sản phẩm khách hàng đã mua mà chưa dánh giá.
+- Khách hàng chọn sản phẩm và đánh giá . Hệ thống sẽ kiểm tra và lưu lại đánh giá của khách hàng vào CSDL .
+Luồng sự kiện phụ
+Không có .
+Đặc tả chức năng “Sửa đánh giá”
+Tên UC
+Sửa đánh giá .
+Actor
+Khách hàng.
+Mô tả UC
+Khách hàng có thể sửa lại đánh giá của mình về sản phẩm.
+Tiền điều kiện
+Khách hàng phải đăng nhập vào hệ thống và chọn tương tác.
+Luồng sự kiện chính
+Hệ thống hiển thị giao diện tương tác . Khách hàng chọn sửa đánh giá . Hệ thống sẽ hiển thị các đánh giá của khách hàng . Khách hàng chọn đánh giá cần sửa và sửa lại . Hệ thống sẽ thông báo “ xác nhận sửa đánh giá ” . Nếu xác nhận , dánh giá của khách hàng sẽ được cập nhập vào CSDL , hệ thống sẽ thông báo “Sửa đánh giá thành công” và hiển thị lại đánh giá sau khi cập nhập.
+Luồng sự kiện phụ
+Nếu khách hàng “ không xác nhận ” thì hệ thông báo “ thất bại ” và giữ lại đánh giá ban đầu của khách hàng.
+Đặc tả chức năng “Xóa đánh giá”
+Tên UC
+Xoá đánh giá.
+Actor
+Khách hàng.
+Mô tả UC
+Khách hàng có thể xoá đánh giá của mình đối với sản phẩm.
+Tiền điều kiện
+Khách hàng phải đăng nhập vào hệ thống.
+Luồng sự kiện chính
+- Khi đã đăng nhập vào hệ thống , khách hàng chọn tương tác và chọn xoá đánh giá.
+- Hệ thống hiển thị giao diện các đánh của khách hàng.
+- Khách hàng chọn đánh giá muốn xoá
+- Hệ thống yêu cầu xác nhận “ Chắc chắn xoá đánh giá ”.
+- Nếu khách hàng chọn “Có” thì đánh giá về sản phẩm sẽ được xoá .
+- Hệ thống thông báo “ Xoá đánh giá thành công”.
+Luồng sự kiện phụ
+Nếu khách hàng chọn “Không” thì hệ thống sẽ quay lại giao diện ban đầu , và giữ nguyên đánh giá.
+3.2.3. Biểu đồ hoạt động
+a) Nhân viên.
+Biểu đồ hoạt động Đăng nhập.
+b)Usecase Quản lý sản phẩm
+Biểu đồ hoạt động Thêm sản phẩm.
+Biểu đồ hoạt động sửa sản phẩm.
+Biểu đồ hoạt động Xoá sản phẩm.
+Biểu đồ hoạt hộng Quản lý hàng hoá.
+c)Usecase Quản lý hóa đơn
+Biểu đồ hoạt động Tạo hoá đơn
+Biểu đồ hoạt động  Cập nhập hoá đơn.
+Biểu đồ hoạt dộng Huỷ đơn hàng.
+d)Usecase Quản lý truyền thông
+Biểu đồ hoạt động Chỉnh sửa bài viết.
+Biểu đồ hoạt động Xoá bài viết.
+e)Usecase Quản lý khách hàng.
+Biểu đồ hoạt động Thêm khách hàng.
+Biểu đồ hoạt động Cập nhập thông tin khách hàng.
+Biểu đồ hoạt động Tìm kiếm khách hàng.
+Biểu đồ hoạt động Xóa khách hàng.
+b) Quản lý
+Usecase quản lý nhân viên
+Biểu đồ hoạt động Thêm nhân viên:
+Biểu đồ hoạt động Cập nhật thông tin nhân viên:
+Biểu đồ hoạt động Xóa nhân viên:
+Usecase phân nhiệm vụ
+Biểu đồ hoạt động Thêm nhiệm vụ:
+Biểu đồ hoạt động Sửa nhiệm vụ:
+Biểu đồ hoạt động Xóa nhiệm vụ:
+Usecase quản lý nhà cung cấp
+Biểu đồ hoạt động Thêm nhà cung cấp:
+Biểu đồ hoạt động Cập nhật thông tin nhà cung cấp:
+Biểu đồ hoạt động Xóa nhà cung cấp:
+Usecase thống kê
+Biểu đồ hoạt động Thống kê:
+c) Khách hàng
+Biểu đồ hoạt động Đăng ký tài khoản
+Biểu đồ hoạt động Đăng nhập tài khoản
+Biểu đồ hoạt động Quên mật khẩu tài khoản
+Biểu đồ hoạt động Cập nhật thông tin tài khoản
+Biểu đồ hoạt động Đổi mật khẩu tài khoản
+Biểu đồ hoạt động Liên kết tài khoản
+b) Usecase xem sản phẩm
+Biểu đồ hoạt động Xem sản phẩm
+c) Usecase quản lý giỏ hàng
+Biểu đồ hoạt động Thêm sản phẩm vào giỏ hàng
+Biểu đồ hoạt động Cập nhật giỏ hàng
+Biểu đồ hoạt động Xóa giỏ hàng
+d) Usecase đặt hàng
+Biểu đồ hoạt động Sửa thông tin giao hàng
+Biểu đồ hoạt động Nhắn tin với cửa hàng
+Biểu đồ hoạt động Theo dõi tình trạng đơn hàng
+Biểu đồ hoạt động Hủy đơn hàng
+e) Usecase thanh toán
+Biểu đồ hoạt động Sử dụng voucher.
+Biểu đồ hoạt động Phương thức thanh toán.
+f) Usecase lịch sử mua hàng
+Biểu đồ hoạt động Xem đơn đã mua.
+Biểu đồ hoạt động Mua lại đơn hàng.
+g) Usecase tương tác
+Biểu đồ hoạt động Thêm đánh giá.
+Biểu đồ hoạt động Sửa đánh giá.
+Biểu đồ hoạt động Xóa đánh giá.
+3.2.4. Biểu đồ trình tự
+a) Nhân viên
+Biểu đồ trình tự Đăng nhập.
+Biểu đồ trình tự Thêm sản phẩm.
+Biểu đồ trình tự Sửa sản phẩm.
+Biểu đồ trình tự Xoá sản phẩm.
+Biểu đồ trình tự Quản lý hàng hoá.
+Biểu đồ trình Taọ hoá đơn.
+Biểu đồ trình Cập nhập hoá đơn.
+Biểu đồ trình tự Huỷ đơn hàng.
+Biểu đồ trình tự Đăng bài viết.
+Biểu đồ trình tự Chỉnh sửa bài viết.
+Biểu đồ trình tự Xoá bài viết.
+Biểu đồ trình tự Thêm khách hàng.
+ss
+Biểu đồ trình tự Cập nhập thông tin khách hàng.
+Biểu đồ trình tự Tìm kiếm khách hàng.
+Biểu đồ trình tự Xóa khách hàng.
+b) Quản lý
+Biểu đồ trình tự Thêm nhân viên
+Biểu đồ trình tự Cập nhật thông tin nhân viên:
+Biểu đồ trình tự Xóa nhân viên:
+Biểu đồ trình tự Thêm nhiệm vụ:
+Biểu đồ trình tự Sửa nhiệm vụ:
+Biểu đồ trình tự Xóa nhiệm vụ:
+Biểu đồ trình tự Thêm nhà cung cấp:
+Biểu đồ trình tự Cập nhật thông tin nhà cung cấp:
+Biểu đồ trình tự Xóa nhà cung cấp:
+Biểu đồ trình tự Thống kê Nhiệm vụ:
+Biểu đồ tuần tự Thống kê Đơn hàng:
+Biểu đồ trình tự Thống kê Nhập đơn hàng:
+Biểu đồ trình tự Thống Kê sản phẩm:
+c) Khách hàng
+Biểu đồ trình tự Đăng ký tài khoản
+Biểu đồ trình tự Đăng nhâp tài khoản
+Biểu đồ trình tự Quên mật khẩu tài khoản
+Biểu đồ trình tự Cập nhật thông tin tài khoản
+Biểu đồ trình tự Đổi mật khẩu tài khoản
+Biểu đồ trình tự Liên kết tài khoản
+Biểu đồ trình tự Xem sản phẩm
+Biểu đồ trình tự Thêm sản phẩm vào giỏ hàng
+Biểu đồ trình tự Cập nhật giỏ hàng
+Biểu đồ trình tự Xóa giỏ hàng
+Biểu đồ trình tự Sửa thông tin giao hàng
+Biểu đồ trình tự Nhắn tin với cửa hàng
+Biểu đồ trình tự Theo dõi tình trạng đơn hàng
+Biểu đồ trình tự Hủy đơn hàng
+Biểu đồ trình tự Sử dụng voucher.
+Biểu đồ trình tự Phương thức thanh toán.
+Biểu đồ trình tự Xem đơn đã mua.
+Biểu đồ trình tự Mua lại đơn hàng.
+Biểu đồ trình tự Thêm đánh giá.
+Biều đồ trình tự sửa Đánh giá.
+Biểu đồ trình tự Xóa đánh giá.
+3.2.5. Biểu đồ lớp và biểu đồ trạng thái
+3.2.5.1 Biểu đồ lớp
+3.2.5.2 Biểu đồ trạng thái
+Biểu đồ trạng thái của lớp giỏ hàng
+Biểu đồ trạng thái của lớp sản phẩm.
+Biểu đồ trạng thái của lớp tài khoản
+Biểu đồ trạng thái của lớp hóa đơn
+Biểu đồ trạng thái của lớp nhà cung cấp
+CHƯƠNG 4. XÂY DỰNG CHƯƠNG TRÌNH
+4.1. Công nghệ và môi trường xây dựng
+Dựa trên kết quả phân tích và thiết kế ở Chương 3, chương trình được xây dựng với các công nghệ đã trình bày ở Chương 2:
+Giao diện người dùng (frontend): React.js.
+Xử lý nghiệp vụ phía server (backend): Framework Laravel (PHP).
+Cơ sở dữ liệu: MySQL.
+Môi trường triển khai: hệ điều hành Windows, trình duyệt Chrome.
+Chương trình hiện thực hóa các nhóm chức năng: Tài khoản; Sản phẩm; Giỏ hàng – Đặt hàng – Thanh toán; Quản lý nhân viên/khách hàng/nhà cung cấp; Quản lý đơn hàng; Quản lý truyền thông và Thống kê, tương ứng với các use case đã đặc tả ở mục 3.2.
+4.2. Giao diện chương trình
+Dưới đây là một số giao diện chính của chương trình, ở cả phía khách hàng và phía quản trị (quản lý/nhân viên).
+Giao diện đăng ký
+Hình 4.12. Giao diện đăng ký
+Giao diện đăng nhập
+Hình 4.13. Giao diện đăng nhập
+Giao diện trang chủ
+Hình 4.14. Giao diện trang chủ
+Giao diện sản phẩm
+Hình 4.15. Giao diện sản phẩm
+Giao diện giỏ hàng
+Hình 4.16. Giao diện giỏ hàng
+Giao diện đơn hàng
+Hình 4.17. Giao diện đơn hàng
+Giao diện tìm kiếm
+Hình 4.18. Giao diện tìm kiếm
+Giao diện thanh toán
+Hình 4.19. Giao diện thanh toán
+Giao diện thống kê quản lý
+Hình 4.20. Giao diện thống kê quản lý
+Giao diện quản lý nhân viên
+Hình 4.21. Giao diện quản lý nhân viên
+Giao diện quản lý sản phẩm
+Hình 4.22. Giao diện quản lý sản phẩm
+Giao diện quản lý khách hàng
+Hình 4.23. Giao diện quản lý khách hàng
+Giao diện quản lý nhà cung cấp
+Hình 4.24. Giao diện quản lý nhà cung cấp
+Giao diện quản lý voucher
+Hình 4.25. Giao diện quản lý voucher
+Giao diện quản lý truyền thông
+Hình 4.26. Giao diện quản lý truyền thông
+Giao diện gọi món
+Hình 4.27. Giao diện gọi món
+Giao diện quản lý đơn hàng
+Hình 4.28. Giao diện quản lý đơn hàng

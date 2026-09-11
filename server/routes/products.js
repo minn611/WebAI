@@ -5,6 +5,9 @@ const productController = require('../controllers/productController');
 // GET /api/products
 router.get('/', productController.getAll);
 
+// GET /api/products/:id
+router.get('/:id', productController.getById);
+
 // POST /api/products
 router.post('/', productController.create);
 

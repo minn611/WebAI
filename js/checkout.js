@@ -18,6 +18,21 @@ const Checkout = {
       const vInput = document.getElementById("voucher-input");
       if (vInput) vInput.value = voucherParam;
       this.applyVoucherCode();
+    } else {
+      // Fallback: check sessionStorage for voucher persisted from cart page
+      const pendingVoucher = sessionStorage.getItem('dodo_pending_voucher');
+      if (pendingVoucher) {
+        try {
+          const parsed = JSON.parse(pendingVoucher);
+          this.appliedVoucher = parsed;
+          const vInput = document.getElementById("voucher-input");
+          if (vInput) vInput.value = parsed.code || '';
+          // Show discount immediately without re-validating (already validated on cart page)
+          this.calculateFinalTotals();
+        } catch (e) {
+          console.warn('Invalid pending voucher in sessionStorage');
+        }
+      }
     }
   },
 
@@ -96,7 +111,7 @@ const Checkout = {
     return { itemsTotal, ship, discount, finalTotal };
   },
 
-  applyVoucherCode() {
+  async applyVoucherCode() {
     const input = document.getElementById("voucher-input");
     if (!input) return;
     const code = input.value.trim().toUpperCase();
@@ -107,6 +122,36 @@ const Checkout = {
       return;
     }
 
+    const itemsTotal = Cart.getItemsTotal();
+
+    try {
+      const response = await fetch("http://localhost:5000/api/vouchers/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, totalAmount: itemsTotal })
+      });
+      const data = await response.json();
+
+      if (data.success && data.voucher) {
+        this.appliedVoucher = {
+          code: data.voucher.code,
+          discountAmount: data.voucher.discountAmount,
+          description: data.voucher.description
+        };
+        Toast.success(data.message || `Áp dụng mã <b>${data.voucher.code}</b> thành công!`);
+        this.calculateFinalTotals();
+        return;
+      } else if (data.message) {
+        this.appliedVoucher = null;
+        Toast.error(data.message);
+        this.calculateFinalTotals();
+        return;
+      }
+    } catch (err) {
+      console.warn("Backend voucher API offline, falling back to local DB...");
+    }
+
+    // Local DB Fallback
     const vouchers = DB.getVouchers();
     const found = vouchers.find(v => v.code === code);
 
@@ -117,7 +162,6 @@ const Checkout = {
       return;
     }
 
-    const itemsTotal = Cart.getItemsTotal();
     if (found.minOrder && itemsTotal < found.minOrder) {
       this.appliedVoucher = null;
       Toast.warning(`Mã này chỉ áp dụng cho đơn hàng từ ${Formatters.currency(found.minOrder)} trở lên!`);
@@ -201,7 +245,7 @@ const Checkout = {
       voucherCode: this.appliedVoucher ? this.appliedVoucher.code : "",
       totalAmount: finalTotal,
       paymentMethod: this.paymentMethod,
-      paymentStatus: this.paymentMethod === "vietqr" ? "paid" : "pending",
+      paymentStatus: "pending",
       orderStatus: "pending",
       createdAt: new Date().toISOString().replace("T", " ").substring(0, 19)
     };
@@ -232,6 +276,14 @@ const Checkout = {
     } catch (e) {}
 
     DB.saveOrder(newOrder);
+
+    // Gửi thông báo thao tác lên terminal máy chủ
+    if (typeof AuditLogger !== "undefined") {
+      AuditLogger.notifyServer(
+        `ĐẶT ĐƠN HÀNG TRỰC TUYẾN #${orderId}`,
+        `Khách: ${name} (${phone}) | Tổng tiền: ${Formatters.currency(finalTotal)} | PT: ${this.paymentMethod.toUpperCase()} | ${cart.map(i => `${i.name} (x${i.quantity})`).join(', ')}`
+      );
+    }
 
     // Give loyalty points if customer
     const user = Auth.getCurrentUser();

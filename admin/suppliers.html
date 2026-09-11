@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản Lý Nhà Cung Cấp & Nhập Kho - TeaJoy Admin</title>
+  <title>Quản Lý Nhà Cung Cấp & Nhập Kho - Đô Đô POS Admin</title>
 
   <!-- Google Fonts for Vietnamese Support -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -171,11 +171,33 @@
         this.renderTable();
       },
 
-      renderTable() {
+      async renderTable() {
         const tbody = document.getElementById("admin-suppliers-tbody");
         if (!tbody) return;
 
-        const sups = DB.getSuppliers();
+        let sups = [];
+
+        try {
+          const response = await fetch("http://localhost:5000/api/suppliers");
+          const data = await response.json();
+          if (data.success && data.data) {
+            sups = data.data.map(s => ({
+              id: s.ma_ncc || `SUP-${s.id}`,
+              name: s.ten_nha_cung_cap,
+              contact: s.nguoi_dai_dien || 'Đại diện',
+              phone: s.so_dien_thoai,
+              materials: s.danh_muc_nguyen_lieu || 'Nguyên liệu trà sữa',
+              status: s.trang_thai === 'tam_dung' ? 'paused' : 'active'
+            }));
+          }
+        } catch (err) {
+          console.warn("Backend API offline, falling back to LocalStorage...");
+        }
+
+        if (sups.length === 0) {
+          sups = DB.getSuppliers();
+        }
+
         if (sups.length === 0) {
           tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Chưa có nhà cung cấp nào.</td></tr>`;
           return;
@@ -247,6 +269,9 @@
             list[idx] = { ...list[idx], name, contact, phone, materials, status };
             DB.set(STORAGE_KEYS.SUPPLIERS, list);
             Toast.success(`Đã cập nhật nhà cung cấp: <b>${name}</b>`);
+            if (typeof AuditLogger !== "undefined") {
+              AuditLogger.notifyServer(`CẬP NHẬT NHÀ CUNG CẤP: ${name}`, `Liên hệ: ${contact} (${phone}) | Nguyên liệu: ${materials}`, "Quản Lý Cửa Hàng", "ADMIN");
+            }
           }
         } else {
           const newSup = {
@@ -260,6 +285,9 @@
           list.push(newSup);
           DB.set(STORAGE_KEYS.SUPPLIERS, list);
           Toast.success(`Đã thêm nhà cung cấp: <b>${name}</b>`);
+          if (typeof AuditLogger !== "undefined") {
+            AuditLogger.notifyServer(`THÊM NHÀ CUNG CẤP MỚI: ${name}`, `Liên hệ: ${contact} (${phone}) | Nguyên liệu: ${materials}`, "Quản Lý Cửa Hàng", "ADMIN");
+          }
         }
 
         Modal.close("supplier-modal");
@@ -275,6 +303,9 @@
           const updated = list.filter(s => s.id !== id);
           DB.set(STORAGE_KEYS.SUPPLIERS, updated);
           Toast.info(`Đã xóa nhà cung cấp <b>${sup.name}</b>`);
+          if (typeof AuditLogger !== "undefined") {
+            AuditLogger.notifyServer(`XÓA NHÀ CUNG CẤP: ${sup.name}`, `Đã xóa đối tác cung cấp mã ${id}`, "Quản Lý Cửa Hàng", "ADMIN");
+          }
           this.renderTable();
         }
       }
