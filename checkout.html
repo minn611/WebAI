@@ -153,17 +153,58 @@
           </div>
 
           <!-- Live VietQR Box -->
-          <div id="vietqr-presentation" class="vietqr-box animate-fade">
-            <h5 style="margin-bottom: 0.25rem;">Quét Mã QR Để Thanh Toán Nhanh</h5>
-            <p class="text-xs text-muted">Mở App Ngân hàng bất kỳ (Vietcombank, MB, Techcombank, TPBank...) quét mã bên dưới</p>
-            
-            <img id="vietqr-img" class="qr-code-img" src="" alt="Mã VietQR Thanh Toán">
-            
-            <div style="font-size: 0.9rem; font-weight: 700; margin-top: 0.5rem;">
-              Số tiền: <span id="vietqr-amount" style="color: var(--primary); font-size: 1.2rem;">0 ₫</span>
+          <div id="vietqr-presentation" class="vietqr-box animate-fade" style="background: #fff; border: 2px solid #00529C; border-radius: var(--radius-lg); box-shadow: 0 4px 20px rgba(0, 82, 156, 0.12); padding: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+              <span style="font-size: 1.25rem;">🏦</span>
+              <h5 style="margin: 0; color: #00529C; font-size: 1.1rem;">Chuyển Khoản VietQR Tự Động (VietinBank)</h5>
             </div>
-            <div class="text-xs text-muted" style="margin-top: 4px;">
-              Chủ TK: <b>TRA SUA DO DO</b> | STK: <b>0901234567</b> (MB Bank)
+            <p class="text-xs text-muted" style="margin-bottom: 0.75rem;">Mở ứng dụng Ngân hàng bất kỳ (VietinBank, Vietcombank, Techcombank, MB, BIDV, MoMo...) quét mã bên dưới</p>
+            
+            <div style="position: relative; display: inline-block;">
+              <img id="vietqr-img" class="qr-code-img" src="https://img.vietqr.io/image/vietinbank-0868870869-compact2.png?amount=0&accountName=NGO%20MANH%20HIEU" alt="Mã VietQR Thanh Toán" style="width: 210px; height: 210px; border: 2px solid #00529C; border-radius: var(--radius-md); padding: 6px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+            </div>
+            
+            <div style="font-size: 0.95rem; font-weight: 700; margin-top: 0.6rem;">
+              Số tiền cần chuyển: <span id="vietqr-amount" style="color: var(--primary); font-size: 1.3rem;">0 ₫</span>
+            </div>
+            
+            <!-- Bank details card -->
+            <div style="background: #F0F6FF; border: 1px solid #BFDBFE; border-radius: var(--radius-md); padding: 0.85rem; margin-top: 0.75rem; text-align: left; font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span class="text-muted">Ngân hàng:</span>
+                <b style="color: #00529C;">VietinBank (CN Tiên Sơn - Hội Sở)</b>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="text-muted">Số tài khoản / Alias:</span>
+                <div>
+                  <b style="font-size: 1rem; color: #1E3A8A; letter-spacing: 0.5px;">0868870869</b>
+                  <button type="button" class="btn btn-sm" style="padding: 2px 8px; font-size: 0.75rem; margin-left: 6px; background: #DBEAFE; color: #1E40AF;" onclick="navigator.clipboard.writeText('0868870869'); Toast.success('Đã sao chép STK: 0868870869!');">📋 Chép</button>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span class="text-muted">Chủ tài khoản:</span>
+                <b>NGO MANH HIEU</b>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="text-muted">Nội dung chuyển khoản:</span>
+                <div>
+                  <b id="vietqr-memo-display" style="color: var(--primary);">DODO THANHTOAN</b>
+                  <button type="button" class="btn btn-sm" style="padding: 2px 8px; font-size: 0.75rem; margin-left: 6px; background: #DBEAFE; color: #1E40AF;" onclick="Checkout.copyTransferMemo()">📋 Chép</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 0.85rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+              <button type="button" class="btn btn-sm btn-outline" onclick="Checkout.viewOriginalQRModal()" style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem;">
+                <span>🖼️</span> Xem Ảnh Thẻ QR Gốc Của Quán
+              </button>
+              <button type="button" class="btn btn-sm" onclick="Checkout.notifyTransferCompleted()" style="background: linear-gradient(135deg, #10B981, #059669); color: #fff; border: none; font-weight: 600; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
+                <span>🔔</span> Báo Cho Quán Đã Chuyển Tiền
+              </button>
+            </div>
+
+            <div style="font-size: 0.75rem; color: #047857; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: var(--radius-sm); padding: 6px 10px; margin-top: 0.75rem;">
+              ⚡ <b>Tự Động & Realtime:</b> Ngay khi bạn chuyển khoản, hệ thống sẽ phát âm thanh chuông báo và gửi thông báo trực tiếp đến Quản lý & Nhân viên quán để pha chế ngay lập tức!
             </div>
           </div>
         </div>

@@ -28,6 +28,67 @@ app.use(cors({
 // Parse JSON request bodies
 app.use(express.json());
 
+// Bộ nhớ lưu thông báo chuyển khoản & thao tác gửi tới Quản lý & Pha chế
+let transferNotifications = [];
+
+// 🔔 Endpoint Nhận Thông Báo Chuyển Khoản VietQR từ Khách Hàng
+app.post('/api/notifications/transfer', (req, res) => {
+  const { orderId, customerName, customerPhone, amount, bankName, accountNumber, accountName, note } = req.body || {};
+  const notif = {
+    id: 'NOTIF-' + Date.now(),
+    orderId: orderId || 'TS-' + Math.floor(1000 + Math.random() * 9000),
+    customerName: customerName || 'Khách Hàng',
+    customerPhone: customerPhone || '',
+    amount: parseFloat(amount) || 0,
+    bankName: bankName || 'VietinBank (CN Tiên Sơn)',
+    accountNumber: accountNumber || '0868870869',
+    accountName: accountName || 'NGO MANH HIEU',
+    note: note || 'Chuyển khoản thanh toán đơn hàng',
+    status: 'unread',
+    createdAt: new Date().toISOString()
+  };
+
+  transferNotifications.unshift(notif);
+  if (transferNotifications.length > 100) transferNotifications.pop();
+
+  const time = new Date().toLocaleTimeString('vi-VN');
+  console.log(`\n\x07========================================================================`);
+  console.log(`🔔 [THÔNG BÁO CHUYỂN KHOẢN VIETQR MỚI - GỬI QUẢN LÝ & NHÂN VIÊN] [${time}]`);
+  console.log(`   💰 Số tiền nhận:   ${notif.amount.toLocaleString('vi-VN')} ₫`);
+  console.log(`   👤 Khách chuyển:   ${notif.customerName} (SĐT: ${notif.customerPhone})`);
+  console.log(`   📋 Mã đơn hàng:    #${notif.orderId}`);
+  console.log(`   🏦 Ngân hàng nhận: ${notif.bankName} - STK: ${notif.accountNumber} (${notif.accountName})`);
+  console.log(`   📝 Nội dung:       ${notif.note}`);
+  console.log(`   ⚡ Quản lý/Nhân viên vui lòng kiểm tra App VietinBank và bấm xác nhận đơn!`);
+  console.log(`========================================================================\n`);
+
+  return res.status(201).json({
+    success: true,
+    message: 'Đã gửi thông báo chuyển khoản tới Quản lý và Nhân viên',
+    data: notif
+  });
+});
+
+// 🔔 Endpoint Lấy Danh Sách Thông Báo Cho Màn Hình Quản Lý & Pha Chế
+app.get('/api/notifications', (req, res) => {
+  res.json({
+    success: true,
+    count: transferNotifications.length,
+    unreadCount: transferNotifications.filter(n => n.status === 'unread').length,
+    data: transferNotifications
+  });
+});
+
+// 🔔 Endpoint Đánh Dấu Thông Báo Đã Đọc / Đã Kiểm Tra
+app.put('/api/notifications/:id/read', (req, res) => {
+  const { id } = req.params;
+  const notif = transferNotifications.find(n => n.id === id);
+  if (notif) {
+    notif.status = 'read';
+  }
+  res.json({ success: true, message: 'Đã đánh dấu đã đọc' });
+});
+
 // 🔔 Endpoint Nhận Thông Báo Thao Tác Thời Gian Thực từ Mọi Tác Nhân
 app.post('/api/audit', (req, res) => {
   const { actor, role, action, detail } = req.body || {};

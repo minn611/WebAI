@@ -331,12 +331,24 @@
         `).join("");
       }
 
-      // 2. Render Bestsellers
+      // 2. Render Bestsellers & Sync với CSDL MySQL
       const grid = document.getElementById("homepage-bestsellers-grid");
-      const products = DB.getProducts().filter(p => p.isBestseller).slice(0, 4);
-      if (grid) {
-        grid.innerHTML = products.map(p => ClientApp.renderProductCard(p)).join("");
-      }
+      const renderBestsellers = () => {
+        if (!grid) return;
+        const prods = DB.getProducts().filter(p => p.isBestseller).slice(0, 4);
+        grid.innerHTML = prods.map(p => ClientApp.renderProductCard(p)).join("");
+      };
+      renderBestsellers();
+
+      fetch("http://localhost:5000/api/products")
+        .then(res => res.json())
+        .then(json => {
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            DB.set(STORAGE_KEYS.PRODUCTS, json.data);
+            renderBestsellers();
+          }
+        })
+        .catch(() => {});
 
       // 3. Render Truyền Thông & Tin Tức từ API /api/posts (FR-15)
       const postsContainer = document.getElementById("home-posts-container");

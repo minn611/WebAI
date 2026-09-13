@@ -186,13 +186,104 @@ const Checkout = {
     }
   },
 
+  sessionOrderId: null,
+
+  copyTransferMemo() {
+    const memo = `DODO ${this.sessionOrderId || "THANHTOAN"}`;
+    navigator.clipboard.writeText(memo).then(() => {
+      Toast.success(`Đã sao chép nội dung: <b>${memo}</b>`);
+    }).catch(() => {
+      Toast.info(`Nội dung chuyển: ${memo}`);
+    });
+  },
+
+  viewOriginalQRModal() {
+    const modalHtml = `
+      <div style="text-align: center; padding: 1rem 0.5rem;">
+        <div style="font-weight: 700; font-size: 1.15rem; color: #00529C; margin-bottom: 0.25rem;">Thẻ Chuyển Khoản VietinBank Chính Thức</div>
+        <p class="text-xs text-muted" style="margin-bottom: 1rem;">Quét trực tiếp qua App ngân hàng hoặc lưu ảnh về máy</p>
+        <div style="max-width: 320px; margin: 0 auto; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 82, 156, 0.25); border: 2px solid #00529C;">
+          <img src="images/vietinbank-qr.png" alt="Thẻ QR VietinBank NGO MANH HIEU" style="width: 100%; height: auto; display: block;">
+        </div>
+        <div style="margin-top: 1.25rem; font-size: 0.85rem; background: #F0F6FF; border-radius: 8px; padding: 10px; text-align: left; max-width: 320px; margin-inline: auto;">
+          <div>🏦 <b>VietinBank</b> - CN TIEN SON - HOI SO</div>
+          <div>👤 Chủ TK: <b>NGO MANH HIEU</b></div>
+          <div>💳 STK / Alias: <b>0868870869</b></div>
+        </div>
+        <button class="btn btn-primary" style="margin-top: 1.25rem; width: 100%; max-width: 320px;" onclick="Modal.close('custom-qr-modal')">Đã Hiểu & Đóng</button>
+      </div>
+    `;
+
+    let modalEl = document.getElementById("custom-qr-modal");
+    if (!modalEl) {
+      modalEl = document.createElement("div");
+      modalEl.id = "custom-qr-modal";
+      modalEl.className = "modal-overlay";
+      modalEl.innerHTML = `<div class="modal-card" style="max-width: 400px; padding: 1.5rem;"><div id="custom-qr-modal-body"></div></div>`;
+      document.body.appendChild(modalEl);
+    }
+    document.getElementById("custom-qr-modal-body").innerHTML = modalHtml;
+    Modal.open("custom-qr-modal");
+  },
+
+  async notifyTransferCompleted(isAutoFromSubmit = false) {
+    const { finalTotal } = this.calculateFinalTotals();
+    const name = document.getElementById("checkout-name")?.value.trim() || "Khách Hàng Trực Tuyến";
+    const phone = document.getElementById("checkout-phone")?.value.trim() || "";
+    const note = document.getElementById("checkout-note")?.value.trim() || "";
+    const orderCode = this.sessionOrderId || "TS-" + Math.floor(1000 + Math.random() * 9000);
+
+    const payload = {
+      orderId: orderCode,
+      customerName: name,
+      customerPhone: phone,
+      amount: finalTotal,
+      bankName: "VietinBank (CN Tiên Sơn)",
+      accountNumber: "0868870869",
+      accountName: "NGO MANH HIEU",
+      note: `DODO ${orderCode} - ${name} (${phone})`
+    };
+
+    // 1. Broadcast sự kiện realtime đa kênh qua LocalStorage & BroadcastChannel
+    try {
+      localStorage.setItem("dodo_latest_transfer_notification", JSON.stringify({ ...payload, timestamp: Date.now() }));
+      if (typeof BroadcastChannel !== "undefined") {
+        const bc = new BroadcastChannel("dodo_notifications");
+        bc.postMessage({ type: "TRANSFER_NOTIFICATION", data: payload });
+        bc.close();
+      }
+    } catch (e) {}
+
+    // 2. Gửi API máy chủ Backend
+    try {
+      await fetch("http://localhost:5000/api/notifications/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      console.log("Backend offline, transfer notification broadcasted locally");
+    }
+
+    if (!isAutoFromSubmit) {
+      Toast.success(`🔔 Đã gửi thông báo chuyển khoản thành công tới Quản lý & Nhân viên quán! Mã đơn: <b>${orderCode}</b>`);
+    }
+  },
+
   updatePaymentDetails(total) {
+    if (!this.sessionOrderId) {
+      this.sessionOrderId = Formatters.generateOrderId();
+    }
+
+    const memoDisplay = document.getElementById("vietqr-memo-display");
+    if (memoDisplay) memoDisplay.textContent = `DODO ${this.sessionOrderId}`;
+
     const qrImg = document.getElementById("vietqr-img");
     const qrAmount = document.getElementById("vietqr-amount");
     if (qrAmount) qrAmount.textContent = Formatters.currency(total);
     if (qrImg) {
-      // Official VietQR QuickLink format (MBBank 0901234567 - TeaJoy Store)
-      qrImg.src = `https://img.vietqr.io/image/mbbank-0901234567-compact2.png?amount=${total}&addInfo=DODO%20THANHTOAN&accountName=TRA%20SUA%20DO%20DO`;
+      // Chuẩn VietQR động VietinBank với STK 0868870869 và tên NGO MANH HIEU
+      qrImg.src = `https://img.vietqr.io/image/vietinbank-0868870869-compact2.png?amount=${total}&addInfo=DODO%20${this.sessionOrderId}&accountName=NGO%20MANH%20HIEU`;
     }
   },
 
@@ -230,7 +321,7 @@ const Checkout = {
     }
 
     const { itemsTotal, ship, discount, finalTotal } = this.calculateFinalTotals();
-    const orderId = Formatters.generateOrderId();
+    const orderId = this.sessionOrderId || Formatters.generateOrderId();
 
     const newOrder = {
       id: orderId,
@@ -245,7 +336,7 @@ const Checkout = {
       voucherCode: this.appliedVoucher ? this.appliedVoucher.code : "",
       totalAmount: finalTotal,
       paymentMethod: this.paymentMethod,
-      paymentStatus: "pending",
+      paymentStatus: this.paymentMethod === "vietqr" ? "cho_thanh_toan" : "pending",
       orderStatus: "pending",
       createdAt: new Date().toISOString().replace("T", " ").substring(0, 19)
     };
@@ -276,6 +367,11 @@ const Checkout = {
     } catch (e) {}
 
     DB.saveOrder(newOrder);
+
+    // Gửi thông báo chuyển khoản nếu chọn phương thức VietQR
+    if (this.paymentMethod === "vietqr") {
+      this.notifyTransferCompleted(true);
+    }
 
     // Gửi thông báo thao tác lên terminal máy chủ
     if (typeof AuditLogger !== "undefined") {

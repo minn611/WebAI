@@ -169,6 +169,25 @@ const OrderTracking = {
           </div>
         `}
 
+        <!-- VietQR Payment Prompt if order paid via VietQR and pending -->
+        ${(order.paymentMethod === 'vietqr' && order.paymentStatus !== 'completed' && !isCancelled) ? `
+          <div style="background: #F0F6FF; border: 2px solid #00529C; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <div style="font-weight: 700; color: #00529C; font-size: 1rem; margin-bottom: 0.25rem;">
+              🏦 Quét Mã VietQR VietinBank Để Thanh Toán Đơn Hàng
+            </div>
+            <p class="text-xs text-muted" style="margin-bottom: 0.75rem;">
+              Mở App Ngân Hàng bất kỳ quét mã bên dưới (Số tiền: <b>${Formatters.currency(order.totalAmount)}</b>)
+            </p>
+            <img src="https://img.vietqr.io/image/vietinbank-0868870869-compact2.png?amount=${order.totalAmount}&addInfo=DODO%20${order.id}&accountName=NGO%20MANH%20HIEU" alt="VietQR VietinBank" style="width: 190px; height: 190px; background: #fff; padding: 6px; border-radius: 8px; border: 1px solid #BFDBFE;">
+            <div style="font-size: 0.82rem; margin-top: 0.5rem;">
+              STK: <b>0868870869</b> (VietinBank - NGO MANH HIEU) | Nội dung: <b>DODO ${order.id}</b>
+            </div>
+            <button class="btn btn-sm" style="margin-top: 0.75rem; background: linear-gradient(135deg, #10B981, #059669); color: #fff; font-weight: 600;" onclick="OrderTracking.notifyTransfer('${order.id}', ${order.totalAmount}, '${order.customerName}', '${order.customerPhone}')">
+              🔔 Tôi Đã Chuyển Khoản Xong (Báo Cho Quán)
+            </button>
+          </div>
+        ` : ''}
+
         <!-- Customer & Delivery info -->
         <div class="grid grid-cols-2 gap-4" style="margin-bottom: 1.75rem; background-color: var(--bg-subtle); padding: 1.25rem; border-radius: var(--radius-md);">
           <div>
@@ -279,6 +298,40 @@ const OrderTracking = {
     });
     Toast.success("Đã thêm các món vào giỏ hàng!");
     Cart.openDrawer();
+  },
+
+  async notifyTransfer(orderId, amount, customerName, customerPhone) {
+    const payload = {
+      orderId: orderId,
+      customerName: customerName || "Khách Hàng",
+      customerPhone: customerPhone || "",
+      amount: amount || 0,
+      bankName: "VietinBank (CN Tiên Sơn)",
+      accountNumber: "0868870869",
+      accountName: "NGO MANH HIEU",
+      note: `DODO ${orderId} - ${customerName}`
+    };
+
+    // 1. Broadcast realtime
+    try {
+      localStorage.setItem("dodo_latest_transfer_notification", JSON.stringify({ ...payload, timestamp: Date.now() }));
+      if (typeof BroadcastChannel !== "undefined") {
+        const bc = new BroadcastChannel("dodo_notifications");
+        bc.postMessage({ type: "TRANSFER_NOTIFICATION", data: payload });
+        bc.close();
+      }
+    } catch (e) {}
+
+    // 2. Gửi API máy chủ Backend
+    try {
+      await fetch("http://localhost:5000/api/notifications/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {}
+
+    Toast.success(`🔔 Đã gửi thông báo chuyển khoản tới Quản lý & Nhân viên quán! Quán sẽ kiểm tra tài khoản VietinBank và xác nhận ngay.`);
   }
 };
 
