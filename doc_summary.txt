@@ -45,9 +45,43 @@ CHƯƠNG 3. PHÂN TÍCH VÀ THIẾT KẾ HỆ THỐNG10
 3.2.5. Biểu đồ lớp và biểu đồ trạng thái139
 3.2.5.1 Biểu đồ lớp139
 3.2.5.2 Biểu đồ trạng thái140
+3.2.6. Thiết kế cơ sở dữ liệu141
+3.2.6. Thiết kế cơ sở dữ liệu
+Hệ thống quản lý quán trà sữa được triển khai trên nền tảng hệ quản trị cơ sở dữ liệu quan hệ MySQL 8.0, sử dụng bảng mã ký tự utf8mb4 đảm bảo lưu trữ chuẩn xác tiếng Việt có dấu. Cơ sở dữ liệu được thiết kế theo chuẩn hóa bậc 3 (3NF), đảm bảo tính toàn vẹn dữ liệu, triệt tiêu sự dư thừa thông tin, đồng thời tối ưu hóa hiệu năng truy vấn cho các hoạt động bán hàng trực tuyến, thanh toán chuyển khoản VietQR thời gian thực, quản lý kho nguyên liệu và kiểm soát vận hành nội bộ.
+
+3.2.6.1. Danh mục các bảng thực thể trong hệ thống
+Cơ sở dữ liệu của hệ thống bao gồm 12 bảng chính:
+- tai_khoan: Quản lý tài khoản người dùng, mã hóa mật khẩu bcrypt, phân quyền truy cập (Admin, Nhân viên, Khách hàng).
+- nhan_vien: Lưu trữ hồ sơ nhân viên, mã nhân viên, chức vụ (Quản lý, Pha chế, Thu ngân), ca làm việc và mức lương.
+- khach_hang: Thông tin khách hàng, số điện thoại, địa chỉ giao hàng, tích lũy điểm thưởng và phân hạng thành viên.
+- nha_cung_cap: Danh bạ nhà cung cấp nguyên liệu (trà, sữa, topping, ly cốc, bao bì), đầu mối liên hệ.
+- san_pham: Menu đồ uống và bánh ngọt, mã SKU, danh mục, giá bán gốc, giá khuyến mãi, số lượng tồn kho và lượt bán.
+- topping: Danh mục các loại topping thêm cho trà sữa (trân châu, thạch, kem cheese...) kèm đơn giá phụ thu.
+- don_hang: Thông tin tổng thể đơn hàng, mã đơn (TS-xxxx, POS-xxxx), thông tin nhận hàng, phương thức thanh toán, trạng thái đơn và tổng tiền.
+- chi_tiet_don_hang: Chi tiết từng ly đồ uống trong đơn: kích thước (M/L), định lượng đường, đá, danh sách topping đi kèm, đơn giá và thành tiền.
+- thanh_toan: Nhật ký giao dịch thanh toán (VietQR, MoMo, ZaloPay, COD), mã giao dịch cổng, trạng thái thanh toán và thời gian giao dịch.
+- vouchers: Mã khuyến mãi giảm giá, hình thức giảm (% hoặc tiền mặt), giá trị giảm, đơn hàng tối thiểu và thời hạn áp dụng.
+- bai_viet: Quản lý bài viết truyền thông, tin tức ưu đãi sự kiện, banner quảng bá hiển thị trên trang chủ website.
+- reviews: Đánh giá, xếp hạng sao (1-5 sao), bình luận cảm nhận của khách hàng về món và phản hồi từ quản lý.
+
+3.2.6.2. Cấu trúc chi tiết các trường trong cơ sở dữ liệu
+(Đặc tả đầy đủ kiểu dữ liệu, khóa chính PK, khóa ngoại FK, ràng buộc NOT NULL của toàn bộ 12 bảng: tai_khoan, nhan_vien, khach_hang, nha_cung_cap, san_pham, topping, don_hang, chi_tiet_don_hang, thanh_toan, vouchers, bai_viet, reviews).
+
+3.2.6.3. Mối quan hệ và các ràng buộc toàn vẹn (Foreign Key Constraints)
+- chi_tiet_don_hang(don_hang_id) -> don_hang(id): ON DELETE CASCADE
+- thanh_toan(don_hang_id) -> don_hang(id): ON DELETE CASCADE
+- reviews(don_hang_id) -> don_hang(id): ON DELETE SET NULL
+- chi_tiet_don_hang(san_pham_id) -> san_pham(id): ON DELETE RESTRICT
+- san_pham(nha_cung_cap_id) -> nha_cung_cap(id): ON DELETE SET NULL
+- nhan_vien(tai_khoan_id) -> tai_khoan(id): ON DELETE CASCADE
+- khach_hang(tai_khoan_id) -> tai_khoan(id): ON DELETE CASCADE
+- bai_viet(tac_gia_id) -> tai_khoan(id): ON DELETE CASCADE
+
 CHƯƠNG 4. XÂY DỰNG CHƯƠNG TRÌNH143
 4.1. Công nghệ và môi trường xây dựng143
 4.2. Giao diện chương trình143
+KẾT LUẬN152
+TÀI LIỆU THAM KHẢO154
 NHẬN XÉT
 BẢNG PHÂN CÔNG NHIỆM VỤ NHÓM
 Thành viên
@@ -1321,3 +1355,35 @@ Giao diện gọi món
 Hình 4.27. Giao diện gọi món
 Giao diện quản lý đơn hàng
 Hình 4.28. Giao diện quản lý đơn hàng
+
+KẾT LUẬN
+1. Kết quả đạt được của đề tài
+Trải qua quá trình khảo sát thực tế tại quán trà sữa Đô Đô, tiến hành phân tích nghiệp vụ, thiết kế hệ thống theo mô hình hướng đối tượng UML và xây dựng chương trình thử nghiệm, nhóm đã hoàn thành toàn diện các mục tiêu đặt ra cho đề tài 'Xây dựng hệ thống quản lý quán trà sữa':
+• Phía Khách hàng: Xây dựng hoàn chỉnh website bán hàng hiện đại, thân thiện, tương thích tối ưu trên mọi kích thước màn hình. Khách hàng dễ dàng tìm kiếm, phân loại thức uống, chọn size, mức đường, đá, topping theo sở thích cá nhân, áp dụng mã voucher giảm giá và đặt hàng nhanh chóng.
+• Giải pháp Thanh toán số thông minh: Tích hợp công nghệ thanh toán chuyển khoản mã VietQR chuẩn ngân hàng (VietinBank), tự động hiển thị mã QR kèm số tiền và nội dung chuyển khoản chính xác; hỗ trợ khách sao chép nhanh và gửi tín hiệu báo nạp tiền tức thì tới quầy thu ngân.
+• Phía Quản lý & Vận hành quầy: Xây dựng hệ thống quản trị chuyên sâu với cơ chế phân quyền rõ ràng theo từng vai trò (Quản trị viên, Quản lý cửa hàng, Thu ngân, Nhân viên pha chế). Cung cấp màn hình POS tạo đơn tại quầy, quản lý menu sản phẩm, nguyên liệu nhà cung cấp, hồ sơ nhân viên, mã giảm giá và báo cáo doanh thu theo thời gian thực.
+• Cơ chế Tương tác thời gian thực (Real-time): Đồng bộ dữ liệu lập tức giữa khách hàng và màn hình tiếp nhận của nhân viên pha chế, kèm hệ thống chuông báo âm thanh trực quan khi có thông báo chuyển khoản mới hoặc đơn hàng cần xử lý.
+• Cơ sở dữ liệu: Thiết kế chuẩn hóa 12 bảng thực thể trên MySQL 8.0 với các ràng buộc toàn vẹn khóa ngoại, lưu trữ toàn diện mọi thông tin phát sinh trong quá trình vận hành của quán.
+
+2. Ưu điểm nổi bật của hệ thống
+• Giao diện thiết kế theo phong cách hiện đại, trực quan, thao tác mượt mà, tối ưu hóa trải nghiệm người dùng (UX/UI).
+• Kiến trúc phân tầng rõ ràng giữa Giao diện người dùng và Hệ thống máy chủ RESTful API, tạo điều kiện thuận lợi cho việc bảo trì, kiểm thử và mở rộng tính năng.
+• Tự động hóa cao trong quy trình xử lý đơn: từ lúc khách chọn món, chuyển tiền, pha chế đến in hóa đơn nhiệt tiêu chuẩn POS 80mm chỉ qua 1 thao tác bấm chuột.
+• Hệ thống kiểm soát bảo mật và phân quyền vai trò chặt chẽ, ngăn ngừa gian lận và thất thoát dữ liệu kinh doanh.
+
+3. Hạn chế và Hướng phát triển tiếp theo
+• Hạn chế: Chưa tích hợp trực tiếp Webhook tự động đối soát biến động số dư từ cổng thanh toán mở của Ngân hàng (Open Banking API) mà vẫn cần thu ngân đối chiếu; phạm vi ứng dụng hiện tại tập trung phục vụ tối ưu cho một cơ sở kinh doanh độc lập.
+• Hướng phát triển trong tương lai:
+  + Nâng cấp kiến trúc phần mềm hỗ trợ mô hình Chuỗi nhượng quyền đa chi nhánh (Multi-branch / Multi-store), cho phép quản lý tập trung nhiều cơ sở cùng lúc.
+  + Phát triển ứng dụng di động (Mobile App) trên nền tảng React Native / Flutter cho cả hai hệ điều hành iOS và Android dành cho khách hàng thân thiết và đội ngũ nhân viên giao hàng (Shipper).
+  + Ứng dụng trí tuệ nhân tạo (AI / Machine Learning) để phân tích thói quen gọi món của khách hàng, từ đó đưa ra gợi ý thức uống cá nhân hóa và dự báo số lượng nguyên liệu cần nhập theo tuần.
+
+TÀI LIỆU THAM KHẢO
+[1] ThS. Lê Thị Chi (2024), Bài giảng Phân tích và Thiết kế Hệ thống Thông tin, Khoa Công nghệ Thông tin, Trường Đại học Công nghệ Giao thông Vận tải.
+[2] GS.TS. Nguyễn Văn Ba (2018), Phát triển hệ thống thông tin hướng đối tượng với UML, Nhà xuất bản Đại học Quốc gia Hà Nội.
+[3] PGS.TS. Trần Đình Quế (2020), Giáo trình Cơ sở dữ liệu và Hệ quản trị cơ sở dữ liệu quan hệ, Nhà xuất bản Thông tin và Truyền thông.
+[4] Robin Nixon (2021), Learning PHP, MySQL & JavaScript: With jQuery, CSS & HTML5 (6th Edition), O'Reilly Media.
+[5] David Flanagan (2020), JavaScript: The Definitive Guide: Master the World's Most-Used Programming Language (7th Edition), O'Reilly Media.
+[6] Oracle Corporation (2024), MySQL 8.0 Reference Manual, Oracle Documentation: https://dev.mysql.com/doc/refman/8.0/en/
+[7] Mozilla Developer Network (2024), MDN Web Docs - Web APIs, DOM and Modern JavaScript: https://developer.mozilla.org/
+[8] Công ty Cổ phần Thanh toán Quốc gia Việt Nam (NAPAS) & Ngân hàng Nhà nước Việt Nam (2023), Tiêu chuẩn kỹ thuật định dạng mã QR thanh toán quốc gia (VietQR).

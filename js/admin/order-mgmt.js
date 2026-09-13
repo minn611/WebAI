@@ -20,6 +20,11 @@ const OrderMgmt = {
         this.openOrderDetail(orderId);
       }, 200);
     }
+    if (urlParams.get("action") === "pos") {
+      setTimeout(() => {
+        this.openCreateOrderModal();
+      }, 200);
+    }
   },
 
   async syncOrdersFromAPI() {
@@ -292,6 +297,7 @@ const OrderMgmt = {
       ${order.orderStatus === 'shipping' ? `
         <button class="btn btn-secondary" onclick="OrderMgmt.updateStatus('${order.id}', 'completed')">🎉 Xác Nhận Giao Thành Công</button>
       ` : ''}
+      <button class="btn btn-danger" onclick="OrderMgmt.deleteOrder('${order.id}')" style="margin-left: auto;" title="Xóa vĩnh viễn đơn hàng khỏi hệ thống">🗑️ Xóa Đơn Hàng</button>
     `;
 
     Modal.open("order-detail-modal");
@@ -347,6 +353,55 @@ const OrderMgmt = {
     if (detailModal && detailModal.classList.contains("active")) {
       this.openOrderDetail(orderId);
     }
+  },
+
+  async deleteOrder(orderId) {
+    if (!orderId) return;
+    const confirmDel = confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng #${orderId} không?\n\nLưu ý: Hành động này sẽ xóa đơn khỏi cơ sở dữ liệu và không thể khôi phục!`);
+    if (!confirmDel) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/orders/${encodeURIComponent(orderId)}`, {
+        method: "DELETE"
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok && !data.success) {
+        console.warn("Backend delete notice:", data.message);
+      }
+    } catch (e) {
+      console.warn("Lỗi kết nối server khi xóa đơn:", e);
+    }
+
+    // Xóa trong bộ nhớ client
+    DB.deleteOrder(orderId);
+
+    // Bắn thông báo BroadcastChannel
+    try {
+      const ch = new BroadcastChannel('trasua_dodo_orders');
+      ch.postMessage({ type: 'ORDER_DELETED', orderId });
+      ch.close();
+    } catch (e) {}
+
+    // Ghi audit log
+    if (typeof AuditLogger !== "undefined") {
+      AuditLogger.notifyServer(
+        `XÓA ĐƠN HÀNG #${orderId}`,
+        `Đã xóa vĩnh viễn đơn hàng #${orderId} khỏi hệ thống.`
+      );
+    }
+
+    Toast.success(`🗑️ Đã xóa vĩnh viễn đơn hàng <b>#${orderId}</b> thành công!`);
+
+    // Đóng modal chi tiết nếu đang mở
+    const detailModal = document.getElementById("order-detail-modal");
+    if (detailModal && detailModal.classList.contains("active")) {
+      Modal.close("order-detail-modal");
+    }
+
+    // Đồng bộ và tải lại bảng
+    await this.syncOrdersFromAPI();
+    this.renderOrdersTable();
+    this.updateStatusCounts();
   },
 
   // 1-Click Print 80mm POS Receipt

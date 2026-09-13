@@ -114,6 +114,9 @@
       }
     }
 
+    const urlTab = new URLSearchParams(window.location.search).get('tab');
+    if (urlTab === 'register') switchAuthTab('register');
+
     function handleLoginSubmit(e) {
       e.preventDefault();
       const u = document.getElementById("login-username").value;
