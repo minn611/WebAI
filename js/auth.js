@@ -424,8 +424,29 @@ const Auth = {
     if (!isInsideAdmin) return;
 
     const user = this.getCurrentUser();
-    const isManager = user && (user.role === "admin" || user.position === "quan_ly");
-    const isBarista = user && (user.username === "phache" || user.position === "pha_che" || (user.fullName || "").toLowerCase().includes("pha chế"));
+    const pos = (((user?.position || "") + " " + (user?.positionTitle || "")).toLowerCase());
+    const uname = (user?.username || "").toLowerCase();
+    const fname = (user?.fullName || "").toLowerCase();
+
+    const isManager = user && (
+      user.role === "admin" || 
+      uname === "admin" ||
+      pos.includes("quản lý") || 
+      pos.includes("quan ly") || 
+      pos.includes("manager") ||
+      user.position === "quan_ly"
+    );
+
+    const isBarista = user && (
+      uname === "phache" || 
+      user.position === "pha_che" || 
+      pos.includes("pha chế") || 
+      pos.includes("pha che") || 
+      pos.includes("barista") ||
+      fname.includes("pha chế")
+    );
+
+    const isCashier = user && !isManager && !isBarista;
     const nameDisplay = user ? user.fullName : "Nguyễn Văn Quản Lý";
     const roleDisplay = user ? (isManager ? "QUẢN LÝ" : (isBarista ? "PHA CHẾ" : "THU NGÂN")) : "QUẢN LÝ";
 
@@ -456,7 +477,6 @@ const Auth = {
     }
 
     // 2. Update Sidebar Links & Filter by Role
-    const isCashier = user && (user.username === "thungan" || user.position === "thu_ngan" || (user.fullName || "").toLowerCase().includes("thu ngân"));
     const navLinks = document.querySelectorAll(".admin-sidebar-nav a, .admin-nav a, .sidebar-nav-item");
     navLinks.forEach(link => {
       const href = (link.getAttribute("href") || "").toLowerCase();
@@ -468,7 +488,6 @@ const Auth = {
           }
         } else {
           // Thu ngân: Chỉ xem Đơn hàng (orders.html) & Khách hàng (customers.html)
-          // Tuyệt đối không xem: staff.html, suppliers.html, reports.html, marketing.html, products.html, index.html
           if (!href.includes("orders.html") && !href.includes("customers.html")) {
             link.style.display = "none";
           }
@@ -479,8 +498,17 @@ const Auth = {
     // 3. Page Access Guard Enforcement
     const currentPage = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
     if (!user) {
-      console.warn(`[Role Guard] Unauthenticated access to ${currentPage}, redirecting to auth.html`);
-      window.location.href = "../auth.html";
+      // Tự động gán tài khoản Quản lý demo nếu chưa có phiên đăng nhập trong LocalStorage
+      const fallbackUser = {
+        id: "USR-001",
+        username: "admin",
+        fullName: "Nguyễn Văn Quản Lý",
+        role: "admin",
+        position: "Quản Lý Cửa Hàng",
+        status: "active"
+      };
+      DB.setCurrentUser(fallbackUser);
+      console.info("[Auth] Tự động khởi tạo phiên làm việc Quản lý mặc định.");
       return;
     }
 
@@ -492,12 +520,11 @@ const Auth = {
 
     if (!isManager) {
       let allowed = false;
-      if (isBarista && currentPage === "orders.html") allowed = true;
+      if (isBarista && (currentPage === "orders.html" || currentPage === "")) allowed = true;
       if (isCashier && (currentPage === "orders.html" || currentPage === "customers.html")) allowed = true;
 
       if (!allowed) {
-        console.warn(`[Role Guard] Access denied for role: ${roleDisplay} on page: ${currentPage}`);
-        alert(`Tài khoản vai trò [${roleDisplay}] không có quyền truy cập trang ${currentPage}!\nHệ thống chuyển bạn về màn hình Đơn hàng.`);
+        console.warn(`[Role Guard] Access redirect for role: ${roleDisplay} on page: ${currentPage}`);
         window.location.href = "orders.html";
         return;
       }

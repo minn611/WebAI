@@ -208,9 +208,12 @@ const orderController = {
   },
 
   // GET /api/orders/:id -> Tra cứu 1 đơn hàng theo mã đơn, dbId hoặc số điện thoại
+  // GET /api/orders/:id -> Tra cứu 1 đơn hàng theo mã đơn, dbId hoặc số điện thoại
   async getById(req, res) {
     try {
-      const searchKey = req.params.id.trim();
+      const searchKey = String(req.params.id || '').trim();
+      const isNum = /^\d+$/.test(searchKey);
+      const numId = isNum ? parseInt(searchKey) : -1;
 
       const [orders] = await pool.query(
         `SELECT dh.*, tt.phuong_thuc, tt.trang_thai as trang_thai_tt
@@ -218,7 +221,7 @@ const orderController = {
          LEFT JOIN THANH_TOAN tt ON dh.id = tt.don_hang_id
          WHERE dh.ma_don_hang = ? OR dh.id = ? OR dh.sdt_nguoi_nhan = ?
          ORDER BY dh.ngay_dat DESC LIMIT 1`,
-        [searchKey, searchKey, searchKey]
+        [searchKey, numId, searchKey]
       );
 
       if (orders.length === 0) {
@@ -293,28 +296,83 @@ const orderController = {
     }
   },
 
+  // PUT /api/orders/:id -> Chỉnh sửa toàn diện thông tin đơn hàng
+  async update(req, res) {
+    try {
+      const orderId = String(req.params.id || '').trim();
+      const isNum = /^\d+$/.test(orderId);
+      const numId = isNum ? parseInt(orderId) : -1;
+      const { customerName, customerPhone, customerAddress, note, orderStatus, paymentStatus } = req.body;
+
+      // Cập nhật thông tin trong bảng DON_HANG
+      await pool.query(
+        `UPDATE DON_HANG 
+         SET ten_nguoi_nhan = COALESCE(?, ten_nguoi_nhan),
+             sdt_nguoi_nhan = COALESCE(?, sdt_nguoi_nhan),
+             dia_chi_giao_hang = COALESCE(?, dia_chi_giao_hang),
+             ghi_chu = COALESCE(?, ghi_chu),
+             trang_thai_don_hang = COALESCE(?, trang_thai_don_hang)
+         WHERE ma_don_hang = ? OR id = ?`,
+        [customerName, customerPhone, customerAddress, note, orderStatus, orderId, numId]
+      );
+
+      // Cập nhật trạng thái thanh toán nếu có
+      if (paymentStatus) {
+        const payStatusDb = (paymentStatus === 'paid' || paymentStatus === 'da_thanh_toan') ? 'da_thanh_toan' : 'cho_thanh_toan';
+        await pool.query(
+          `UPDATE THANH_TOAN tt
+           JOIN DON_HANG dh ON tt.don_hang_id = dh.id
+           SET tt.trang_thai = ?
+           WHERE dh.ma_don_hang = ? OR dh.id = ?`,
+          [payStatusDb, orderId, numId]
+        );
+      }
+
+      return res.json({ success: true, message: `Đã cập nhật thông tin đơn hàng #${orderId} thành công!` });
+    } catch (error) {
+      console.error('Lỗi khi chỉnh sửa đơn hàng:', error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  },
+
   // PUT /api/orders/:id/status -> Update status
   async updateStatus(req, res) {
     try {
-      const orderId = req.params.id;
-      const { status } = req.body;
+      const orderId = String(req.params.id || '').trim();
+      const isNum = /^\d+$/.test(orderId);
+      const numId = isNum ? parseInt(orderId) : -1;
+      const { status, paymentStatus } = req.body;
 
-      if (!status) return res.status(400).json({ success: false, message: 'Trạng thái là bắt buộc!' });
+      if (!status && !paymentStatus) return res.status(400).json({ success: false, message: 'Trạng thái là bắt buộc!' });
 
-      await pool.query(
-        `UPDATE DON_HANG SET trang_thai_don_hang = ? WHERE ma_don_hang = ? OR id = ?`,
-        [status, orderId, orderId]
-      );
+      if (status) {
+        await pool.query(
+          `UPDATE DON_HANG SET trang_thai_don_hang = ? WHERE ma_don_hang = ? OR id = ?`,
+          [status, orderId, numId]
+        );
+      }
+
+      if (paymentStatus) {
+        const payStatusDb = (paymentStatus === 'paid' || paymentStatus === 'da_thanh_toan') ? 'da_thanh_toan' : 'cho_thanh_toan';
+        await pool.query(
+          `UPDATE THANH_TOAN tt
+           JOIN DON_HANG dh ON tt.don_hang_id = dh.id
+           SET tt.trang_thai = ?
+           WHERE dh.ma_don_hang = ? OR dh.id = ?`,
+          [payStatusDb, orderId, numId]
+        );
+      }
 
       const time = new Date().toLocaleTimeString('vi-VN');
       console.log(`\n========================================================================`);
       console.log(`🔔 [THÔNG BÁO MÁY CHỦ] [${time}]`);
       console.log(`   👤 Tác nhân:  Nhân Viên Quản Lý / Pha Chế / Thu Ngân`);
       console.log(`   ⚡ Thao tác:  CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG #${orderId}`);
-      console.log(`   📊 Trạng thái: [${status.toUpperCase()}]`);
+      if (status) console.log(`   📊 Trạng thái đơn: [${status.toUpperCase()}]`);
+      if (paymentStatus) console.log(`   💳 Thanh toán:     [${paymentStatus.toUpperCase()}]`);
       console.log(`========================================================================\n`);
 
-      return res.json({ success: true, message: `Cập nhật trạng thái đơn hàng sang ${status} thành công!` });
+      return res.json({ success: true, message: `Cập nhật trạng thái đơn hàng sang ${status || paymentStatus} thành công!` });
 
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
@@ -326,12 +384,14 @@ const orderController = {
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
-      const orderId = req.params.id;
+      const orderId = String(req.params.id || '').trim();
+      const isNum = /^\d+$/.test(orderId);
+      const numId = isNum ? parseInt(orderId) : -1;
 
       // Tìm DB id từ mã đơn hoặc id số
       const [orderRows] = await connection.query(
         'SELECT id FROM DON_HANG WHERE ma_don_hang = ? OR id = ?',
-        [orderId, orderId]
+        [orderId, numId]
       );
 
       if (orderRows.length === 0) {

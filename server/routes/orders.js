@@ -17,6 +17,9 @@ router.post('/', orderController.create);
 // PUT /api/orders/:id/status
 router.put('/:id/status', orderController.updateStatus);
 
+// PUT /api/orders/:id
+router.put('/:id', orderController.update);
+
 // DELETE /api/orders/:id
 router.delete('/:id', orderController.delete);
 

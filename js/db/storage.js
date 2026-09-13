@@ -155,9 +155,19 @@ const DB = {
     this.set(STORAGE_KEYS.ORDERS, list);
     return order;
   },
+  saveOrders(orders) {
+    this.set(STORAGE_KEYS.ORDERS, Array.isArray(orders) ? orders : []);
+    return orders;
+  },
+  deleteOrder(id) {
+    let list = this.getOrders();
+    list = list.filter(o => o.id !== id && o.orderId !== id);
+    this.set(STORAGE_KEYS.ORDERS, list);
+    return list;
+  },
   updateOrderStatus(orderId, newStatus) {
     const list = this.getOrders();
-    const order = list.find(o => o.id === orderId);
+    const order = list.find(o => o.id === orderId || o.orderId === orderId);
     if (order) {
       order.orderStatus = newStatus;
       this.set(STORAGE_KEYS.ORDERS, list);
