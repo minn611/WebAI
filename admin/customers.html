@@ -169,15 +169,17 @@
   </div>
 
   <!-- Scripts -->
-  <script src="../js/db/mock-data.js"></script>
-  <script src="../js/db/storage.js"></script>
-  <script src="../js/utils/formatters.js"></script>
-  <script src="../js/utils/toast.js"></script>
-  <script src="../js/utils/modal.js"></script>
-  <script src="../js/auth.js"></script>
+  <script src="../js/db/mock-data.js?v=20260913"></script>
+  <script src="../js/db/storage.js?v=20260913"></script>
+  <script src="../js/utils/formatters.js?v=20260913"></script>
+  <script src="../js/utils/toast.js?v=20260913"></script>
+  <script src="../js/utils/modal.js?v=20260913"></script>
+  <script src="../js/auth.js?v=20260913"></script>
   
   <script>
     const CustomerMgmt = {
+      customersList: [],
+
       init() {
         this.renderTable();
         document.getElementById("admin-cust-search")?.addEventListener("input", () => this.renderTable());
@@ -194,16 +196,17 @@
           const url = q ? `/api/customers?search=${encodeURIComponent(q)}` : `/api/customers`;
           const response = await fetch(url);
           const data = await response.json();
-          if (data.success && data.data) {
+          if (data.success && Array.isArray(data.data)) {
             customers = data.data.map(item => ({
               id: `CUST-${item.id}`,
+              rawId: item.id,
               fullName: item.ho_ten,
               phone: item.so_dien_thoai,
               email: item.email || 'Chưa có email',
-              points: item.diem_tich_luy,
+              points: item.diem_tich_luy || 0,
               tier: item.hang_thanh_vien === 'kim_cuong' ? 'VIP Kim Cương' : (item.hang_thanh_vien === 'vang' ? 'VIP Vàng' : (item.hang_thanh_vien === 'bac' ? 'VIP Bạc' : 'VIP Đồng')),
               createdAt: item.ngay_tao ? item.ngay_tao.split('T')[0] : '2026-01-01',
-              status: 'active'
+              status: item.trang_thai === 'tam_khoa' ? 'locked' : 'active'
             }));
           }
         } catch (err) {
@@ -216,8 +219,10 @@
             const term = q.toLowerCase();
             users = users.filter(u => (u.fullName && u.fullName.toLowerCase().includes(term)) || (u.phone && u.phone.includes(term)) || (u.email && u.email.toLowerCase().includes(term)));
           }
-          customers = users;
+          customers = users.map(u => ({ ...u, rawId: u.id }));
         }
+
+        this.customersList = customers;
 
         if (customers.length === 0) {
           tbody.innerHTML = `
@@ -273,21 +278,24 @@
       },
 
       openEditModal(userId) {
-        const users = DB.getUsers();
-        const u = users.find(user => user.id === userId);
+        let u = this.customersList.find(user => String(user.id) === String(userId) || String(user.rawId) === String(userId));
+        if (!u) {
+          const users = DB.getUsers();
+          u = users.find(user => String(user.id) === String(userId));
+        }
         if (!u) return;
 
         document.getElementById("cust-modal-title").textContent = `Chỉnh Sửa: ${u.fullName}`;
         document.getElementById("cust-id").value = u.id;
         document.getElementById("cust-name").value = u.fullName || "";
         document.getElementById("cust-phone").value = u.phone || "";
-        document.getElementById("cust-email").value = u.email || "";
+        document.getElementById("cust-email").value = (u.email && !u.email.includes('Chưa có')) ? u.email : "";
         document.getElementById("cust-points").value = u.points || 0;
         document.getElementById("cust-tier").value = u.tier || "VIP Đồng";
         Modal.open("customer-modal");
       },
 
-      saveCustomerSubmit(e) {
+      async saveCustomerSubmit(e) {
         e.preventDefault();
         const custId = document.getElementById("cust-id").value;
         const name = document.getElementById("cust-name").value.trim();
@@ -296,20 +304,33 @@
         const points = parseInt(document.getElementById("cust-points").value) || 0;
         const tier = document.getElementById("cust-tier").value;
 
+        try {
+          if (custId) {
+            await fetch(`/api/customers/${encodeURIComponent(custId)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ fullName: name, phone, email, points, tier })
+            });
+            Toast.success(`Đã cập nhật khách hàng: <b>${name}</b>`);
+          } else {
+            await fetch('/api/customers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ fullName: name, phone, email, points, tier })
+            });
+            Toast.success(`Đã thêm khách hàng: <b>${name}</b>`);
+          }
+        } catch (err) {
+          console.warn("Lỗi lưu lên backend, cập nhật LocalStorage...");
+        }
+
+        // Đồng bộ LocalStorage
         let users = DB.getUsers();
         if (custId) {
           const idx = users.findIndex(u => u.id === custId);
           if (idx >= 0) {
-            users[idx] = {
-              ...users[idx],
-              fullName: name,
-              phone,
-              email,
-              points,
-              tier
-            };
+            users[idx] = { ...users[idx], fullName: name, phone, email, points, tier };
           }
-          Toast.success(`Đã cập nhật khách hàng: <b>${name}</b>`);
         } else {
           const newCust = {
             id: `CUST-${Date.now().toString().slice(-4)}`,
@@ -324,36 +345,48 @@
             createdAt: new Date().toISOString().split("T")[0]
           };
           users.push(newCust);
-          Toast.success(`Đã thêm khách hàng: <b>${name}</b>`);
         }
-
         DB.set(STORAGE_KEYS.USERS, users);
+
         Modal.close("customer-modal");
-        this.renderTable();
+        await this.renderTable();
       },
 
-      toggleLock(userId) {
-        const users = DB.getUsers();
+      async toggleLock(userId) {
+        try {
+          await fetch(`/api/customers/${encodeURIComponent(userId)}/toggle-lock`, { method: 'PUT' });
+        } catch (err) {}
+
+        let users = DB.getUsers();
         const target = users.find(u => u.id === userId);
         if (target) {
           target.status = target.status === 'locked' ? 'active' : 'locked';
           DB.set(STORAGE_KEYS.USERS, users);
-          Toast.success(`Đã ${target.status === 'locked' ? 'khóa' : 'mở khóa'} tài khoản: <b>${target.fullName}</b>`);
-          this.renderTable();
         }
+        Toast.success(`Đã thay đổi trạng thái tài khoản khách hàng.`);
+        await this.renderTable();
       },
 
-      deleteCustomer(userId) {
-        const users = DB.getUsers();
-        const target = users.find(u => u.id === userId);
-        if (!target) return;
+      async deleteCustomer(userId) {
+        const u = this.customersList.find(c => String(c.id) === String(userId) || String(c.rawId) === String(userId));
+        const name = u ? u.fullName : userId;
+        const phone = u ? u.phone : '';
 
-        if (confirm(`Bạn có chắc muốn xóa khách hàng "${target.fullName}" (${target.phone}) khỏi hệ thống?`)) {
-          const updated = users.filter(u => u.id !== userId);
-          DB.set(STORAGE_KEYS.USERS, updated);
-          Toast.info(`Đã xóa khách hàng: ${target.fullName}`);
-          this.renderTable();
+        if (!confirm(`Bạn có chắc chắn muốn xóa khách hàng "${name}" (${phone}) khỏi hệ thống và cơ sở dữ liệu?`)) return;
+
+        try {
+          const res = await fetch(`/api/customers/${encodeURIComponent(userId)}`, { method: 'DELETE' });
+          const json = await res.json().catch(() => ({}));
+          if (json.message) Toast.info(json.message);
+          else Toast.info(`Đã xóa khách hàng: ${name}`);
+        } catch (err) {
+          Toast.info(`Đã xóa khách hàng: ${name}`);
         }
+
+        let users = DB.getUsers().filter(user => user.id !== userId);
+        DB.set(STORAGE_KEYS.USERS, users);
+
+        await this.renderTable();
       }
     };
 

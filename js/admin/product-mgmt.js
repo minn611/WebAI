@@ -364,6 +364,27 @@ const ProductMgmt = {
       Toast.success(`Đã cập nhật trạng thái topping: <b>${target.name}</b>`);
       this.renderToppingsTable();
     }
+  },
+
+  async deleteTopping(toppingId) {
+    if (!toppingId) return;
+    const toppings = DB.getToppings();
+    const target = toppings.find(t => t.id === toppingId);
+    const name = target ? target.name : toppingId;
+
+    if (!confirm(`Bạn có chắc muốn xóa topping "${name}" khỏi danh mục?`)) return;
+
+    const updated = toppings.filter(t => t.id !== toppingId);
+    DB.saveToppings(updated);
+
+    try {
+      await fetch(`http://localhost:5000/api/toppings/${encodeURIComponent(toppingId)}`, {
+        method: "DELETE"
+      });
+    } catch (err) {}
+
+    Toast.info(`Đã xóa topping <b>${name}</b> thành công.`);
+    this.renderToppingsTable();
   }
 };
 

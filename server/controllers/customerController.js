@@ -106,3 +106,176 @@ exports.updateCustomerPoints = async (req, res) => {
     res.status(500).json({ success: false, message: 'Lỗi máy chủ khi cập nhật điểm tích lũy' });
   }
 };
+
+// @desc    Thêm khách hàng mới (Admin)
+// @route   POST /api/customers
+exports.createCustomer = async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const { fullName, phone, email, points, tier, address } = req.body;
+
+    if (!fullName || !phone) {
+      connection.release();
+      return res.status(400).json({ success: false, message: 'Vui lòng nhập họ tên và số điện thoại!' });
+    }
+
+    const username = phone.trim();
+    const bcrypt = require('bcryptjs');
+    const passwordHash = await bcrypt.hash('123456', 10);
+
+    // Kiểm tra tài khoản đã tồn tại
+    const [existing] = await connection.query('SELECT id FROM TAI_KHOAN WHERE so_dien_thoai = ? OR ten_dang_nhap = ?', [phone.trim(), username]);
+    let accountId;
+    if (existing.length > 0) {
+      accountId = existing[0].id;
+    } else {
+      const [accResult] = await connection.query(
+        `INSERT INTO TAI_KHOAN (ten_dang_nhap, mat_khau_hash, so_dien_thoai, email, vai_tro, trang_thai)
+         VALUES (?, ?, ?, ?, 'khach_hang', 'hoat_dong')`,
+        [username, passwordHash, phone.trim(), email || null]
+      );
+      accountId = accResult.insertId;
+    }
+
+    // Tạo mã khách hàng
+    const maKh = 'KH' + Date.now().toString().slice(-4);
+    const pts = parseInt(points) || 0;
+    let t = (tier || 'dong').toLowerCase();
+    if (t.includes('kim')) t = 'kim_cuong';
+    else if (t.includes('vang')) t = 'vang';
+    else if (t.includes('bac')) t = 'bac';
+    else t = 'dong';
+
+    const [custResult] = await connection.query(
+      `INSERT INTO KHACH_HANG (tai_khoan_id, ma_khach_hang, ho_ten, dia_chi_mac_dinh, diem_tich_luy, hang_thanh_vien)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [accountId, maKh, fullName.trim(), address || '', pts, t]
+    );
+
+    await connection.commit();
+    connection.release();
+
+    res.status(201).json({
+      success: true,
+      message: `Thêm khách hàng ${fullName} thành công!`,
+      customerId: custResult.insertId
+    });
+  } catch (error) {
+    await connection.rollback();
+    connection.release();
+    console.error('Error creating customer:', error);
+    res.status(500).json({ success: false, message: error.message || 'Lỗi khi thêm khách hàng' });
+  }
+};
+
+// @desc    Chỉnh sửa thông tin khách hàng (Admin)
+// @route   PUT /api/customers/:id
+exports.updateCustomer = async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const rawId = req.params.id;
+    const id = rawId.replace(/^CUST-/, '');
+    const { fullName, phone, email, points, tier } = req.body;
+
+    let t = (tier || 'dong').toLowerCase();
+    if (t.includes('kim')) t = 'kim_cuong';
+    else if (t.includes('vang')) t = 'vang';
+    else if (t.includes('bac')) t = 'bac';
+    else t = 'dong';
+
+    const [cust] = await connection.query('SELECT * FROM KHACH_HANG WHERE id = ?', [id]);
+    if (cust.length === 0) {
+      connection.release();
+      return res.status(404).json({ success: false, message: 'Không tìm thấy khách hàng!' });
+    }
+
+    await connection.query(
+      `UPDATE KHACH_HANG SET ho_ten = ?, diem_tich_luy = ?, hang_thanh_vien = ? WHERE id = ?`,
+      [fullName.trim(), parseInt(points) || 0, t, id]
+    );
+
+    if (cust[0].tai_khoan_id) {
+      await connection.query(
+        `UPDATE TAI_KHOAN SET so_dien_thoai = ?, email = ? WHERE id = ?`,
+        [phone.trim(), email ? email.trim() : null, cust[0].tai_khoan_id]
+      );
+    }
+
+    await connection.commit();
+    connection.release();
+
+    res.json({ success: true, message: `Đã cập nhật khách hàng ${fullName} thành công!` });
+  } catch (error) {
+    await connection.rollback();
+    connection.release();
+    console.error('Error updating customer:', error);
+    res.status(500).json({ success: false, message: error.message || 'Lỗi khi cập nhật khách hàng' });
+  }
+};
+
+// @desc    Xóa khách hàng (Admin)
+// @route   DELETE /api/customers/:id
+exports.deleteCustomer = async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const rawId = req.params.id;
+    const id = rawId.replace(/^CUST-/, '');
+
+    const [cust] = await connection.query('SELECT tai_khoan_id FROM KHACH_HANG WHERE id = ?', [id]);
+    if (cust.length === 0) {
+      connection.release();
+      return res.status(404).json({ success: false, message: 'Không tìm thấy khách hàng để xóa!' });
+    }
+
+    const accId = cust[0].tai_khoan_id;
+    await connection.query('DELETE FROM KHACH_HANG WHERE id = ?', [id]);
+    if (accId) {
+      await connection.query('DELETE FROM TAI_KHOAN WHERE id = ?', [accId]);
+    }
+
+    await connection.commit();
+    connection.release();
+
+    res.json({ success: true, message: 'Đã xóa khách hàng thành công khỏi hệ thống!' });
+  } catch (error) {
+    await connection.rollback();
+    connection.release();
+    console.error('Error deleting customer:', error);
+    res.status(500).json({ success: false, message: error.message || 'Lỗi khi xóa khách hàng' });
+  }
+};
+
+// @desc    Khóa / Mở khóa tài khoản khách hàng
+// @route   PUT /api/customers/:id/toggle-lock
+exports.toggleLock = async (req, res) => {
+  try {
+    const rawId = req.params.id;
+    const id = rawId.replace(/^CUST-/, '');
+    const [cust] = await pool.query(
+      `SELECT tk.id, tk.trang_thai, kh.ho_ten 
+       FROM KHACH_HANG kh 
+       JOIN TAI_KHOAN tk ON kh.tai_khoan_id = tk.id 
+       WHERE kh.id = ?`,
+      [id]
+    );
+
+    if (cust.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản khách hàng!' });
+    }
+
+    const newStatus = cust[0].trang_thai === 'tam_khoa' ? 'hoat_dong' : 'tam_khoa';
+    await pool.query('UPDATE TAI_KHOAN SET trang_thai = ? WHERE id = ?', [newStatus, cust[0].id]);
+
+    res.json({
+      success: true,
+      message: `Đã ${newStatus === 'tam_khoa' ? 'khóa' : 'mở khóa'} tài khoản khách hàng ${cust[0].ho_ten} thành công!`,
+      status: newStatus
+    });
+  } catch (error) {
+    console.error('Error toggling customer lock:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

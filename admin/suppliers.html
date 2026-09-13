@@ -158,15 +158,17 @@
   </div>
 
   <!-- Scripts -->
-  <script src="../js/db/mock-data.js"></script>
-  <script src="../js/db/storage.js"></script>
-  <script src="../js/utils/formatters.js"></script>
-  <script src="../js/utils/toast.js"></script>
-  <script src="../js/utils/modal.js"></script>
-  <script src="../js/auth.js"></script>
+  <script src="../js/db/mock-data.js?v=20260913"></script>
+  <script src="../js/db/storage.js?v=20260913"></script>
+  <script src="../js/utils/formatters.js?v=20260913"></script>
+  <script src="../js/utils/toast.js?v=20260913"></script>
+  <script src="../js/utils/modal.js?v=20260913"></script>
+  <script src="../js/auth.js?v=20260913"></script>
 
   <script>
     const SupplierMgmt = {
+      suppliersList: [],
+
       init() {
         this.renderTable();
       },
@@ -180,9 +182,11 @@
         try {
           const response = await fetch("http://localhost:5000/api/suppliers");
           const data = await response.json();
-          if (data.success && data.data) {
+          if (data.success && Array.isArray(data.data)) {
             sups = data.data.map(s => ({
               id: s.ma_ncc || `SUP-${s.id}`,
+              rawId: s.id,
+              ma_ncc: s.ma_ncc,
               name: s.ten_nha_cung_cap,
               contact: s.nguoi_dai_dien || 'Đại diện',
               phone: s.so_dien_thoai,
@@ -195,8 +199,10 @@
         }
 
         if (sups.length === 0) {
-          sups = DB.getSuppliers();
+          sups = DB.getSuppliers().map(s => ({ ...s, rawId: s.id }));
         }
+
+        this.suppliersList = sups;
 
         if (sups.length === 0) {
           tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">Chưa có nhà cung cấp nào.</td></tr>`;
@@ -218,7 +224,6 @@
             <td style="text-align: center;">
               <div class="table-actions" style="justify-content: center; gap: 0.35rem;">
                 <button class="action-icon-btn btn-edit" title="Sửa thông tin đối tác" onclick="SupplierMgmt.openEditModal('${s.id}')">✏️</button>
-                <button class="action-icon-btn btn-view" title="Lịch sử nhập kho" onclick="Toast.info('Lịch sử nhập kho của ${s.name}: 12 lô hàng đã nhận')">📦</button>
                 <button class="action-icon-btn btn-del" title="Xóa đối tác" onclick="SupplierMgmt.deleteSupplier('${s.id}')">🗑️</button>
               </div>
             </td>
@@ -238,21 +243,24 @@
       },
 
       openEditModal(id) {
-        const list = DB.getSuppliers();
-        const sup = list.find(s => s.id === id);
+        let sup = this.suppliersList.find(s => String(s.id) === String(id) || String(s.rawId) === String(id));
+        if (!sup) {
+          const list = DB.getSuppliers();
+          sup = list.find(s => String(s.id) === String(id));
+        }
         if (!sup) return;
 
         document.getElementById("sup-modal-title").textContent = `Sửa Đối Tác: ${sup.name}`;
         document.getElementById("sup-id").value = sup.id;
-        document.getElementById("sup-name").value = sup.name;
-        document.getElementById("sup-contact").value = sup.contact;
-        document.getElementById("sup-phone").value = sup.phone;
-        document.getElementById("sup-materials").value = sup.materials;
+        document.getElementById("sup-name").value = sup.name || "";
+        document.getElementById("sup-contact").value = sup.contact || "";
+        document.getElementById("sup-phone").value = sup.phone || "";
+        document.getElementById("sup-materials").value = sup.materials || "";
         document.getElementById("sup-status").value = sup.status || "active";
         Modal.open("supplier-modal");
       },
 
-      saveSubmit(e) {
+      async saveSubmit(e) {
         e.preventDefault();
         const id = document.getElementById("sup-id").value;
         const name = document.getElementById("sup-name").value.trim();
@@ -261,53 +269,93 @@
         const materials = document.getElementById("sup-materials").value.trim();
         const status = document.getElementById("sup-status").value;
 
-        const list = DB.getSuppliers();
+        try {
+          if (id) {
+            await fetch(`http://localhost:5000/api/suppliers/${encodeURIComponent(id)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name,
+                ten_nha_cung_cap: name,
+                contact,
+                nguoi_dai_dien: contact,
+                phone,
+                so_dien_thoai: phone,
+                materials,
+                danh_muc_nguyen_lieu: materials,
+                status
+              })
+            });
+            Toast.success(`Đã cập nhật nhà cung cấp: <b>${name}</b>`);
+          } else {
+            const ma_ncc = 'NCC-' + Date.now().toString().slice(-4);
+            await fetch('http://localhost:5000/api/suppliers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ma_ncc,
+                name,
+                ten_nha_cung_cap: name,
+                contact,
+                nguoi_dai_dien: contact,
+                phone,
+                so_dien_thoai: phone,
+                materials,
+                danh_muc_nguyen_lieu: materials,
+                status
+              })
+            });
+            Toast.success(`Đã thêm nhà cung cấp: <b>${name}</b>`);
+          }
+        } catch (err) {
+          console.warn("Backend API error, falling back to LocalStorage...");
+        }
 
+        // Đồng bộ LocalStorage
+        const list = DB.getSuppliers();
         if (id) {
           const idx = list.findIndex(s => s.id === id);
           if (idx !== -1) {
             list[idx] = { ...list[idx], name, contact, phone, materials, status };
-            DB.set(STORAGE_KEYS.SUPPLIERS, list);
-            Toast.success(`Đã cập nhật nhà cung cấp: <b>${name}</b>`);
-            if (typeof AuditLogger !== "undefined") {
-              AuditLogger.notifyServer(`CẬP NHẬT NHÀ CUNG CẤP: ${name}`, `Liên hệ: ${contact} (${phone}) | Nguyên liệu: ${materials}`, "Quản Lý Cửa Hàng", "ADMIN");
-            }
           }
         } else {
-          const newSup = {
+          list.push({
             id: `SUP-0${list.length + 1}`,
             name,
             contact,
             phone,
             materials,
             status
-          };
-          list.push(newSup);
-          DB.set(STORAGE_KEYS.SUPPLIERS, list);
-          Toast.success(`Đã thêm nhà cung cấp: <b>${name}</b>`);
-          if (typeof AuditLogger !== "undefined") {
-            AuditLogger.notifyServer(`THÊM NHÀ CUNG CẤP MỚI: ${name}`, `Liên hệ: ${contact} (${phone}) | Nguyên liệu: ${materials}`, "Quản Lý Cửa Hàng", "ADMIN");
-          }
+          });
         }
+        DB.set(STORAGE_KEYS.SUPPLIERS, list);
 
         Modal.close("supplier-modal");
-        this.renderTable();
+        await this.renderTable();
       },
 
-      deleteSupplier(id) {
-        const list = DB.getSuppliers();
-        const sup = list.find(s => s.id === id);
-        if (!sup) return;
+      async deleteSupplier(id) {
+        const sup = this.suppliersList.find(s => String(s.id) === String(id) || String(s.rawId) === String(id));
+        const name = sup ? sup.name : id;
 
-        if (confirm(`Bạn có chắc chắn muốn xóa nhà cung cấp "${sup.name}" không?`)) {
-          const updated = list.filter(s => s.id !== id);
-          DB.set(STORAGE_KEYS.SUPPLIERS, updated);
-          Toast.info(`Đã xóa nhà cung cấp <b>${sup.name}</b>`);
-          if (typeof AuditLogger !== "undefined") {
-            AuditLogger.notifyServer(`XÓA NHÀ CUNG CẤP: ${sup.name}`, `Đã xóa đối tác cung cấp mã ${id}`, "Quản Lý Cửa Hàng", "ADMIN");
-          }
-          this.renderTable();
+        if (!confirm(`Bạn có chắc chắn muốn xóa nhà cung cấp "${name}" khỏi hệ thống và cơ sở dữ liệu?`)) return;
+
+        try {
+          const res = await fetch(`http://localhost:5000/api/suppliers/${encodeURIComponent(id)}`, {
+            method: 'DELETE'
+          });
+          const json = await res.json().catch(() => ({}));
+          if (json.message) Toast.info(json.message);
+          else Toast.info(`Đã xóa nhà cung cấp: ${name}`);
+        } catch (err) {
+          Toast.info(`Đã xóa nhà cung cấp: ${name}`);
         }
+
+        const list = DB.getSuppliers();
+        const updated = list.filter(s => s.id !== id && s.name !== name);
+        DB.set(STORAGE_KEYS.SUPPLIERS, updated);
+
+        await this.renderTable();
       }
     };
 

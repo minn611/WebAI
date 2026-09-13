@@ -35,8 +35,8 @@ const OrderMgmt = {
       clearTimeout(timeoutId);
       const data = await res.json();
       const orderList = data.success && (Array.isArray(data.orders) ? data.orders : (Array.isArray(data.data) ? data.data : null));
-      if (orderList && orderList.length > 0) {
-        orderList.forEach(o => {
+      if (orderList && Array.isArray(orderList)) {
+        const normalizedList = orderList.map(o => {
           const itemsNormalized = Array.isArray(o.items) ? o.items.map(it => ({
             name: it.name || it.ten_san_pham || "Trà Sữa",
             size: it.size || it.kich_thuoc || "M",
@@ -48,9 +48,10 @@ const OrderMgmt = {
             subtotal: parseFloat(it.subtotal || it.thanh_tien || 0)
           })) : [];
 
-          const normalized = {
+          return {
             id: o.id || o.orderId || `TS-${o.dbId}`,
             orderId: o.id || o.orderId,
+            dbId: o.dbId || o.id,
             customerName: o.customerName || o.ten_nguoi_nhan || "Khách Hàng",
             customerPhone: o.customerPhone || o.phone || o.sdt_nguoi_nhan || "",
             customerAddress: o.customerAddress || o.address || o.dia_chi_giao_hang || "Tại quán / Chưa có",
@@ -66,8 +67,10 @@ const OrderMgmt = {
             orderStatus: o.orderStatus || o.status || o.trang_thai_don_hang || "pending",
             createdAt: o.createdAt || new Date().toISOString()
           };
-          DB.saveOrder(normalized);
         });
+        if (normalizedList.length > 0) {
+          DB.saveOrders(normalizedList);
+        }
       }
     } catch (err) {
       console.warn("Backend offline or unreachable, using local database cache.");
@@ -357,51 +360,63 @@ const OrderMgmt = {
 
   async deleteOrder(orderId) {
     if (!orderId) return;
-    const confirmDel = confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng #${orderId} không?\n\nLưu ý: Hành động này sẽ xóa đơn khỏi cơ sở dữ liệu và không thể khôi phục!`);
-    if (!confirmDel) return;
-
-    try {
-      const res = await fetch(`http://localhost:5000/api/orders/${encodeURIComponent(orderId)}`, {
-        method: "DELETE"
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok && !data.success) {
-        console.warn("Backend delete notice:", data.message);
+    
+    const executeDelete = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/orders/${encodeURIComponent(orderId)}`, {
+          method: "DELETE"
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok && !data.success) {
+          console.warn("Backend delete notice:", data.message);
+        }
+      } catch (e) {
+        console.warn("Lỗi kết nối server khi xóa đơn:", e);
       }
-    } catch (e) {
-      console.warn("Lỗi kết nối server khi xóa đơn:", e);
-    }
 
-    // Xóa trong bộ nhớ client
-    DB.deleteOrder(orderId);
+      // Xóa trong bộ nhớ client
+      DB.deleteOrder(orderId);
 
-    // Bắn thông báo BroadcastChannel
-    try {
-      const ch = new BroadcastChannel('trasua_dodo_orders');
-      ch.postMessage({ type: 'ORDER_DELETED', orderId });
-      ch.close();
-    } catch (e) {}
+      // Bắn thông báo BroadcastChannel
+      try {
+        const ch = new BroadcastChannel('trasua_dodo_orders');
+        ch.postMessage({ type: 'ORDER_DELETED', orderId });
+        ch.close();
+      } catch (e) {}
 
-    // Ghi audit log
-    if (typeof AuditLogger !== "undefined") {
-      AuditLogger.notifyServer(
-        `XÓA ĐƠN HÀNG #${orderId}`,
-        `Đã xóa vĩnh viễn đơn hàng #${orderId} khỏi hệ thống.`
+      // Ghi audit log
+      if (typeof AuditLogger !== "undefined") {
+        AuditLogger.notifyServer(
+          `XÓA ĐƠN HÀNG #${orderId}`,
+          `Đã xóa vĩnh viễn đơn hàng #${orderId} khỏi hệ thống.`
+        );
+      }
+
+      Toast.success(`🗑️ Đã xóa vĩnh viễn đơn hàng <b>#${orderId}</b> thành công!`);
+
+      // Đóng modal chi tiết nếu đang mở
+      const detailModal = document.getElementById("order-detail-modal");
+      if (detailModal && detailModal.classList.contains("active")) {
+        Modal.close("order-detail-modal");
+      }
+
+      // Đồng bộ và tải lại bảng
+      await this.syncOrdersFromAPI();
+      this.renderOrdersTable();
+      this.updateStatusCounts();
+    };
+
+    if (typeof Modal !== "undefined" && typeof Modal.confirm === "function") {
+      Modal.confirm(
+        `Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng <b>#${orderId}</b> không?<br><span style="color: #DC2626; font-size: 0.8rem;">Lưu ý: Hành động này sẽ xóa đơn khỏi cơ sở dữ liệu và không thể khôi phục!</span>`,
+        executeDelete,
+        "Xác Nhận Xóa Đơn Hàng"
       );
+    } else {
+      if (confirm(`Bạn có chắc muốn xóa đơn hàng #${orderId} không?`)) {
+        executeDelete();
+      }
     }
-
-    Toast.success(`🗑️ Đã xóa vĩnh viễn đơn hàng <b>#${orderId}</b> thành công!`);
-
-    // Đóng modal chi tiết nếu đang mở
-    const detailModal = document.getElementById("order-detail-modal");
-    if (detailModal && detailModal.classList.contains("active")) {
-      Modal.close("order-detail-modal");
-    }
-
-    // Đồng bộ và tải lại bảng
-    await this.syncOrdersFromAPI();
-    this.renderOrdersTable();
-    this.updateStatusCounts();
   },
 
   // 1-Click Print 80mm POS Receipt

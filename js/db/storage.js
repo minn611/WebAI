@@ -161,7 +161,8 @@ const DB = {
   },
   deleteOrder(id) {
     let list = this.getOrders();
-    list = list.filter(o => o.id !== id && o.orderId !== id);
+    const sid = String(id || '').trim();
+    list = list.filter(o => String(o.id || '') !== sid && String(o.orderId || '') !== sid && String(o.dbId || '') !== sid);
     this.set(STORAGE_KEYS.ORDERS, list);
     return list;
   },
