@@ -37,8 +37,8 @@
           <span>Tổng Quan (Dashboard)</span>
         </a>
         <a href="orders.html" class="sidebar-nav-item">
-          <span class="nav-icon">📦</span>
-          <span>Quản Lý Đơn Hàng</span>
+          <span class="nav-icon">🧾</span>
+          <span>Quản Lý Hoá Đơn</span>
         </a>
         <a href="products.html" class="sidebar-nav-item">
           <span class="nav-icon">🧋</span>
@@ -47,6 +47,10 @@
         <a href="customers.html" class="sidebar-nav-item">
           <span class="nav-icon">👥</span>
           <span>Khách Hàng & Điểm</span>
+        </a>
+        <a href="reviews.html" class="sidebar-nav-item">
+          <span class="nav-icon">⭐</span>
+          <span>Đánh Giá & Phản Hồi</span>
         </a>
         <a href="staff.html" class="sidebar-nav-item">
           <span class="nav-icon">💼</span>
@@ -163,11 +167,19 @@
   <script src="../js/utils/formatters.js?v=20260913"></script>
   <script src="../js/utils/toast.js?v=20260913"></script>
   <script src="../js/utils/modal.js?v=20260913"></script>
+  <script src="../js/utils/api-config.js?v=20260914"></script>
   <script src="../js/auth.js?v=20260913"></script>
 
   <script>
     const SupplierMgmt = {
       suppliersList: [],
+
+      getApiBase() {
+        if (typeof APIConfig !== 'undefined' && typeof APIConfig.getBaseUrl === 'function') {
+          return APIConfig.getBaseUrl();
+        }
+        return window.API_BASE || (window.location.origin.includes(':5000') ? '/api' : 'http://localhost:5000/api');
+      },
 
       init() {
         this.renderTable();
@@ -180,7 +192,7 @@
         let sups = [];
 
         try {
-          const response = await fetch("http://localhost:5000/api/suppliers");
+          const response = await fetch(`${this.getApiBase()}/suppliers`);
           const data = await response.json();
           if (data.success && Array.isArray(data.data)) {
             sups = data.data.map(s => ({
@@ -269,9 +281,19 @@
         const materials = document.getElementById("sup-materials").value.trim();
         const status = document.getElementById("sup-status").value;
 
+        if (!Formatters.isValidPhone(phone)) {
+          Toast.warning("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).");
+          const phoneInput = document.getElementById("sup-phone");
+          if (phoneInput) {
+            phoneInput.focus();
+            phoneInput.style.borderColor = "#EF4444";
+          }
+          return;
+        }
+
         try {
           if (id) {
-            await fetch(`http://localhost:5000/api/suppliers/${encodeURIComponent(id)}`, {
+            await fetch(`${this.getApiBase()}/suppliers/${encodeURIComponent(id)}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -289,7 +311,7 @@
             Toast.success(`Đã cập nhật nhà cung cấp: <b>${name}</b>`);
           } else {
             const ma_ncc = 'NCC-' + Date.now().toString().slice(-4);
-            await fetch('http://localhost:5000/api/suppliers', {
+            await fetch(`${this.getApiBase()}/suppliers`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -341,7 +363,7 @@
         if (!confirm(`Bạn có chắc chắn muốn xóa nhà cung cấp "${name}" khỏi hệ thống và cơ sở dữ liệu?`)) return;
 
         try {
-          const res = await fetch(`http://localhost:5000/api/suppliers/${encodeURIComponent(id)}`, {
+          const res = await fetch(`${this.getApiBase()}/suppliers/${encodeURIComponent(id)}`, {
             method: 'DELETE'
           });
           const json = await res.json().catch(() => ({}));

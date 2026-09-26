@@ -5,6 +5,11 @@
 const OrderTracking = {
   activeOrder: null,
 
+  getApiBase() {
+    return (typeof window !== "undefined" && window.API_BASE) || 
+           (typeof APIConfig !== "undefined" ? APIConfig.getBaseUrl() : "http://localhost:5000/api");
+  },
+
   init() {
     const urlParams = new URLSearchParams(window.location.search);
     const orderId = urlParams.get("id");
@@ -62,9 +67,10 @@ const OrderTracking = {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 1800);
-      let endpoint = `http://localhost:5000/api/orders/${encodeURIComponent(query)}`;
+      const apiBase = this.getApiBase();
+      let endpoint = `${apiBase}/orders/${encodeURIComponent(query)}`;
       if (isPhone) {
-        endpoint = `http://localhost:5000/api/orders/customer/${encodeURIComponent(query)}`;
+        endpoint = `${apiBase}/orders/customer/${encodeURIComponent(query)}`;
       }
       const res = await fetch(endpoint, { signal: controller.signal });
       clearTimeout(timeoutId);
@@ -266,7 +272,7 @@ const OrderTracking = {
     `;
   },
 
-  simulateNextStatus(orderId) {
+  async simulateNextStatus(orderId) {
     const order = DB.getOrderById(orderId);
     if (!order) return;
 
@@ -275,6 +281,16 @@ const OrderTracking = {
     if (currIdx < stages.length - 1) {
       const nextStatus = stages[currIdx + 1];
       DB.updateOrderStatus(orderId, nextStatus);
+
+      try {
+        const apiBase = this.getApiBase();
+        await fetch(`${apiBase}/orders/${encodeURIComponent(orderId)}/status`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: nextStatus })
+        });
+      } catch (err) {}
+
       Toast.success(`Đã chuyển trạng thái đơn sang: <b>${nextStatus.toUpperCase()}</b>`);
       this.lookupOrder(orderId);
     } else {
@@ -282,9 +298,19 @@ const OrderTracking = {
     }
   },
 
-  cancelOrder(orderId) {
+  async cancelOrder(orderId) {
     if (confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) {
       DB.updateOrderStatus(orderId, "cancelled");
+
+      try {
+        const apiBase = this.getApiBase();
+        await fetch(`${apiBase}/orders/${encodeURIComponent(orderId)}/status`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "cancelled" })
+        });
+      } catch (err) {}
+
       Toast.warning("Đã hủy đơn hàng!");
       this.lookupOrder(orderId);
     }
@@ -324,7 +350,8 @@ const OrderTracking = {
 
     // 2. Gửi API máy chủ Backend
     try {
-      await fetch("http://localhost:5000/api/notifications/transfer", {
+      const apiBase = this.getApiBase();
+      await fetch(`${apiBase}/notifications/transfer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

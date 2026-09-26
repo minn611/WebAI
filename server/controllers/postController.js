@@ -67,3 +67,92 @@ exports.createPost = async (req, res) => {
     res.status(500).json({ success: false, message: 'Lỗi máy chủ khi đăng bài viết' });
   }
 };
+
+// @desc    Lấy chi tiết 1 Bài viết theo ID hoặc Slug
+// @route   GET /api/posts/:id
+exports.getPostById = async (req, res) => {
+  try {
+    const rawId = req.params.id;
+    const isNum = /^\d+$/.test(rawId);
+    const numId = isNum ? parseInt(rawId) : -1;
+
+    const [rows] = await pool.query(
+      `SELECT * FROM BAI_VIET WHERE id = ? OR slug = ? LIMIT 1`,
+      [numId, rawId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bài viết' });
+    }
+
+    // Tăng lượt xem
+    await pool.query(`UPDATE BAI_VIET SET luot_xem = luot_xem + 1 WHERE id = ?`, [rows[0].id]);
+
+    res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error('Error getting post by id:', error);
+    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi lấy chi tiết bài viết' });
+  }
+};
+
+// @desc    Cập nhật Bài viết (Admin / Staff)
+// @route   PUT /api/posts/:id
+exports.updatePost = async (req, res) => {
+  try {
+    const rawId = req.params.id;
+    const isNum = /^\d+$/.test(rawId);
+    const numId = isNum ? parseInt(rawId) : -1;
+    const { tieu_de, loai_bai_viet, anh_dai_dien, tom_tat, noi_dung, trang_thai } = req.body;
+
+    const [result] = await pool.query(
+      `UPDATE BAI_VIET 
+       SET tieu_de = COALESCE(?, tieu_de),
+           loai_bai_viet = COALESCE(?, loai_bai_viet),
+           anh_dai_dien = COALESCE(?, anh_dai_dien),
+           tom_tat = COALESCE(?, tom_tat),
+           noi_dung = COALESCE(?, noi_dung),
+           trang_thai = COALESCE(?, trang_thai)
+       WHERE id = ?`,
+      [
+        tieu_de ? tieu_de.trim() : null,
+        loai_bai_viet || null,
+        anh_dai_dien || null,
+        tom_tat !== undefined ? tom_tat : null,
+        noi_dung !== undefined ? noi_dung : null,
+        trang_thai || null,
+        numId
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bài viết để cập nhật!' });
+    }
+
+    res.json({ success: true, message: 'Cập nhật bài viết truyền thông thành công!' });
+  } catch (error) {
+    console.error('Error updating post:', error);
+    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi cập nhật bài viết' });
+  }
+};
+
+// @desc    Xóa Bài viết (Admin)
+// @route   DELETE /api/posts/:id
+exports.deletePost = async (req, res) => {
+  try {
+    const rawId = req.params.id;
+    const isNum = /^\d+$/.test(rawId);
+    const numId = isNum ? parseInt(rawId) : -1;
+
+    const [result] = await pool.query(`DELETE FROM BAI_VIET WHERE id = ?`, [numId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bài viết để xóa!' });
+    }
+
+    res.json({ success: true, message: 'Đã xóa bài viết khỏi hệ thống!' });
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi xóa bài viết' });
+  }
+};
+

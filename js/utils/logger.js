@@ -11,9 +11,12 @@ const AuditLogger = {
       let role = customRole || (user ? (user.positionTitle || user.role).toUpperCase() : "KHÁCH HÀNG");
 
       const payload = { actor, role, action, detail };
+      const apiBase = (typeof APIConfig !== 'undefined' && typeof APIConfig.getBaseUrl === 'function')
+        ? APIConfig.getBaseUrl()
+        : (window.API_BASE || (window.location.origin.includes(':5000') ? '/api' : 'http://localhost:5000/api'));
 
       // Gửi ngầm tới endpoint máy chủ
-      fetch("http://localhost:5000/api/audit", {
+      fetch(`${apiBase}/audit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

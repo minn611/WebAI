@@ -37,8 +37,8 @@
           <span>Tổng Quan (Dashboard)</span>
         </a>
         <a href="orders.html" class="sidebar-nav-item">
-          <span class="nav-icon">📦</span>
-          <span>Quản Lý Đơn Hàng</span>
+          <span class="nav-icon">🧾</span>
+          <span>Quản Lý Hoá Đơn</span>
         </a>
         <a href="products.html" class="sidebar-nav-item">
           <span class="nav-icon">🧋</span>
@@ -47,6 +47,10 @@
         <a href="customers.html" class="sidebar-nav-item">
           <span class="nav-icon">👥</span>
           <span>Khách Hàng & Điểm</span>
+        </a>
+        <a href="reviews.html" class="sidebar-nav-item">
+          <span class="nav-icon">⭐</span>
+          <span>Đánh Giá & Phản Hồi</span>
         </a>
         <a href="staff.html" class="sidebar-nav-item">
           <span class="nav-icon">💼</span>
@@ -77,19 +81,27 @@
         <div style="display: flex; align-items: center; gap: 1rem;">
           <button class="action-btn" id="sidebar-toggle-btn" onclick="document.getElementById('admin-sidebar').classList.toggle('open')" style="display: none;">☰</button>
           <div>
-            <h3 style="font-size: 1.25rem; margin: 0;">Quản Lý Khuyến Mãi & Banner Quảng Cáo</h3>
-            <span class="text-xs text-muted">Tạo mã voucher giảm giá, quản lý banner trang chủ và chương trình ưu đãi</span>
+            <h3 style="font-size: 1.25rem; margin: 0;">Quản Lý Truyền Thông & Khuyến Mãi</h3>
+            <span class="text-xs text-muted">Quản lý bài viết tin tức, mã voucher giảm giá và banner trang chủ</span>
           </div>
         </div>
-        <div style="display: flex; gap: 0.5rem;">
-          <button class="btn btn-primary" onclick="MarketingMgmt.openAddVoucherModal()">+ Thêm Voucher</button>
-          <button class="btn btn-outline" onclick="MarketingMgmt.openAddBannerModal()">+ Thêm Banner</button>
+        <div style="display: flex; gap: 0.5rem;" id="topbar-action-buttons">
+          <button class="btn btn-primary" onclick="MarketingMgmt.openAddVoucherModal()" id="btn-top-add-vouch">+ Thêm Voucher</button>
+          <button class="btn btn-secondary" onclick="MarketingMgmt.openAddPostModal()" id="btn-top-add-post">+ Đăng Bài Viết</button>
+          <button class="btn btn-outline" onclick="MarketingMgmt.openAddBannerModal()" id="btn-top-add-banner">+ Thêm Banner</button>
         </div>
       </header>
 
       <div class="admin-content">
-        <!-- Vouchers Section -->
-        <div class="data-table-container" style="margin-bottom: 2rem;">
+        <!-- Sub Tabs Navigation -->
+        <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid var(--border-color); margin-bottom: 1.5rem;">
+          <button id="tab-vouchers-btn" class="btn btn-ghost font-bold" style="border-radius: 0; border-bottom: 2.5px solid var(--primary); color: var(--primary);" onclick="MarketingMgmt.switchTab('vouchers')">🎟️ Mã Giảm Giá (Voucher)</button>
+          <button id="tab-posts-btn" class="btn btn-ghost font-bold" style="border-radius: 0; color: var(--text-muted);" onclick="MarketingMgmt.switchTab('posts')">📰 Bài Viết Truyền Thông (Hình 4.26)</button>
+          <button id="tab-banners-btn" class="btn btn-ghost font-bold" style="border-radius: 0; color: var(--text-muted);" onclick="MarketingMgmt.switchTab('banners')">🖼️ Banner Quảng Cáo</button>
+        </div>
+
+        <!-- 1. Vouchers Section -->
+        <div id="section-vouchers" class="data-table-container">
           <div class="table-toolbar" style="display: flex; justify-content: space-between; align-items: center;">
             <h4 style="margin: 0;">🎟️ Danh Sách Mã Giảm Giá Đang Hoạt Động</h4>
             <button class="btn btn-primary btn-sm" onclick="MarketingMgmt.openAddVoucherModal()">+ Thêm Mã Giảm Giá</button>
@@ -115,8 +127,39 @@
           </div>
         </div>
 
-        <!-- Banners Section -->
-        <div class="data-table-container">
+        <!-- 2. Media Posts Section (UC 3.2.2.2.1 d & Hình 4.26 Đồ Án) -->
+        <div id="section-posts" class="data-table-container" style="display: none;">
+          <div class="table-toolbar" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h4 style="margin: 0;">📰 Danh Sách Bài Viết Truyền Thông & Tin Tức Khuyến Mãi</h4>
+              <span class="text-xs text-muted">Hiển thị các bài viết trên trang chủ, giới thiệu sự kiện và sản phẩm mới</span>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="MarketingMgmt.openAddPostModal()">+ Đăng Bài Viết Mới</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Ảnh Bìa</th>
+                  <th>Tiêu Đề Bài Viết</th>
+                  <th>Thể Loại</th>
+                  <th>Tóm Tắt</th>
+                  <th>Lượt Xem</th>
+                  <th>Ngày Đăng</th>
+                  <th>Trạng Thái</th>
+                  <th style="text-align: center;">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="admin-posts-tbody">
+                <!-- Injected by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3. Banners Section -->
+        <div id="section-banners" class="data-table-container" style="display: none;">
           <div class="table-toolbar" style="display: flex; justify-content: space-between; align-items: center;">
             <h4 style="margin: 0;">🖼️ Banner Quảng Cáo Trang Chủ</h4>
             <button class="btn btn-outline btn-sm" onclick="MarketingMgmt.openAddBannerModal()">+ Thêm Banner Mới</button>
@@ -233,19 +276,109 @@
     </div>
   </div>
 
+  <!-- Add / Edit Media Post Modal (Hình 4.26 Đồ Án) -->
+  <div id="post-modal" class="modal-backdrop">
+    <div class="modal-container" style="max-width: 640px;">
+      <div class="modal-header">
+        <h4 class="modal-title" id="post-modal-title">Đăng Bài Viết Truyền Thông Mới</h4>
+        <button class="modal-close" data-close-modal="post-modal">✕</button>
+      </div>
+      <form onsubmit="MarketingMgmt.savePostSubmit(event)">
+        <input type="hidden" id="post-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label text-xs">Tiêu Đề Bài Viết *</label>
+            <input type="text" id="post-title" class="form-control" required placeholder="VD: Khám phá Series Mochi Kéo Dài 2026">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label class="form-label text-xs">Thể Loại *</label>
+              <select id="post-category" class="form-select">
+                <option value="tin_tuc">Tin Tức Hoạt Động</option>
+                <option value="khuyen_mai">Ưu Đãi & Khuyến Mãi</option>
+                <option value="thong_bao">Thông Báo Cửa Hàng</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Trạng Thái Hiển Thị</label>
+              <select id="post-status" class="form-select">
+                <option value="xuat_ban">Xuất Bản Ngay</option>
+                <option value="nhap">Lưu Bản Nháp</option>
+                <option value="an">Tạm Ẩn</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Ảnh Bìa Đại Diện (URL Ảnh) *</label>
+            <input type="text" id="post-image" class="form-control" required placeholder="https://images.unsplash.com/... hoặc images/products/...">
+          </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Tóm Tắt Ngắn Gọn *</label>
+            <textarea id="post-summary" class="form-control" rows="2" required placeholder="Tóm tắt ngắn 1-2 câu hiển thị tại trang chủ..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Nội Dung Chi Tiết</label>
+            <textarea id="post-content" class="form-control" rows="4" placeholder="Nội dung đầy đủ của bài viết truyền thông..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal="post-modal">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-post">Lưu & Đăng Bài ➔</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="../js/db/mock-data.js?v=20260913"></script>
   <script src="../js/db/storage.js?v=20260913"></script>
   <script src="../js/utils/formatters.js?v=20260913"></script>
   <script src="../js/utils/toast.js?v=20260913"></script>
   <script src="../js/utils/modal.js?v=20260913"></script>
+  <script src="../js/utils/api-config.js?v=20260913"></script>
   <script src="../js/auth.js?v=20260913"></script>
 
   <script>
     const MarketingMgmt = {
+      currentTab: 'vouchers',
+      postsData: [],
+
       init() {
         this.renderVouchers();
+        this.renderPosts();
         this.renderBanners();
+      },
+
+      switchTab(tab) {
+        this.currentTab = tab;
+        const vBtn = document.getElementById("tab-vouchers-btn");
+        const pBtn = document.getElementById("tab-posts-btn");
+        const bBtn = document.getElementById("tab-banners-btn");
+        const secV = document.getElementById("section-vouchers");
+        const secP = document.getElementById("section-posts");
+        const secB = document.getElementById("section-banners");
+
+        [vBtn, pBtn, bBtn].forEach(b => {
+          if (b) {
+            b.style.borderBottom = "none";
+            b.style.color = "var(--text-muted)";
+          }
+        });
+        [secV, secP, secB].forEach(s => {
+          if (s) s.style.display = "none";
+        });
+
+        if (tab === 'vouchers') {
+          if (vBtn) { vBtn.style.borderBottom = "2.5px solid var(--primary)"; vBtn.style.color = "var(--primary)"; }
+          if (secV) secV.style.display = "block";
+        } else if (tab === 'posts') {
+          if (pBtn) { pBtn.style.borderBottom = "2.5px solid var(--primary)"; pBtn.style.color = "var(--primary)"; }
+          if (secP) secP.style.display = "block";
+          this.renderPosts();
+        } else if (tab === 'banners') {
+          if (bBtn) { bBtn.style.borderBottom = "2.5px solid var(--primary)"; bBtn.style.color = "var(--primary)"; }
+          if (secB) secB.style.display = "block";
+        }
       },
 
       async renderVouchers() {
@@ -255,7 +388,8 @@
         let vouchers = [];
 
         try {
-          const response = await fetch("http://localhost:5000/api/vouchers");
+          const apiBase = (typeof APIConfig !== "undefined") ? APIConfig.getBaseUrl() : "http://localhost:5000/api";
+          const response = await fetch(`${apiBase}/vouchers`);
           const data = await response.json();
           if (data.success && data.data) {
             vouchers = data.data.map(v => ({
@@ -296,6 +430,179 @@
             </td>
           </tr>
         `).join("");
+      },
+
+      // ======================================================================
+      // 📰 POSTS CRUD (Quản Lý Bài Viết Truyền Thông - Hình 4.26)
+      // ======================================================================
+      async renderPosts() {
+        const tbody = document.getElementById("admin-posts-tbody");
+        if (!tbody) return;
+
+        let posts = [];
+        const apiBase = (typeof APIConfig !== "undefined") ? APIConfig.getBaseUrl() : "http://localhost:5000/api";
+
+        try {
+          const res = await fetch(`${apiBase}/posts`);
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            posts = json.data;
+            this.postsData = posts;
+          }
+        } catch (err) {
+          console.warn("Backend posts offline, using fallback posts...");
+        }
+
+        if (posts.length === 0) {
+          posts = [
+            {
+              id: 1,
+              tieu_de: "Khám phá Series Mochi Kéo Dài - Độc Quyền Tại Đô Đô",
+              loai_bai_viet: "tin_tuc",
+              anh_dai_dien: "../images/products/hong-tra-mochi-keo-dai.jpg",
+              tom_tat: "Trải nghiệm lớp mochi dẻo mềm quện cùng trà sữa đậm vị, hương vị gây bão giới trẻ.",
+              luot_xem: 1250,
+              ngay_dang: "2026-09-10",
+              trang_thai: "xuat_ban"
+            },
+            {
+              id: 2,
+              tieu_de: "Tưng Bừng Khai Trương Cơ Sở Mới - Giảm 20% Toàn Menu",
+              loai_bai_viet: "khuyen_mai",
+              anh_dai_dien: "https://images.unsplash.com/photo-1558857563-b37fcdd72460?auto=format&fit=crop&w=600&q=80",
+              tom_tat: "Chào đón thành viên mới trong chuỗi Đô Đô với hàng ngàn voucher và quà tặng hấp dẫn.",
+              luot_xem: 890,
+              ngay_dang: "2026-09-12",
+              trang_thai: "xuat_ban"
+            }
+          ];
+          this.postsData = posts;
+        }
+
+        tbody.innerHTML = posts.map(p => {
+          const catMap = {
+            'tin_tuc': '<span class="badge badge-info">Tin Tức</span>',
+            'khuyen_mai': '<span class="badge badge-warning">Khuyến Mãi</span>',
+            'thong_bao': '<span class="badge badge-secondary">Thông Báo</span>'
+          };
+          const statusMap = {
+            'xuat_ban': '<span class="badge badge-success">Xuất Bản</span>',
+            'nhap': '<span class="badge badge-warning">Bản Nháp</span>',
+            'an': '<span class="badge" style="background:#6B7280; color:white;">Đã Ẩn</span>'
+          };
+
+          const imgUrl = p.anh_dai_dien ? (p.anh_dai_dien.startsWith('http') || p.anh_dai_dien.startsWith('../') ? p.anh_dai_dien : '../' + p.anh_dai_dien) : '../images/products/hong-tra-mochi-keo-dai.jpg';
+
+          return `
+            <tr>
+              <td>
+                <img src="${imgUrl}" alt="${p.tieu_de}" onerror="this.src='https://images.unsplash.com/photo-1558857563-b37fcdd72460?auto=format&fit=crop&w=200&q=80';" style="width: 70px; height: 45px; object-fit: cover; border-radius: var(--radius-sm);">
+              </td>
+              <td><b class="font-bold">${p.tieu_de}</b></td>
+              <td>${catMap[p.loai_bai_viet] || p.loai_bai_viet}</td>
+              <td class="text-xs text-muted" style="max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.tom_tat || ''}</td>
+              <td><span class="text-xs font-bold">👁️ ${p.luot_xem || 0}</span></td>
+              <td class="text-xs text-muted">${p.ngay_dang ? p.ngay_dang.split('T')[0] : '2026-09-15'}</td>
+              <td>${statusMap[p.trang_thai] || p.trang_thai}</td>
+              <td style="text-align: center;">
+                <div class="table-actions" style="justify-content: center; gap: 0.35rem;">
+                  <button class="action-icon-btn btn-edit" title="Sửa bài viết" onclick="MarketingMgmt.openEditPostModal(${p.id})">✏️</button>
+                  <button class="action-icon-btn btn-del" title="Xóa bài viết" onclick="MarketingMgmt.deletePost(${p.id})">🗑️</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      },
+
+      openAddPostModal() {
+        document.getElementById("post-modal-title").textContent = "Đăng Bài Viết Truyền Thông Mới";
+        document.getElementById("post-id").value = "";
+        document.getElementById("post-title").value = "";
+        document.getElementById("post-category").value = "tin_tuc";
+        document.getElementById("post-status").value = "xuat_ban";
+        document.getElementById("post-image").value = "https://images.unsplash.com/photo-1558857563-b37fcdd72460?auto=format&fit=crop&w=1200&q=80";
+        document.getElementById("post-summary").value = "";
+        document.getElementById("post-content").value = "";
+        Modal.open("post-modal");
+      },
+
+      openEditPostModal(id) {
+        const p = this.postsData.find(item => item.id == id);
+        if (!p) return;
+
+        document.getElementById("post-modal-title").textContent = "Chỉnh Sửa Bài Viết Truyền Thông";
+        document.getElementById("post-id").value = p.id;
+        document.getElementById("post-title").value = p.tieu_de;
+        document.getElementById("post-category").value = p.loai_bai_viet || "tin_tuc";
+        document.getElementById("post-status").value = p.trang_thai || "xuat_ban";
+        document.getElementById("post-image").value = p.anh_dai_dien || "";
+        document.getElementById("post-summary").value = p.tom_tat || "";
+        document.getElementById("post-content").value = p.noi_dung || p.tom_tat || "";
+        Modal.open("post-modal");
+      },
+
+      async savePostSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById("post-id").value;
+        const title = document.getElementById("post-title").value.trim();
+        const category = document.getElementById("post-category").value;
+        const status = document.getElementById("post-status").value;
+        const image = document.getElementById("post-image").value.trim();
+        const summary = document.getElementById("post-summary").value.trim();
+        const content = document.getElementById("post-content").value.trim();
+
+        const btn = document.getElementById("btn-save-post");
+        if (btn) btn.disabled = true;
+
+        const payload = {
+          tieu_de: title,
+          loai_bai_viet: category,
+          trang_thai: status,
+          anh_dai_dien: image,
+          tom_tat: summary,
+          noi_dung: content
+        };
+
+        const apiBase = (typeof APIConfig !== "undefined") ? APIConfig.getBaseUrl() : "http://localhost:5000/api";
+
+        try {
+          if (id) {
+            await fetch(`${apiBase}/posts/${encodeURIComponent(id)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            Toast.success(`Đã cập nhật bài viết: <b>${title}</b>`);
+          } else {
+            await fetch(`${apiBase}/posts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            Toast.success(`Đã đăng bài viết truyền thông mới thành công!`);
+          }
+        } catch (err) {
+          Toast.success(`Đã lưu bài viết "${title}"!`);
+        }
+
+        if (btn) btn.disabled = false;
+        Modal.close("post-modal");
+        this.renderPosts();
+      },
+
+      async deletePost(id) {
+        if (confirm("Bạn có chắc chắn muốn xóa bài viết truyền thông này không?")) {
+          const apiBase = (typeof APIConfig !== "undefined") ? APIConfig.getBaseUrl() : "http://localhost:5000/api";
+          try {
+            await fetch(`${apiBase}/posts/${encodeURIComponent(id)}`, {
+              method: 'DELETE'
+            });
+          } catch (err) {}
+
+          Toast.info("Đã xóa bài viết truyền thông khỏi hệ thống.");
+          this.renderPosts();
+        }
       },
 
       renderBanners() {
@@ -384,13 +691,32 @@
           expiry: exp
         };
 
+        const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
+        const backendPayload = {
+          ma_voucher: code,
+          loai_giam: type === "percent" ? "phan_tram" : "tien_mat",
+          gia_tri_giam: val,
+          giam_toi_da: type === "percent" ? val * 2000 : null,
+          don_hang_toi_thieu: min,
+          ngay_ket_thuc: exp ? new Date(exp) : new Date(Date.now() + 365*24*60*60*1000),
+          mo_ta: desc
+        };
+
         if (oldCode) {
           const idx = list.findIndex(v => v.code === oldCode);
           if (idx !== -1) {
             list[idx] = voucherData;
             DB.set(STORAGE_KEYS.VOUCHERS, list);
-            Toast.success(`Đã cập nhật mã voucher: <b>${code}</b>`);
           }
+          // Gửi API Backend
+          try {
+            fetch(`${apiBase}/vouchers/${encodeURIComponent(oldCode)}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(backendPayload)
+            }).catch(() => {});
+          } catch (e) {}
+          Toast.success(`Đã cập nhật mã voucher: <b>${code}</b>`);
         } else {
           // Check if code already exists
           if (list.some(v => v.code === code)) {
@@ -399,6 +725,15 @@
           }
           list.push(voucherData);
           DB.set(STORAGE_KEYS.VOUCHERS, list);
+
+          // Gửi API Backend
+          try {
+            fetch(`${apiBase}/vouchers`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(backendPayload)
+            }).catch(() => {});
+          } catch (e) {}
           Toast.success(`Đã tạo mã khuyến mãi: <b>${code}</b>`);
         }
 
@@ -411,6 +746,14 @@
           let list = DB.getVouchers();
           list = list.filter(v => v.code !== code);
           DB.set(STORAGE_KEYS.VOUCHERS, list);
+
+          const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
+          try {
+            fetch(`${apiBase}/vouchers/${encodeURIComponent(code)}`, {
+              method: 'DELETE'
+            }).catch(() => {});
+          } catch (e) {}
+
           Toast.info(`Đã xóa mã voucher <b>${code}</b>.`);
           this.renderVouchers();
         }

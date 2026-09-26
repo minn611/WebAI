@@ -40,8 +40,8 @@
           <span>Tổng Quan (Dashboard)</span>
         </a>
         <a href="orders.html" class="sidebar-nav-item">
-          <span class="nav-icon">📦</span>
-          <span>Quản Lý Đơn Hàng</span>
+          <span class="nav-icon">🧾</span>
+          <span>Quản Lý Hoá Đơn</span>
         </a>
         <a href="products.html" class="sidebar-nav-item">
           <span class="nav-icon">🧋</span>
@@ -50,6 +50,10 @@
         <a href="customers.html" class="sidebar-nav-item">
           <span class="nav-icon">👥</span>
           <span>Khách Hàng & Điểm</span>
+        </a>
+        <a href="reviews.html" class="sidebar-nav-item">
+          <span class="nav-icon">⭐</span>
+          <span>Đánh Giá & Phản Hồi</span>
         </a>
         <a href="staff.html" class="sidebar-nav-item">
           <span class="nav-icon">💼</span>
@@ -151,13 +155,15 @@
   <script src="../js/utils/formatters.js"></script>
   <script src="../js/utils/toast.js"></script>
   <script src="../js/utils/modal.js"></script>
+  <script src="../js/utils/api-config.js?v=20260914"></script>
   <script src="../js/auth.js"></script>
 
   <script>
     async function initReportsPage() {
+      const apiBase = (typeof APIConfig !== 'undefined') ? APIConfig.getBaseUrl() : (window.API_BASE || '/api');
       try {
         // 1. Gọi API Summary
-        const sumRes = await fetch('/api/reports/summary');
+        const sumRes = await fetch(`${apiBase}/reports/summary`);
         const sumJson = await sumRes.json();
         if (sumJson.success && sumJson.data) {
           const d = sumJson.data;
@@ -173,7 +179,7 @@
         }
 
         // 2. Gọi API Top 5 Sản Phẩm Bán Chạy
-        const topRes = await fetch('/api/reports/top-products');
+        const topRes = await fetch(`${apiBase}/reports/top-products`);
         const topJson = await topRes.json();
         const tbody = document.getElementById("admin-top-selling-tbody");
         if (tbody && topJson.success && topJson.data && topJson.data.length > 0) {
@@ -225,9 +231,10 @@
     }
 
     async function exportReportCSV() {
+      const apiBase = (typeof APIConfig !== 'undefined') ? APIConfig.getBaseUrl() : (window.API_BASE || '/api');
       try {
         let orders = [];
-        const res = await fetch('/api/orders');
+        const res = await fetch(`${apiBase}/orders`);
         const json = await res.json();
         if (json.success && json.data) {
           orders = json.data;

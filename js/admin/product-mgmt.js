@@ -5,6 +5,15 @@
 const ProductMgmt = {
   currentTab: "products",
 
+  getApiBase() {
+    if (typeof window !== "undefined" && window.location && window.location.origin) {
+      if (window.location.origin.includes("5000")) {
+        return "/api";
+      }
+    }
+    return "http://localhost:5000/api";
+  },
+
   async init() {
     await this.syncFromAPI();
     this.renderProductsTable();
@@ -14,23 +23,31 @@ const ProductMgmt = {
 
   async syncFromAPI() {
     try {
+      const api = this.getApiBase();
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-      const resP = await fetch("http://localhost:5000/api/products", { signal: controller.signal });
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+      const resP = await fetch(`${api}/products`, { signal: controller.signal });
       const dataP = await resP.json();
       const prodList = dataP.success && (Array.isArray(dataP.products) ? dataP.products : (Array.isArray(dataP.data) ? dataP.data : null));
-      if (prodList) {
-        prodList.forEach(p => DB.saveProduct(p));
+      if (prodList && prodList.length > 0) {
+        DB.set(STORAGE_KEYS.PRODUCTS, prodList);
       }
 
-      const resT = await fetch("http://localhost:5000/api/toppings", { signal: controller.signal });
+      const resT = await fetch(`${api}/toppings`, { signal: controller.signal });
       clearTimeout(timeoutId);
       const dataT = await resT.json();
       const topList = dataT.success && (Array.isArray(dataT.toppings) ? dataT.toppings : (Array.isArray(dataT.data) ? dataT.data : null));
-      if (topList) {
-        topList.forEach(t => DB.saveTopping(t));
+      if (topList && topList.length > 0) {
+        const normalized = topList.map(t => ({
+          ...t,
+          inStock: t.inStock !== undefined ? t.inStock : (t.status !== 'disabled')
+        }));
+        DB.saveToppings(normalized);
       }
-    } catch (err) {}
+    } catch (err) {
+      console.warn("API Sync notice:", err.message);
+    }
   },
 
   switchTab(tab) {
@@ -138,6 +155,7 @@ const ProductMgmt = {
         </td>
         <td>
           <div class="table-actions">
+            <button class="action-icon-btn" onclick="ProductMgmt.openEditToppingModal('${t.id}')" title="Chỉnh sửa topping">✏️</button>
             <button class="action-icon-btn" onclick="ProductMgmt.toggleToppingStock('${t.id}')" title="Đổi trạng thái">${t.inStock ? '⏸️' : '▶️'}</button>
             <button class="action-icon-btn btn-del" onclick="ProductMgmt.deleteTopping('${t.id}')" title="Xóa topping">🗑️</button>
           </div>
@@ -147,10 +165,22 @@ const ProductMgmt = {
   },
 
   openAddToppingModal() {
+    document.getElementById("topping-modal-title").textContent = "Thêm Topping Mới";
     document.getElementById("form-top-id").value = "";
     document.getElementById("form-top-name").value = "";
     document.getElementById("form-top-price").value = "";
     document.getElementById("form-top-status").value = "true";
+    Modal.open("topping-form-modal");
+  },
+
+  openEditToppingModal(toppingId) {
+    const t = DB.getToppings().find(item => item.id === toppingId);
+    if (!t) return;
+    document.getElementById("topping-modal-title").textContent = "Chỉnh Sửa Topping";
+    document.getElementById("form-top-id").value = t.id;
+    document.getElementById("form-top-name").value = t.name;
+    document.getElementById("form-top-price").value = t.price;
+    document.getElementById("form-top-status").value = t.inStock ? "true" : "false";
     Modal.open("topping-form-modal");
   },
 
@@ -160,66 +190,48 @@ const ProductMgmt = {
     const name = document.getElementById("form-top-name").value.trim();
     const price = parseInt(document.getElementById("form-top-price").value) || 0;
     const inStock = document.getElementById("form-top-status").value === "true";
+    const api = this.getApiBase();
 
-    const toppings = DB.getToppings();
-    if (id) {
-      const idx = toppings.findIndex(t => t.id === id);
-      if (idx >= 0) {
-        toppings[idx] = { ...toppings[idx], name, price, inStock };
-      }
-      try {
-        await fetch(`http://localhost:5000/api/toppings/${id}`, {
+    try {
+      if (id) {
+        const res = await fetch(`${api}/toppings/${encodeURIComponent(id)}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, price, inStock })
+          body: JSON.stringify({ name, price, inStock, status: inStock ? 'available' : 'disabled' })
         });
-      } catch (err) {}
-    } else {
-      const newTop = {
-        id: `top-${toppings.length + 1}`,
-        name,
-        price,
-        inStock
-      };
-      toppings.push(newTop);
-      try {
-        await fetch("http://localhost:5000/api/toppings", {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          Toast.error(data.message || "Không thể cập nhật topping vào cơ sở dữ liệu!");
+          return;
+        }
+      } else {
+        const res = await fetch(`${api}/toppings`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, price, status: inStock ? 'available' : 'disabled' })
+          body: JSON.stringify({ name, price, status: inStock ? 'available' : 'disabled', inStock })
         });
-      } catch (err) {}
-    }
-
-    DB.saveToppings(toppings);
-    Toast.success(`Đã lưu topping <b>${name}</b> thành công!`);
-    if (typeof AuditLogger !== "undefined") {
-      AuditLogger.notifyServer(
-        id ? `CẬP NHẬT TOPPING: [${id}] ${name}` : `THÊM TOPPING MỚI: ${name}`,
-        `Giá thêm: ${Formatters.currency(price)} | Phục vụ: ${inStock ? 'Còn hàng' : 'Tạm hết'}`,
-        "Quản Lý Cửa Hàng",
-        "ADMIN"
-      );
-    }
-    Modal.close("topping-form-modal");
-    this.renderToppingsTable();
-  },
-
-  async deleteTopping(toppingId) {
-    if (confirm(`Bạn có chắc muốn xóa topping ${toppingId}?`)) {
-      let toppings = DB.getToppings();
-      toppings = toppings.filter(t => t.id !== toppingId);
-      DB.saveToppings(toppings);
-      try {
-        await fetch(`http://localhost:5000/api/toppings/${toppingId}`, {
-          method: "DELETE"
-        });
-      } catch (err) {}
-      Toast.info("Đã xóa topping.");
-      if (typeof AuditLogger !== "undefined") {
-        AuditLogger.notifyServer(`XÓA TOPPING: [${toppingId}]`, `Đã xóa topping khỏi hệ thống`, "Quản Lý Cửa Hàng", "ADMIN");
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          Toast.error(data.message || "Không thể thêm topping vào cơ sở dữ liệu!");
+          return;
+        }
       }
+
+      await this.syncFromAPI();
+      Toast.success(`Đã lưu topping <b>${name}</b> thành công!`);
+      if (typeof AuditLogger !== "undefined") {
+        AuditLogger.notifyServer(
+          id ? `CẬP NHẬT TOPPING: [${id}] ${name}` : `THÊM TOPPING MỚI: ${name}`,
+          `Giá thêm: ${Formatters.currency(price)} | Phục vụ: ${inStock ? 'Còn hàng' : 'Tạm hết'}`,
+          "Quản Lý Cửa Hàng",
+          "ADMIN"
+        );
+      }
+      Modal.close("topping-form-modal");
       this.renderToppingsTable();
+    } catch (err) {
+      console.error("Lỗi khi lưu topping:", err);
+      Toast.error("Lỗi kết nối máy chủ khi lưu topping!");
     }
   },
 
@@ -267,27 +279,11 @@ const ProductMgmt = {
     const inStock = document.getElementById("form-prod-status").value === "true";
     const image = document.getElementById("form-prod-image").value.trim() || "https://images.unsplash.com/photo-1558857563-b37fcdd72460?auto=format&fit=crop&w=600&q=80";
     const desc = document.getElementById("form-prod-desc").value.trim();
+    const api = this.getApiBase();
 
-    const productObj = {
-      id: editId || sku,
-      name,
-      category: cat,
-      price,
-      oldPrice,
-      stockQty,
-      inStock,
-      image,
-      description: desc,
-      rating: 5.0,
-      sold: 10
-    };
-
-    DB.saveProduct(productObj);
-
-    // Đồng bộ trực tiếp lên Backend API Server (MySQL Database)
     try {
       if (editId) {
-        await fetch(`http://localhost:5000/api/products/${editId}`, {
+        const res = await fetch(`${api}/products/${encodeURIComponent(editId)}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -301,8 +297,13 @@ const ProductMgmt = {
             description: desc
           })
         });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          Toast.error(data.message || "Không thể cập nhật sản phẩm vào cơ sở dữ liệu!");
+          return;
+        }
       } else {
-        await fetch("http://localhost:5000/api/products", {
+        const res = await fetch(`${api}/products`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -313,38 +314,66 @@ const ProductMgmt = {
             price,
             originalPrice: oldPrice || null,
             image,
-            stockQty
+            stockQty,
+            inStock
           })
         });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          Toast.error(data.message || "Không thể thêm sản phẩm vào cơ sở dữ liệu!");
+          return;
+        }
       }
-    } catch (err) {}
 
-    Toast.success(`Đã lưu sản phẩm <b>${name}</b> thành công!`);
-    if (typeof AuditLogger !== "undefined") {
-      AuditLogger.notifyServer(
-        editId ? `CHỈNH SỬA MÓN: [${editId}] ${name}` : `THÊM MÓN MỚI: [${sku}] ${name}`,
-        `Giá bán: ${Formatters.currency(price)} | Danh mục: ${cat} | Tồn kho: ${stockQty}`,
-        "Quản Lý Cửa Hàng",
-        "ADMIN"
-      );
+      await this.syncFromAPI();
+      Toast.success(`Đã lưu sản phẩm <b>${name}</b> thành công!`);
+      if (typeof AuditLogger !== "undefined") {
+        AuditLogger.notifyServer(
+          editId ? `CHỈNH SỬA MÓN: [${editId}] ${name}` : `THÊM MÓN MỚI: [${sku}] ${name}`,
+          `Giá bán: ${Formatters.currency(price)} | Danh mục: ${cat} | Tồn kho: ${stockQty}`,
+          "Quản Lý Cửa Hàng",
+          "ADMIN"
+        );
+      }
+      Modal.close("product-form-modal");
+      this.renderProductsTable();
+    } catch (err) {
+      console.error("Lỗi khi lưu sản phẩm:", err);
+      Toast.error("Lỗi kết nối máy chủ khi lưu sản phẩm!");
     }
-    Modal.close("product-form-modal");
-    this.renderProductsTable();
   },
 
   async deleteProduct(productId) {
-    if (confirm(`Bạn có chắc muốn xóa sản phẩm ${productId} khỏi thực đơn?`)) {
+    if (!productId) return;
+    const p = DB.getProductById(productId);
+    const prodName = p ? p.name : productId;
+
+    if (!confirm(`Bạn có chắc muốn xóa sản phẩm "${prodName}" (${productId}) khỏi cơ sở dữ liệu?`)) {
+      return;
+    }
+
+    try {
+      const api = this.getApiBase();
+      const res = await fetch(`${api}/products/${encodeURIComponent(productId)}`, {
+        method: "DELETE"
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.success) {
+        Toast.error(data.message || "Không thể xóa sản phẩm khỏi cơ sở dữ liệu!");
+        return;
+      }
+
+      // Xóa thành công từ database -> cập nhật UI & localStorage
       DB.deleteProduct(productId);
-      try {
-        await fetch(`http://localhost:5000/api/products/${productId}`, {
-          method: "DELETE"
-        });
-      } catch (err) {}
-      Toast.info("Đã xóa sản phẩm.");
+      Toast.success(`Đã xóa sản phẩm <b>${prodName}</b> khỏi cơ sở dữ liệu!`);
       if (typeof AuditLogger !== "undefined") {
-        AuditLogger.notifyServer(`XÓA MÓN KHỎI THỰC ĐƠN: [${productId}]`, `Đã xóa sản phẩm khỏi hệ thống`, "Quản Lý Cửa Hàng", "ADMIN");
+        AuditLogger.notifyServer(`XÓA MÓN KHỎI THỰC ĐƠN: [${productId}] ${prodName}`, `Đã xóa vĩnh viễn khỏi cơ sở dữ liệu`, "Quản Lý Cửa Hàng", "ADMIN");
       }
       this.renderProductsTable();
+    } catch (err) {
+      console.error("Lỗi khi xóa sản phẩm:", err);
+      Toast.error("Không thể kết nối máy chủ để xóa sản phẩm!");
     }
   },
 
@@ -352,17 +381,28 @@ const ProductMgmt = {
     const toppings = DB.getToppings();
     const target = toppings.find(t => t.id === toppingId);
     if (target) {
-      target.inStock = !target.inStock;
-      DB.saveToppings(toppings);
+      const nextState = !target.inStock;
       try {
-        await fetch(`http://localhost:5000/api/toppings/${toppingId}`, {
+        const api = this.getApiBase();
+        const res = await fetch(`${api}/toppings/${encodeURIComponent(toppingId)}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ inStock: target.inStock })
+          body: JSON.stringify({ inStock: nextState })
         });
-      } catch (err) {}
-      Toast.success(`Đã cập nhật trạng thái topping: <b>${target.name}</b>`);
-      this.renderToppingsTable();
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          Toast.error(data.message || "Không thể cập nhật trạng thái topping trong DB!");
+          return;
+        }
+
+        target.inStock = nextState;
+        DB.saveToppings(toppings);
+        Toast.success(`Đã cập nhật trạng thái topping: <b>${target.name}</b> (${nextState ? 'Đang Phục Vụ' : 'Tạm Hết'})`);
+        this.renderToppingsTable();
+      } catch (err) {
+        console.error("Lỗi cập nhật trạng thái topping:", err);
+        Toast.error("Lỗi kết nối máy chủ khi cập nhật trạng thái topping!");
+      }
     }
   },
 
@@ -372,19 +412,35 @@ const ProductMgmt = {
     const target = toppings.find(t => t.id === toppingId);
     const name = target ? target.name : toppingId;
 
-    if (!confirm(`Bạn có chắc muốn xóa topping "${name}" khỏi danh mục?`)) return;
-
-    const updated = toppings.filter(t => t.id !== toppingId);
-    DB.saveToppings(updated);
+    if (!confirm(`Bạn có chắc muốn xóa topping "${name}" khỏi cơ sở dữ liệu?`)) {
+      return;
+    }
 
     try {
-      await fetch(`http://localhost:5000/api/toppings/${encodeURIComponent(toppingId)}`, {
+      const api = this.getApiBase();
+      const res = await fetch(`${api}/toppings/${encodeURIComponent(toppingId)}`, {
         method: "DELETE"
       });
-    } catch (err) {}
+      const data = await res.json().catch(() => ({}));
 
-    Toast.info(`Đã xóa topping <b>${name}</b> thành công.`);
-    this.renderToppingsTable();
+      if (!res.ok || !data.success) {
+        Toast.error(data.message || "Không thể xóa topping khỏi cơ sở dữ liệu!");
+        return;
+      }
+
+      // Xóa thành công từ database -> cập nhật UI & localStorage
+      const updated = toppings.filter(t => t.id !== toppingId);
+      DB.saveToppings(updated);
+
+      Toast.success(`Đã xóa topping <b>${name}</b> khỏi cơ sở dữ liệu!`);
+      if (typeof AuditLogger !== "undefined") {
+        AuditLogger.notifyServer(`XÓA TOPPING: [${toppingId}] ${name}`, `Đã xóa vĩnh viễn khỏi cơ sở dữ liệu`, "Quản Lý Cửa Hàng", "ADMIN");
+      }
+      this.renderToppingsTable();
+    } catch (err) {
+      console.error("Lỗi khi xóa topping:", err);
+      Toast.error("Không thể kết nối máy chủ để xóa topping!");
+    }
   }
 };
 

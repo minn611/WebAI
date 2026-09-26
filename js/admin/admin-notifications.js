@@ -10,6 +10,13 @@ const AdminNotifications = {
   broadcastChannel: null,
   audioCtx: null,
 
+  getApiBase() {
+    if (typeof APIConfig !== 'undefined' && typeof APIConfig.getBaseUrl === 'function') {
+      return APIConfig.getBaseUrl();
+    }
+    return window.API_BASE || (window.location.origin.includes(':5000') ? '/api' : 'http://localhost:5000/api');
+  },
+
   init() {
     this.injectNotificationBellUI();
     this.initAudioContext();
@@ -32,85 +39,86 @@ const AdminNotifications = {
           this.audioCtx = new AudioContextClass();
         }
       }
-      document.removeEventListener("click", initCtx);
-      document.removeEventListener("keydown", initCtx);
     };
-    document.addEventListener("click", initCtx, { once: true });
-    document.addEventListener("keydown", initCtx, { once: true });
+    window.addEventListener("click", initCtx, { once: true });
+    window.addEventListener("keydown", initCtx, { once: true });
   },
 
-  playPaymentChime() {
+  // Phát tiếng Ting Ting mô phỏng nhận tiền/đơn mới
+  playNotificationSound() {
     try {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (!this.audioCtx && AudioContextClass) {
-        this.audioCtx = new AudioContextClass();
+      if (!this.audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) this.audioCtx = new AudioContextClass();
       }
-
-      if (!this.audioCtx) return;
-      if (this.audioCtx.state === "suspended") {
+      if (this.audioCtx && this.audioCtx.state === "suspended") {
         this.audioCtx.resume();
       }
+      if (!this.audioCtx) return;
 
       const now = this.audioCtx.currentTime;
 
-      // Nốt 1: E6 (1318.5 Hz) ngân trong trẻo
+      // Nốt 1: E6 (1318.5 Hz)
       const osc1 = this.audioCtx.createOscillator();
       const gain1 = this.audioCtx.createGain();
       osc1.type = "sine";
-      osc1.frequency.setValueAtTime(1318.5, now);
-      gain1.gain.setValueAtTime(0, now);
-      gain1.gain.linearRampToValueAtTime(0.4, now + 0.03);
+      osc1.frequency.setValueAtTime(1318.51, now);
+      gain1.gain.setValueAtTime(0.3, now);
       gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
       osc1.connect(gain1);
       gain1.connect(this.audioCtx.destination);
       osc1.start(now);
       osc1.stop(now + 0.5);
 
-      // Nốt 2: B6 (1975.5 Hz) cao vút vang lên sau 0.12s ("Ting... Ting!")
+      // Nốt 2: B6 (1975.5 Hz) - Đánh sau 0.12s tạo điệu "Ting Ting"
       const osc2 = this.audioCtx.createOscillator();
       const gain2 = this.audioCtx.createGain();
       osc2.type = "sine";
-      osc2.frequency.setValueAtTime(1975.5, now + 0.12);
-      gain2.gain.setValueAtTime(0, now + 0.12);
-      gain2.gain.linearRampToValueAtTime(0.5, now + 0.15);
-      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.95);
+      osc2.frequency.setValueAtTime(1975.53, now + 0.12);
+      gain2.gain.setValueAtTime(0.35, now + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
       osc2.connect(gain2);
       gain2.connect(this.audioCtx.destination);
       osc2.start(now + 0.12);
-      osc2.stop(now + 0.95);
-    } catch (err) {
-      console.warn("Không thể phát âm thanh:", err);
+      osc2.stop(now + 0.9);
+
+    } catch (e) {
+      console.warn("Lỗi phát âm thanh chuông báo:", e);
     }
   },
 
-  // 2. Tích hợp Quả Chuông 🔔 & Dropdown Danh Sách Thông Báo trên Topbar
+  playPaymentChime() {
+    return this.playNotificationSound();
+  },
+
+  // 2. Tự động chèn giao diện Chuông Thông Báo vào thanh Header của Admin
   injectNotificationBellUI() {
-    const topbar = document.querySelector(".admin-topbar");
-    if (!topbar) return;
+    const headerRight = document.querySelector(".admin-header-right") || document.querySelector(".admin-header") || document.querySelector(".admin-topbar");
+    if (!headerRight || document.getElementById("admin-notif-btn")) return;
 
-    let container = document.getElementById("admin-notif-container");
-    if (container) return;
+    const bellWrapper = document.createElement("div");
+    bellWrapper.id = "admin-notif-container";
+    bellWrapper.className = "notif-bell-wrapper";
+    bellWrapper.style.position = "relative";
+    bellWrapper.style.display = "inline-block";
+    bellWrapper.style.marginRight = "0.5rem";
 
-    container = document.createElement("div");
-    container.id = "admin-notif-container";
-    container.style.cssText = "position: relative; display: inline-block; margin-right: 0.5rem;";
-
-    container.innerHTML = `
-      <button id="admin-notif-bell-btn" class="action-btn" style="position: relative; font-size: 1.15rem; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s;" title="Thông báo chuyển khoản & đơn hàng">
+    bellWrapper.innerHTML = `
+      <button id="admin-notif-btn" type="button" class="action-btn btn btn-outline" style="position: relative; font-size: 1.15rem; padding: 0.45rem 0.75rem; border-radius: 9999px; display: flex; align-items: center; gap: 0.4rem; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s;" title="Thông báo chuyển khoản & đơn hàng">
         <span>🔔</span>
         <span id="admin-notif-badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #EF4444; color: #fff; font-size: 0.68rem; font-weight: 800; border-radius: 10px; padding: 2px 6px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5); animation: pulseBadge 1.8s infinite;">0</span>
       </button>
 
-      <!-- Dropdown Menu -->
-      <div id="admin-notif-dropdown" style="display: none; position: absolute; right: 0; top: 48px; width: 360px; background: #fff; border-radius: var(--radius-lg); box-shadow: 0 12px 36px rgba(0,0,0,0.18); border: 1px solid var(--border-color); z-index: 1000; overflow: hidden; animation: fadeInDown 0.2s ease;">
-        <div style="padding: 12px 16px; background: linear-gradient(135deg, #00529C, #003B70); color: #fff; display: flex; justify-content: space-between; align-items: center;">
+      <!-- Dropdown Popup Thông Báo -->
+      <div id="admin-notif-dropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 360px; max-height: 460px; background: #fff; border: 1px solid var(--border-color); border-radius: var(--radius-lg); box-shadow: 0 12px 36px rgba(0,0,0,0.18); z-index: 1000; overflow: hidden; flex-direction: column; animation: fadeInDown 0.2s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #00529C, #003B70); color: #fff;">
           <div style="font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
             <span>🔔</span> Thông Báo Chuyển Khoản & Đơn Mới
           </div>
-          <button style="background: none; border: none; color: #E0E7FF; font-size: 0.75rem; cursor: pointer; text-decoration: underline;" onclick="AdminNotifications.markAllAsRead()">Đánh dấu đã đọc</button>
+          <button type="button" onclick="AdminNotifications.markAllAsRead()" style="background: none; border: none; color: #E0E7FF; font-size: 0.75rem; cursor: pointer; text-decoration: underline;">Đánh dấu đã đọc</button>
         </div>
 
-        <div id="admin-notif-list" style="max-height: 380px; overflow-y: auto; padding: 6px 0;">
+        <div id="admin-notif-list" style="max-height: 380px; overflow-y: auto; padding: 6px 0; display: flex; flex-direction: column;">
           <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
             Chưa có thông báo chuyển khoản mới nào.
           </div>
@@ -122,24 +130,26 @@ const AdminNotifications = {
       </div>
     `;
 
-    // Chèn trước thông tin người dùng trong topbar
-    const userSection = topbar.querySelector(".action-btn[style*='primary-bg']")?.parentElement || topbar.lastElementChild;
-    topbar.insertBefore(container, userSection);
+    // Chèn vào headerRight
+    const userSection = headerRight.querySelector(".action-btn[style*='primary-bg']")?.parentElement || headerRight.lastElementChild;
+    headerRight.insertBefore(bellWrapper, userSection);
 
-    // Toggle Dropdown
-    const bellBtn = document.getElementById("admin-notif-bell-btn");
+    // Toggle dropdown
+    const bellBtn = document.getElementById("admin-notif-btn");
     const dropdown = document.getElementById("admin-notif-dropdown");
-    bellBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const isOpen = dropdown.style.display === "block";
-      dropdown.style.display = isOpen ? "none" : "block";
-    });
+    if (bellBtn && dropdown) {
+      bellBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isOpen = dropdown.style.display === "block" || dropdown.style.display === "flex";
+        dropdown.style.display = isOpen ? "none" : "block";
+      });
 
-    document.addEventListener("click", (e) => {
-      if (!container.contains(e.target)) {
-        dropdown.style.display = "none";
-      }
-    });
+      document.addEventListener("click", (e) => {
+        if (!bellWrapper.contains(e.target)) {
+          dropdown.style.display = "none";
+        }
+      });
+    }
 
     // Thêm keyframe pulse nếu chưa có
     if (!document.getElementById("notif-pulse-style")) {
@@ -160,7 +170,7 @@ const AdminNotifications = {
     }
   },
 
-  // 3. Lắng nghe sự kiện Realtime qua LocalStorage và BroadcastChannel
+  // 3. Lắng nghe thông báo Real-time qua BroadcastChannel, Storage Event & WebSocket
   initRealtimeListeners() {
     // Cross-tab qua Storage Event
     window.addEventListener("storage", (e) => {
@@ -174,19 +184,37 @@ const AdminNotifications = {
 
     // Cross-tab qua BroadcastChannel
     if (typeof BroadcastChannel !== "undefined") {
-      this.broadcastChannel = new BroadcastChannel("dodo_notifications");
-      this.broadcastChannel.onmessage = (e) => {
-        if (e.data && e.data.type === "TRANSFER_NOTIFICATION") {
-          this.handleNewIncomingNotification(e.data.data);
-        }
-      };
+      try {
+        this.broadcastChannel = new BroadcastChannel("dodo_notifications");
+        this.broadcastChannel.onmessage = (e) => {
+          if (e.data && e.data.type === "TRANSFER_NOTIFICATION") {
+            this.handleNewIncomingNotification(e.data.data);
+          }
+        };
+      } catch (e) {}
+    }
+
+    // WebSocket nếu máy chủ hỗ trợ
+    if (typeof WebSocket !== "undefined") {
+      try {
+        const wsUrl = (window.location.protocol === "https:" ? "wss://" : "ws://") + (window.location.hostname || "localhost") + ":5000";
+        const ws = new WebSocket(wsUrl);
+        ws.onmessage = (e) => {
+          try {
+            const msg = JSON.parse(e.data);
+            if (msg.type === "NEW_TRANSFER_NOTIFICATION") {
+              this.handleNewIncomingNotification(msg.data);
+            }
+          } catch (err) {}
+        };
+      } catch (e) {}
     }
   },
 
   // 4. Lấy thông báo từ Server Backend
   async fetchNotifications(isPoll = false) {
     try {
-      const res = await fetch("http://localhost:5000/api/notifications");
+      const res = await fetch(`${this.getApiBase()}/notifications`);
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         const prevCount = this.notifications.length;
@@ -366,7 +394,7 @@ const AdminNotifications = {
 
     try {
       this.notifications.forEach(n => {
-        fetch(`http://localhost:5000/api/notifications/${n.id}/read`, { method: "PUT" }).catch(() => {});
+        fetch(`${this.getApiBase()}/notifications/${n.id}/read`, { method: "PUT" }).catch(() => {});
       });
     } catch (e) {}
   },
@@ -378,7 +406,7 @@ const AdminNotifications = {
       this.unreadCount = Math.max(0, this.unreadCount - 1);
       this.updateBadge();
       this.renderDropdown();
-      fetch(`http://localhost:5000/api/notifications/${notifId}/read`, { method: "PUT" }).catch(() => {});
+      fetch(`${this.getApiBase()}/notifications/${notifId}/read`, { method: "PUT" }).catch(() => {});
     }
 
     // Nếu đang ở orders.html: mở chi tiết đơn hàng luôn

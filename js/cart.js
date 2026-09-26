@@ -140,7 +140,7 @@ const Cart = {
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h5 style="font-size: 0.925rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</h5>
             <div style="display: flex; gap: 0.35rem; align-items: center;">
-              <button onclick="Cart.closeDrawer(); ClientApp.openCustomizer('${item.productId}')" class="btn btn-outline btn-sm" style="padding: 0.15rem 0.45rem; font-size: 0.72rem; border-radius: var(--radius-full);" title="Đổi size / đường / đá / topping">✏️ Sửa</button>
+              <button onclick="Cart.closeDrawer(); ClientApp.openCustomizer('${item.productId}', '${item.itemKey}')" class="btn btn-outline btn-sm" style="padding: 0.15rem 0.45rem; font-size: 0.72rem; border-radius: var(--radius-full);" title="Đổi size / đường / đá / topping">✏️ Sửa</button>
               <button onclick="Cart.removeItem('${item.itemKey}')" style="color: var(--status-cancelled); font-size: 0.85rem; font-weight: bold; background: none; border: none; cursor: pointer; padding: 0 4px;" title="Xóa món">✕</button>
             </div>
           </div>

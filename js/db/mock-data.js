@@ -104,6 +104,54 @@ const INITIAL_USERS = [
     phone: "0933445566",
     status: "active",
     createdAt: "2026-03-01"
+  },
+  {
+    id: "CUST-001",
+    username: "phucle",
+    password: "123456",
+    fullName: "Lê Hoàng Phúc",
+    role: "customer",
+    phone: "0987654321",
+    email: "phucle@gmail.com",
+    address: "123 Nguyễn Trãi, Q.5, TP.HCM",
+    points: 320,
+    tier: "VIP Vàng",
+    orderCount: 11,
+    totalSpent: 785000,
+    status: "active",
+    createdAt: "2026-01-10"
+  },
+  {
+    id: "CUST-002",
+    username: "linhdan",
+    password: "123456",
+    fullName: "Đặng Linh Đan",
+    role: "customer",
+    phone: "0912345699",
+    email: "danlinh@gmail.com",
+    address: "45 Hai Bà Trưng, Q.1, TP.HCM",
+    points: 150,
+    tier: "VIP Đồng",
+    orderCount: 5,
+    totalSpent: 320000,
+    status: "active",
+    createdAt: "2026-02-01"
+  },
+  {
+    id: "CUST-003",
+    username: "minhanh",
+    password: "123456",
+    fullName: "Trần Minh Anh",
+    role: "customer",
+    phone: "0978998877",
+    email: "minhanh@gmail.com",
+    address: "88 Lê Lợi, Q.1, TP.HCM",
+    points: 560,
+    tier: "VIP Kim Cương",
+    orderCount: 22,
+    totalSpent: 1450000,
+    status: "active",
+    createdAt: "2026-01-05"
   }
 ];
 
@@ -120,3 +168,110 @@ const INITIAL_BANNERS = [
   { id: "BN-01", title: "Mua 2 Tặng 1 Topping Đỉnh Chóp", image: "https://images.unsplash.com/photo-1558857563-b37fcdd72460?auto=format&fit=crop&w=1200&q=80", link: "menu.html", active: true },
   { id: "BN-02", title: "Ra Mắt Bộ Ba Trà Trái Cây Mùa Hè", image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1200&q=80", link: "menu.html", active: true }
 ];
+
+const INITIAL_REVIEWS = [
+  {
+    id: 1,
+    productId: "TS-01",
+    productName: "Hồng Trà Mochi Kéo Dài",
+    productImage: "images/products/hong-tra-mochi-keo-dai.jpg",
+    customerName: "Lê Hoàng Phúc",
+    customerPhone: "0987654321",
+    customerTier: "VIP Vàng",
+    rating: 5,
+    comment: "Trà sữa hồng trà mochi đỉnh của chóp luôn, lớp mochi kéo dài dẻo quánh nhai siêu cuốn! Giá 25k quá hời.",
+    adminReply: "Cảm ơn bạn Phúc nhiều nha! Đô Đô rất vui vì bạn yêu thích món signature Mochi Kéo Dài độc quyền của quán ạ ❤️ Chúc bạn một ngày ngọt ngào!",
+    visible: true,
+    createdAt: "2026-03-10 14:20:00"
+  },
+  {
+    id: 2,
+    productId: "TS-01",
+    productName: "Hồng Trà Mochi Kéo Dài",
+    productImage: "images/products/hong-tra-mochi-keo-dai.jpg",
+    customerName: "Đặng Linh Đan",
+    customerPhone: "0912345699",
+    customerTier: "VIP Đồng",
+    rating: 4,
+    comment: "Trà sữa thơm béo, mochi ngon nhưng hôm nay shipper giao hơi lâu tầm 35 phút nên đá tan bớt chút.",
+    adminReply: "Đô Đô chân thành xin lỗi bạn Đan về trải nghiệm giao hàng chậm giờ cao điểm ạ! Quán đã làm việc lại với đội shipper để tối ưu tuyến đường phục vụ bạn chu đáo hơn.",
+    visible: true,
+    createdAt: "2026-03-12 11:15:00"
+  },
+  {
+    id: 3,
+    productId: "TS-02",
+    productName: "Matcha Mochi Kéo Dài",
+    productImage: "images/products/matcha-mochi-keo-dai.jpg",
+    customerName: "Trần Minh Anh",
+    customerPhone: "0978998877",
+    customerTier: "VIP Kim Cương",
+    rating: 5,
+    comment: "Matcha đậm vị chuẩn Nhật, không bị ngọt gắt, mochi dẻo bùi kéo dài chấm 10/10.",
+    adminReply: "",
+    visible: true,
+    createdAt: "2026-03-13 16:45:00"
+  },
+  {
+    id: 4,
+    productId: "TS-03",
+    productName: "Sữa Tươi Đường Đen Mochi Kéo Dài",
+    productImage: "images/products/sua-tuoi-duong-den-mochi.jpg",
+    customerName: "Lê Hoàng Phúc",
+    customerPhone: "0987654321",
+    customerTier: "VIP Vàng",
+    rating: 5,
+    comment: "Sữa tươi đường đen mochi ngon nhức nách, trân châu mềm dẻo. Sẽ ủng hộ quán dài dài!",
+    adminReply: "",
+    visible: true,
+    createdAt: "2026-03-14 08:30:00"
+  },
+  {
+    id: 5,
+    productId: "TS-07",
+    productName: "Hồng Trà Tiramisu Ovaltine",
+    productImage: "images/products/hong-tra-tiramisu-ovaltine.jpg",
+    customerName: "Đặng Linh Đan",
+    customerPhone: "0912345699",
+    customerTier: "VIP Đồng",
+    rating: 3,
+    comment: "Hồng trà tiramisu lớp phô mai béo ngon nhưng vụn ovaltine hôm nay hơi ít so với hình chụp menu.",
+    adminReply: "",
+    visible: true,
+    createdAt: "2026-03-14 09:10:00"
+  }
+];
+
+// Global & Window Scope Export
+if (typeof window !== 'undefined') {
+  window.INITIAL_CATEGORIES = INITIAL_CATEGORIES;
+  window.INITIAL_TOPPINGS = INITIAL_TOPPINGS;
+  window.INITIAL_SIZES = INITIAL_SIZES;
+  window.INITIAL_PRODUCTS = INITIAL_PRODUCTS;
+  window.INITIAL_VOUCHERS = INITIAL_VOUCHERS;
+  window.INITIAL_SUPPLIERS = INITIAL_SUPPLIERS;
+  window.INITIAL_BANNERS = INITIAL_BANNERS;
+  window.INITIAL_USERS = INITIAL_USERS;
+  window.INITIAL_ORDERS = INITIAL_ORDERS;
+  window.INITIAL_REVIEWS = INITIAL_REVIEWS;
+}
+if (typeof global !== 'undefined') {
+  global.INITIAL_CATEGORIES = INITIAL_CATEGORIES;
+  global.INITIAL_TOPPINGS = INITIAL_TOPPINGS;
+  global.INITIAL_SIZES = INITIAL_SIZES;
+  global.INITIAL_PRODUCTS = INITIAL_PRODUCTS;
+  global.INITIAL_VOUCHERS = INITIAL_VOUCHERS;
+  global.INITIAL_SUPPLIERS = INITIAL_SUPPLIERS;
+  global.INITIAL_BANNERS = INITIAL_BANNERS;
+  global.INITIAL_USERS = INITIAL_USERS;
+  global.INITIAL_ORDERS = INITIAL_ORDERS;
+  global.INITIAL_REVIEWS = INITIAL_REVIEWS;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    INITIAL_CATEGORIES, INITIAL_TOPPINGS, INITIAL_SIZES, INITIAL_PRODUCTS,
+    INITIAL_VOUCHERS, INITIAL_SUPPLIERS, INITIAL_BANNERS, INITIAL_USERS,
+    INITIAL_ORDERS, INITIAL_REVIEWS
+  };
+}
+

@@ -37,8 +37,8 @@
           <span>Tổng Quan (Dashboard)</span>
         </a>
         <a href="orders.html" class="sidebar-nav-item">
-          <span class="nav-icon">📦</span>
-          <span>Quản Lý Đơn Hàng</span>
+          <span class="nav-icon">🧾</span>
+          <span>Quản Lý Hoá Đơn</span>
         </a>
         <a href="products.html" class="sidebar-nav-item">
           <span class="nav-icon">🧋</span>
@@ -47,6 +47,10 @@
         <a href="customers.html" class="sidebar-nav-item active">
           <span class="nav-icon">👥</span>
           <span>Khách Hàng & Điểm</span>
+        </a>
+        <a href="reviews.html" class="sidebar-nav-item">
+          <span class="nav-icon">⭐</span>
+          <span>Đánh Giá & Phản Hồi</span>
         </a>
         <a href="staff.html" class="sidebar-nav-item">
           <span class="nav-icon">💼</span>
@@ -87,13 +91,65 @@
       </header>
 
       <div class="admin-content">
+        <!-- KPI Overview Cards -->
+        <div class="grid grid-cols-4 gap-4" style="margin-bottom: 1.5rem;">
+          <div class="card stat-card" style="padding: 1.25rem; border-radius: var(--radius-lg); background: var(--bg-card); box-shadow: var(--shadow-sm); border: 1px solid var(--border-subtle);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div class="text-xs text-muted font-bold" style="text-transform: uppercase; letter-spacing: 0.5px;">Tổng Khách Hàng</div>
+                <div id="kpi-total-cust" style="font-size: 1.75rem; font-weight: 800; color: var(--text-heading); margin-top: 0.25rem;">0</div>
+              </div>
+              <div style="font-size: 2.2rem; opacity: 0.85;">👥</div>
+            </div>
+          </div>
+          <div class="card stat-card" style="padding: 1.25rem; border-radius: var(--radius-lg); background: var(--bg-card); box-shadow: var(--shadow-sm); border: 1px solid var(--border-subtle);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div class="text-xs text-muted font-bold" style="text-transform: uppercase; letter-spacing: 0.5px;">Tổng Đơn Đã Mua</div>
+                <div id="kpi-total-orders" style="font-size: 1.75rem; font-weight: 800; color: var(--primary); margin-top: 0.25rem;">0 đơn</div>
+              </div>
+              <div style="font-size: 2.2rem; opacity: 0.85;">📦</div>
+            </div>
+          </div>
+          <div class="card stat-card" style="padding: 1.25rem; border-radius: var(--radius-lg); background: var(--bg-card); box-shadow: var(--shadow-sm); border: 1px solid var(--border-subtle);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div class="text-xs text-muted font-bold" style="text-transform: uppercase; letter-spacing: 0.5px;">Tổng Chi Tiêu (Doanh Thu)</div>
+                <div id="kpi-total-spent" style="font-size: 1.75rem; font-weight: 800; color: #2a9d8f; margin-top: 0.25rem;">0đ</div>
+              </div>
+              <div style="font-size: 2.2rem; opacity: 0.85;">💰</div>
+            </div>
+          </div>
+          <div class="card stat-card" style="padding: 1.25rem; border-radius: var(--radius-lg); background: var(--bg-card); box-shadow: var(--shadow-sm); border: 1px solid var(--border-subtle);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div class="text-xs text-muted font-bold" style="text-transform: uppercase; letter-spacing: 0.5px;">Tổng Điểm Tích Lũy</div>
+                <div id="kpi-total-points" style="font-size: 1.75rem; font-weight: 800; color: #e76f51; margin-top: 0.25rem;">0 pts</div>
+              </div>
+              <div style="font-size: 2.2rem; opacity: 0.85;">⭐</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div style="display: flex; gap: 0.75rem; border-bottom: 2px solid var(--border-subtle); margin-bottom: 1.5rem;">
+          <button id="tab-cust-btn" class="btn btn-sm" onclick="CustomerMgmt.switchTab('customers')" style="border-radius: 8px 8px 0 0; font-weight: 700; border-bottom: 2px solid var(--primary); background: rgba(196, 0, 29, 0.08); color: var(--primary);">
+            👥 Khách Hàng & Điểm Tích Lũy
+          </button>
+          <button id="tab-complaints-btn" class="btn btn-sm" onclick="CustomerMgmt.switchTab('complaints')" style="border-radius: 8px 8px 0 0; font-weight: 600; color: var(--text-muted); background: transparent;">
+            📩 Khiếu Nại & Phản Ánh Dịch Vụ <span id="complaints-badge-count" class="badge badge-warning" style="margin-left: 4px; font-size: 0.7rem; display: none;">0</span>
+          </button>
+        </div>
+
+        <!-- TAB 1: CUSTOMERS CRM -->
+        <div id="section-customers">
         <div class="data-table-container">
           <div class="table-toolbar">
             <div class="input-with-icon" style="max-width: 320px;">
               <span class="input-icon">🔍</span>
               <input type="text" id="admin-cust-search" class="form-control form-control-sm" placeholder="Tìm tên khách, số điện thoại, email...">
             </div>
-            <span class="text-xs text-muted">💡 <i>Thao tác: Chỉnh sửa thông tin, Cộng/Trừ điểm tích lũy, Khóa hoặc Xóa khách hàng</i></span>
+            <span class="text-xs text-muted">💡 <i>Thao tác: Tra cứu số đơn hàng, chi tiêu, chỉnh sửa thông tin & tích lũy điểm</i></span>
           </div>
 
           <div class="table-responsive">
@@ -103,6 +159,8 @@
                   <th>Mã Khách</th>
                   <th>Họ và Tên</th>
                   <th>Số Điện Thoại</th>
+                  <th style="text-align: center;">Số Đơn Mua</th>
+                  <th style="text-align: right;">Tổng Chi Tiêu</th>
                   <th>Điểm Tích Lũy</th>
                   <th>Hạng Thành Viên</th>
                   <th>Ngày Đăng Ký</th>
@@ -116,8 +174,82 @@
             </table>
           </div>
         </div>
+        </div>
+        <!-- END TAB 1 -->
+
+        <!-- TAB 2: COMPLAINTS & FEEDBACK (FR-12, FR-24, UC 3.2.2.2.3 b) -->
+        <div id="section-complaints" style="display: none;">
+          <div class="data-table-container">
+            <div class="table-toolbar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <span class="text-xs font-bold text-muted">LỌC TRẠNG THÁI:</span>
+                <button class="btn btn-xs btn-outline active-filter" id="filter-complaint-all" onclick="CustomerMgmt.filterComplaints('all')">Tất Cả</button>
+                <button class="btn btn-xs btn-outline" id="filter-complaint-pending" onclick="CustomerMgmt.filterComplaints('pending')">⏳ Chờ Xử Lý</button>
+                <button class="btn btn-xs btn-outline" id="filter-complaint-resolved" onclick="CustomerMgmt.filterComplaints('resolved')">✅ Đã Giải Quyết</button>
+              </div>
+              <button class="btn btn-sm btn-outline" onclick="CustomerMgmt.renderComplaints()">🔄 Làm Mới</button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã Phiếu</th>
+                    <th>Khách Hàng</th>
+                    <th>Số Điện Thoại</th>
+                    <th>Loại Khiếu Nại</th>
+                    <th>Nội Dung Phản Ánh</th>
+                    <th>Thời Gian Gửi</th>
+                    <th>Trạng Thái</th>
+                    <th>Giải Pháp / Phản Hồi</th>
+                    <th style="text-align: center;">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-complaints-tbody">
+                  <!-- Injected by CustomerMgmt -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- END TAB 2 -->
       </div>
     </main>
+  </div>
+
+  <!-- Resolve Complaint Modal -->
+  <div id="resolve-complaint-modal" class="modal-backdrop">
+    <div class="modal-container" style="max-width: 520px;">
+      <div class="modal-header">
+        <h4 class="modal-title" id="resolve-modal-title">Xử Lý & Bồi Hoàn Khiếu Nại</h4>
+        <button class="modal-close" data-close-modal="resolve-complaint-modal">✕</button>
+      </div>
+      <form onsubmit="CustomerMgmt.resolveComplaintSubmit(event)">
+        <div class="modal-body">
+          <input type="hidden" id="resolve-complaint-id">
+          <div style="background: var(--bg-card-hover); padding: 0.85rem; border-radius: var(--radius-md); margin-bottom: 1rem; border: 1px solid var(--border-subtle);">
+            <div class="text-xs text-muted">Nội dung khiếu nại của khách:</div>
+            <div id="resolve-modal-customer-text" style="font-weight: 600; margin-top: 4px; color: var(--text-heading); font-size: 0.9rem;">...</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label text-xs">Phương Án Giải Quyết / Bồi Hoàn *</label>
+            <select id="resolve-solution-preset" class="form-select" onchange="CustomerMgmt.onPresetChange(this.value)" style="margin-bottom: 0.5rem;">
+              <option value="">-- Chọn giải pháp mẫu hoặc tự nhập --</option>
+              <option value="Đã liên hệ xin lỗi và tặng voucher giảm giá 20% cho đơn hàng tiếp theo.">Tặng voucher giảm 20%</option>
+              <option value="Đã gọi điện xin lỗi và miễn phí đổi 1 ly trà sữa mới tận nơi cho khách.">Đổi ly mới miễn phí tận nơi</option>
+              <option value="Đã hoàn tiền 100% giá trị món hàng bị sự cố cho khách hàng.">Hoàn tiền 100% món bị lỗi</option>
+              <option value="Đã tiếp thu ý kiến đóng góp và chấn chỉnh thái độ phục vụ của nhân viên ca làm.">Chấn chỉnh thái độ nhân viên</option>
+            </select>
+            <textarea id="resolve-response-text" class="form-control" rows="4" required placeholder="Nhập chi tiết biện pháp giải quyết và phản hồi gửi đến khách hàng..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal="resolve-complaint-modal">Hủy</button>
+          <button type="submit" class="btn btn-success">✅ Xác Nhận Đã Giải Quyết</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- Add / Edit Customer Modal -->
@@ -159,6 +291,16 @@
               </select>
             </div>
           </div>
+          <div class="grid grid-cols-2 gap-4" style="margin-top: 0.5rem; background: var(--bg-card-hover); padding: 0.75rem; border-radius: var(--radius-md); border: 1px dashed var(--border-subtle);">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label text-xs font-bold">🛒 Số Đơn Hàng Đã Mua</label>
+              <input type="number" id="cust-order-count" class="form-control" value="0" min="0">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label text-xs font-bold">💰 Tổng Chi Tiêu (VNĐ)</label>
+              <input type="number" id="cust-total-spent" class="form-control" value="0" min="0">
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" data-close-modal="customer-modal">Hủy</button>
@@ -174,15 +316,217 @@
   <script src="../js/utils/formatters.js?v=20260913"></script>
   <script src="../js/utils/toast.js?v=20260913"></script>
   <script src="../js/utils/modal.js?v=20260913"></script>
+  <script src="../js/utils/api-config.js?v=20260913"></script>
   <script src="../js/auth.js?v=20260913"></script>
   
   <script>
     const CustomerMgmt = {
       customersList: [],
+      complaintsList: [],
+      activeTab: 'customers',
+      complaintFilter: 'all',
 
       init() {
         this.renderTable();
+        this.renderComplaints();
         document.getElementById("admin-cust-search")?.addEventListener("input", () => this.renderTable());
+      },
+
+      switchTab(tab) {
+        this.activeTab = tab;
+        const secCust = document.getElementById("section-customers");
+        const secComp = document.getElementById("section-complaints");
+        const btnCust = document.getElementById("tab-cust-btn");
+        const btnComp = document.getElementById("tab-complaints-btn");
+
+        if (tab === 'customers') {
+          secCust.style.display = "block";
+          secComp.style.display = "none";
+          btnCust.style.fontWeight = "700";
+          btnCust.style.borderBottom = "2px solid var(--primary)";
+          btnCust.style.background = "rgba(196, 0, 29, 0.08)";
+          btnCust.style.color = "var(--primary)";
+
+          btnComp.style.fontWeight = "600";
+          btnComp.style.borderBottom = "none";
+          btnComp.style.background = "transparent";
+          btnComp.style.color = "var(--text-muted)";
+        } else {
+          secCust.style.display = "none";
+          secComp.style.display = "block";
+          btnComp.style.fontWeight = "700";
+          btnComp.style.borderBottom = "2px solid var(--primary)";
+          btnComp.style.background = "rgba(196, 0, 29, 0.08)";
+          btnComp.style.color = "var(--primary)";
+
+          btnCust.style.fontWeight = "600";
+          btnCust.style.borderBottom = "none";
+          btnCust.style.background = "transparent";
+          btnCust.style.color = "var(--text-muted)";
+
+          this.renderComplaints();
+        }
+      },
+
+      async renderComplaints() {
+        const tbody = document.getElementById("admin-complaints-tbody");
+        if (!tbody) return;
+
+        let list = [];
+        try {
+          const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
+          const res = await fetch(`${apiBase}/complaints`);
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data)) {
+            list = data.data;
+          }
+        } catch (err) {
+          console.warn("Backend API offline for complaints, falling back to LocalStorage...");
+        }
+
+        if (list.length === 0) {
+          try {
+            list = JSON.parse(localStorage.getItem("dodo_complaints") || "[]");
+          } catch(e) { list = []; }
+        }
+
+        this.complaintsList = list;
+
+        // Cập nhật badge số khiếu nại chờ xử lý
+        const pendingCount = list.filter(c => c.status !== 'resolved' && c.trang_thai !== 'da_xu_ly').length;
+        const badge = document.getElementById("complaints-badge-count");
+        if (badge) {
+          badge.textContent = pendingCount;
+          badge.style.display = pendingCount > 0 ? "inline-block" : "none";
+        }
+
+        // Lọc theo trạng thái
+        let filtered = list;
+        if (this.complaintFilter === 'pending') {
+          filtered = list.filter(c => c.status !== 'resolved' && c.trang_thai !== 'da_xu_ly');
+        } else if (this.complaintFilter === 'resolved') {
+          filtered = list.filter(c => c.status === 'resolved' || c.trang_thai === 'da_xu_ly');
+        }
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="9" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✨</div>
+                <b>Không có phiếu khiếu nại nào trong danh mục này.</b>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map(item => {
+          const isResolved = item.status === 'resolved' || item.trang_thai === 'da_xu_ly';
+          const typeLabel = item.type || item.loai_khieu_nai || 'Khác';
+          const customerName = item.customerName || item.ten_khach || 'Khách hàng';
+          const phone = item.phone || item.so_dien_thoai || 'Chưa có';
+          const content = item.content || item.noi_dung || '';
+          const createdAt = item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'Mới đây';
+          const responseText = item.responseText || item.phan_hoi || '<i>Chưa có phản hồi</i>';
+
+          return `
+            <tr>
+              <td class="font-bold text-primary">${item.id}</td>
+              <td><b>${customerName}</b></td>
+              <td>${phone}</td>
+              <td><span class="badge badge-outline">${typeLabel}</span></td>
+              <td style="max-width: 250px; font-size: 0.85rem;" title="${content}">${content}</td>
+              <td class="text-xs text-muted">${createdAt}</td>
+              <td>
+                <span class="badge ${isResolved ? 'badge-success' : 'badge-warning'}">
+                  ${isResolved ? '✅ Đã Giải Quyết' : '⏳ Chờ Xử Lý'}
+                </span>
+              </td>
+              <td style="max-width: 240px; font-size: 0.85rem; color: #2a9d8f;">${responseText}</td>
+              <td style="text-align: center;">
+                ${!isResolved ? `
+                  <button class="btn btn-xs btn-primary" onclick="CustomerMgmt.openResolveModal('${item.id}')">
+                    🛠️ Xử Lý
+                  </button>
+                ` : `
+                  <button class="btn btn-xs btn-outline" onclick="CustomerMgmt.openResolveModal('${item.id}')" title="Cập nhật lại giải pháp">
+                    ✏️ Sửa
+                  </button>
+                `}
+              </td>
+            </tr>
+          `;
+        }).join("");
+      },
+
+      filterComplaints(status) {
+        this.complaintFilter = status;
+        ['all', 'pending', 'resolved'].forEach(s => {
+          const btn = document.getElementById(`filter-complaint-${s}`);
+          if (btn) {
+            if (s === status) {
+              btn.classList.add('active-filter');
+              btn.style.background = 'var(--primary)';
+              btn.style.color = '#fff';
+            } else {
+              btn.classList.remove('active-filter');
+              btn.style.background = 'transparent';
+              btn.style.color = 'inherit';
+            }
+          }
+        });
+        this.renderComplaints();
+      },
+
+      openResolveModal(complaintId) {
+        const item = this.complaintsList.find(c => String(c.id) === String(complaintId));
+        if (!item) return;
+
+        document.getElementById("resolve-complaint-id").value = item.id;
+        document.getElementById("resolve-modal-customer-text").textContent = `[${item.customerName || 'Khách'}] "${item.content || ''}"`;
+        document.getElementById("resolve-solution-preset").value = "";
+        document.getElementById("resolve-response-text").value = item.responseText || item.phan_hoi || "";
+        Modal.open("resolve-complaint-modal");
+      },
+
+      onPresetChange(val) {
+        if (val) {
+          document.getElementById("resolve-response-text").value = val;
+        }
+      },
+
+      async resolveComplaintSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById("resolve-complaint-id").value;
+        const responseText = document.getElementById("resolve-response-text").value.trim();
+        if (!responseText) return;
+
+        const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
+        try {
+          await fetch(`${apiBase}/complaints/${encodeURIComponent(id)}/resolve`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ responseText, resolvedBy: 'Quản Lý Cửa Hàng' })
+          });
+          Toast.success("Đã ghi nhận phương án giải quyết khiếu nại thành công!");
+        } catch (err) {
+          Toast.success("Đã giải quyết khiếu nại (Chế độ offline LocalStorage)!");
+        }
+
+        // Cập nhật LocalStorage
+        try {
+          let list = JSON.parse(localStorage.getItem("dodo_complaints") || "[]");
+          const idx = list.findIndex(c => String(c.id) === String(id));
+          if (idx >= 0) {
+            list[idx].status = 'resolved';
+            list[idx].responseText = responseText;
+            list[idx].resolvedAt = new Date().toISOString();
+            localStorage.setItem("dodo_complaints", JSON.stringify(list));
+          }
+        } catch(e) {}
+
+        Modal.close("resolve-complaint-modal");
+        await this.renderComplaints();
       },
 
       async renderTable() {
@@ -193,7 +537,8 @@
         const q = document.getElementById("admin-cust-search")?.value.trim() || "";
 
         try {
-          const url = q ? `/api/customers?search=${encodeURIComponent(q)}` : `/api/customers`;
+          const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
+          const url = q ? `${apiBase}/customers?search=${encodeURIComponent(q)}` : `${apiBase}/customers`;
           const response = await fetch(url);
           const data = await response.json();
           if (data.success && Array.isArray(data.data)) {
@@ -205,6 +550,8 @@
               email: item.email || 'Chưa có email',
               points: item.diem_tich_luy || 0,
               tier: item.hang_thanh_vien === 'kim_cuong' ? 'VIP Kim Cương' : (item.hang_thanh_vien === 'vang' ? 'VIP Vàng' : (item.hang_thanh_vien === 'bac' ? 'VIP Bạc' : 'VIP Đồng')),
+              orderCount: parseInt(item.so_don_da_mua) || 0,
+              totalSpent: parseFloat(item.tong_chi_tieu) || 0,
               createdAt: item.ngay_tao ? item.ngay_tao.split('T')[0] : '2026-01-01',
               status: item.trang_thai === 'tam_khoa' ? 'locked' : 'active'
             }));
@@ -215,19 +562,41 @@
 
         if (customers.length === 0) {
           let users = DB.getUsers().filter(u => u.role === "customer");
+          const allOrders = DB.getOrders();
+
           if (q) {
             const term = q.toLowerCase();
             users = users.filter(u => (u.fullName && u.fullName.toLowerCase().includes(term)) || (u.phone && u.phone.includes(term)) || (u.email && u.email.toLowerCase().includes(term)));
           }
-          customers = users.map(u => ({ ...u, rawId: u.id }));
+
+          customers = users.map(u => {
+            const userOrders = allOrders.filter(o => 
+              (u.phone && o.customerPhone === u.phone) || 
+              (u.fullName && o.customerName === u.fullName)
+            );
+            const userOrdersCount = userOrders.filter(o => o.orderStatus !== 'cancelled').length;
+            const userOrdersSpent = userOrders
+              .filter(o => o.orderStatus !== 'cancelled')
+              .reduce((sum, o) => sum + (parseFloat(o.totalAmount) || 0), 0);
+
+            return {
+              ...u,
+              rawId: u.id,
+              orderCount: Math.max(parseInt(u.orderCount) || 0, userOrdersCount),
+              totalSpent: Math.max(parseFloat(u.totalSpent) || 0, userOrdersSpent)
+            };
+          });
         }
 
         this.customersList = customers;
 
+        // Update Top KPI Summary
+        this.updateKPIs(customers);
+
         if (customers.length === 0) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="8" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+              <td colspan="10" style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
                 <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">👥</div>
                 <b>Chưa có tài khoản khách hàng nào.</b>
                 <p class="text-xs" style="margin-top: 4px;">Bạn có thể nhấn nút <b>+ Thêm Khách Hàng</b> phía trên để tạo thủ công cho khách tại quầy.</p>
@@ -245,6 +614,16 @@
               <div class="text-xs text-muted">${u.email || 'Chưa có email'}</div>
             </td>
             <td><b>${u.phone || 'Chưa có'}</b></td>
+            <td style="text-align: center;">
+              <span class="badge badge-outline font-bold" style="background: rgba(196, 0, 29, 0.08); color: var(--primary); font-size: 0.85rem; border: 1px solid rgba(196, 0, 29, 0.2);">
+                🛒 ${u.orderCount || 0} đơn
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <div class="font-bold text-success" style="font-size: 0.95rem; color: #2a9d8f;">
+                ${Formatters.currency(u.totalSpent || 0)}
+              </div>
+            </td>
             <td><span class="badge badge-warning font-bold">${u.points || 0} pts</span></td>
             <td><span class="badge badge-primary">${u.tier || 'VIP Đồng'}</span></td>
             <td class="text-xs text-muted">${u.createdAt || '2026-01-01'}</td>
@@ -255,7 +634,7 @@
             </td>
             <td style="text-align: center;">
               <div class="table-actions" style="justify-content: center; gap: 0.35rem;">
-                <button class="action-icon-btn btn-edit" onclick="CustomerMgmt.openEditModal('${u.id}')" title="Chỉnh sửa thông tin & điểm">✏️</button>
+                <button class="action-icon-btn btn-edit" onclick="CustomerMgmt.openEditModal('${u.id}')" title="Chỉnh sửa thông tin, điểm & chi tiêu">✏️</button>
                 <button class="action-icon-btn" onclick="CustomerMgmt.toggleLock('${u.id}')" title="${u.status === 'locked' ? 'Mở Khóa' : 'Tạm Khóa'}">
                   ${u.status === 'locked' ? '🔓' : '🔒'}
                 </button>
@@ -266,6 +645,23 @@
         `).join("");
       },
 
+      updateKPIs(customers) {
+        const totalCust = customers.length;
+        const totalOrders = customers.reduce((acc, c) => acc + (c.orderCount || 0), 0);
+        const totalSpent = customers.reduce((acc, c) => acc + (c.totalSpent || 0), 0);
+        const totalPoints = customers.reduce((acc, c) => acc + (c.points || 0), 0);
+
+        const elCust = document.getElementById("kpi-total-cust");
+        const elOrders = document.getElementById("kpi-total-orders");
+        const elSpent = document.getElementById("kpi-total-spent");
+        const elPoints = document.getElementById("kpi-total-points");
+
+        if (elCust) elCust.textContent = totalCust;
+        if (elOrders) elOrders.textContent = `${totalOrders} đơn`;
+        if (elSpent) elSpent.textContent = Formatters.currency(totalSpent);
+        if (elPoints) elPoints.textContent = `${totalPoints} pts`;
+      },
+
       openAddModal() {
         document.getElementById("cust-modal-title").textContent = "Thêm Khách Hàng Mới";
         document.getElementById("cust-id").value = "";
@@ -274,6 +670,8 @@
         document.getElementById("cust-email").value = "";
         document.getElementById("cust-points").value = "0";
         document.getElementById("cust-tier").value = "VIP Đồng";
+        document.getElementById("cust-order-count").value = "0";
+        document.getElementById("cust-total-spent").value = "0";
         Modal.open("customer-modal");
       },
 
@@ -292,6 +690,8 @@
         document.getElementById("cust-email").value = (u.email && !u.email.includes('Chưa có')) ? u.email : "";
         document.getElementById("cust-points").value = u.points || 0;
         document.getElementById("cust-tier").value = u.tier || "VIP Đồng";
+        document.getElementById("cust-order-count").value = u.orderCount || 0;
+        document.getElementById("cust-total-spent").value = u.totalSpent || 0;
         Modal.open("customer-modal");
       },
 
@@ -303,20 +703,33 @@
         const email = document.getElementById("cust-email").value.trim();
         const points = parseInt(document.getElementById("cust-points").value) || 0;
         const tier = document.getElementById("cust-tier").value;
+        const orderCount = parseInt(document.getElementById("cust-order-count").value) || 0;
+        const totalSpent = parseFloat(document.getElementById("cust-total-spent").value) || 0;
 
+        if (!Formatters.isValidPhone(phone)) {
+          Toast.warning("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).");
+          const phoneInput = document.getElementById("cust-phone");
+          if (phoneInput) {
+            phoneInput.focus();
+            phoneInput.style.borderColor = "#EF4444";
+          }
+          return;
+        }
+
+        const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
         try {
           if (custId) {
-            await fetch(`/api/customers/${encodeURIComponent(custId)}`, {
+            await fetch(`${apiBase}/customers/${encodeURIComponent(custId)}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ fullName: name, phone, email, points, tier })
+              body: JSON.stringify({ fullName: name, phone, email, points, tier, orderCount, totalSpent })
             });
             Toast.success(`Đã cập nhật khách hàng: <b>${name}</b>`);
           } else {
-            await fetch('/api/customers', {
+            await fetch(`${apiBase}/customers`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ fullName: name, phone, email, points, tier })
+              body: JSON.stringify({ fullName: name, phone, email, points, tier, orderCount, totalSpent })
             });
             Toast.success(`Đã thêm khách hàng: <b>${name}</b>`);
           }
@@ -329,7 +742,7 @@
         if (custId) {
           const idx = users.findIndex(u => u.id === custId);
           if (idx >= 0) {
-            users[idx] = { ...users[idx], fullName: name, phone, email, points, tier };
+            users[idx] = { ...users[idx], fullName: name, phone, email, points, tier, orderCount, totalSpent };
           }
         } else {
           const newCust = {
@@ -340,6 +753,8 @@
             email,
             points,
             tier,
+            orderCount,
+            totalSpent,
             role: "customer",
             status: "active",
             createdAt: new Date().toISOString().split("T")[0]
@@ -353,8 +768,9 @@
       },
 
       async toggleLock(userId) {
+        const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
         try {
-          await fetch(`/api/customers/${encodeURIComponent(userId)}/toggle-lock`, { method: 'PUT' });
+          await fetch(`${apiBase}/customers/${encodeURIComponent(userId)}/toggle-lock`, { method: 'PUT' });
         } catch (err) {}
 
         let users = DB.getUsers();
@@ -374,8 +790,9 @@
 
         if (!confirm(`Bạn có chắc chắn muốn xóa khách hàng "${name}" (${phone}) khỏi hệ thống và cơ sở dữ liệu?`)) return;
 
+        const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
         try {
-          const res = await fetch(`/api/customers/${encodeURIComponent(userId)}`, { method: 'DELETE' });
+          const res = await fetch(`${apiBase}/customers/${encodeURIComponent(userId)}`, { method: 'DELETE' });
           const json = await res.json().catch(() => ({}));
           if (json.message) Toast.info(json.message);
           else Toast.info(`Đã xóa khách hàng: ${name}`);

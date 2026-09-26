@@ -40,8 +40,8 @@
           <span>Tổng Quan (Dashboard)</span>
         </a>
         <a href="orders.html" class="sidebar-nav-item">
-          <span class="nav-icon">📦</span>
-          <span>Quản Lý Đơn Hàng</span>
+          <span class="nav-icon">🧾</span>
+          <span>Quản Lý Hoá Đơn</span>
         </a>
         <a href="products.html" class="sidebar-nav-item">
           <span class="nav-icon">🧋</span>
@@ -50,6 +50,10 @@
         <a href="customers.html" class="sidebar-nav-item">
           <span class="nav-icon">👥</span>
           <span>Khách Hàng & Điểm</span>
+        </a>
+        <a href="reviews.html" class="sidebar-nav-item">
+          <span class="nav-icon">⭐</span>
+          <span>Đánh Giá & Phản Hồi</span>
         </a>
         <a href="staff.html" class="sidebar-nav-item">
           <span class="nav-icon">💼</span>
@@ -110,11 +114,11 @@
 
           <div class="kpi-card">
             <div class="kpi-info">
-              <h6>Tổng Số Đơn Hàng</h6>
+              <h6>Tổng Số Hoá Đơn</h6>
               <div class="kpi-value" id="kpi-orders">0</div>
               <div class="kpi-growth up" style="color: var(--text-muted);">● Cập nhật realtime</div>
             </div>
-            <div class="kpi-icon-wrap kpi-info">📦</div>
+            <div class="kpi-icon-wrap kpi-info">🧾</div>
           </div>
 
           <div class="kpi-card">
@@ -163,15 +167,15 @@
         <!-- 3. Recent Orders Table -->
         <div class="data-table-container">
           <div class="table-toolbar">
-            <h4 style="margin: 0;">Đơn Hàng Gần Đây Cần Xử Lý</h4>
-            <a href="orders.html" class="btn btn-outline btn-sm">Xem tất cả đơn ➔</a>
+            <h4 style="margin: 0;">Hoá Đơn Gần Đây Cần Xử Lý</h4>
+            <a href="orders.html" class="btn btn-outline btn-sm">Xem tất cả hoá đơn ➔</a>
           </div>
 
           <div class="table-responsive">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Mã Đơn</th>
+                  <th>Mã Hoá Đơn</th>
                   <th>Khách Hàng</th>
                   <th>Số Món</th>
                   <th>Tổng Tiền</th>
@@ -197,6 +201,7 @@
   <script src="../js/utils/formatters.js?v=20260913"></script>
   <script src="../js/utils/toast.js?v=20260913"></script>
   <script src="../js/utils/modal.js?v=20260913"></script>
+  <script src="../js/utils/api-config.js?v=20260914"></script>
   <script src="../js/auth.js?v=20260913"></script>
   <script src="../js/admin/dashboard.js?v=20260913"></script>
   <script src="../js/admin/admin-notifications.js?v=20260913"></script>

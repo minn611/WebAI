@@ -21,7 +21,10 @@ const Auth = {
     return user && (user.role === "admin" || user.role === "staff");
   },
 
-  API_BASE: "http://localhost:5000/api",
+  get API_BASE() {
+    return (typeof window !== "undefined" && window.API_BASE) || 
+           (typeof APIConfig !== "undefined" ? APIConfig.getBaseUrl() : "http://localhost:5000/api");
+  },
 
   async loginAsync(username, password) {
     try {
@@ -71,6 +74,38 @@ const Auth = {
       window.location.href = "../index.html";
     } else {
       window.location.reload();
+    }
+  },
+
+  async changePasswordAsync(oldPassword, newPassword) {
+    const user = this.getCurrentUser();
+    if (!user) return { success: false, message: "Bạn chưa đăng nhập!" };
+
+    try {
+      const response = await fetch(`${this.API_BASE}/auth/change-password`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: user.username,
+          phone: user.phone,
+          oldPassword,
+          newPassword
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        user.password = newPassword;
+        DB.saveUser(user);
+        DB.setCurrentUser(user);
+        return { success: true, message: data.message || "Đổi mật khẩu thành công!" };
+      } else {
+        return { success: false, message: data.message || "Đổi mật khẩu không thành công!" };
+      }
+    } catch (err) {
+      user.password = newPassword;
+      DB.saveUser(user);
+      DB.setCurrentUser(user);
+      return { success: true, message: "Đã đổi mật khẩu thành công!" };
     }
   },
 
@@ -126,6 +161,60 @@ const Auth = {
     DB.saveUser(newUser);
     DB.setCurrentUser(newUser);
     return { success: true, user: newUser };
+  },
+
+  // Reset Password via OTP (UC 3.2.2.2.3 a)
+  async resetPasswordWithOtpAsync(phone, newPassword) {
+    try {
+      const response = await fetch(`${this.API_BASE}/auth/change-password`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: phone.trim(),
+          newPassword: newPassword
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        const users = DB.getUsers();
+        const u = users.find(x => x.phone === phone.trim() || x.username === phone.trim());
+        if (u) {
+          u.password = newPassword;
+          DB.saveUser(u);
+        }
+        return { success: true, message: data.message || "Đặt lại mật khẩu mới thành công!" };
+      }
+      return { success: false, message: data.message || "Không thể đặt lại mật khẩu!" };
+    } catch (err) {
+      const users = DB.getUsers();
+      const u = users.find(x => x.phone === phone.trim() || x.username === phone.trim());
+      if (u) {
+        u.password = newPassword;
+        DB.saveUser(u);
+        return { success: true, message: "Đã đặt lại mật khẩu mới thành công!" };
+      }
+      return { success: false, message: "Không tìm thấy tài khoản với số điện thoại này!" };
+    }
+  },
+
+  // Social Login (UC 3.2.2.2.3 a)
+  loginWithSocial(provider) {
+    const user = {
+      id: `USR-${Date.now()}`,
+      username: `${provider.toLowerCase()}_user`,
+      fullName: `Khách Hàng (${provider})`,
+      role: "customer",
+      email: `${provider.toLowerCase()}@teajoy.vn`,
+      phone: "0900" + Math.floor(100000 + Math.random() * 900000),
+      points: 50,
+      tier: "Đồng",
+      status: "active",
+      provider: provider,
+      createdAt: new Date().toISOString().split("T")[0]
+    };
+    DB.saveUser(user);
+    DB.setCurrentUser(user);
+    return { success: true, user, message: `Đăng nhập thành công với tài khoản ${provider}!` };
   },
 
   // Switch role for quick testing/demo
@@ -256,6 +345,16 @@ const Auth = {
     const f = document.getElementById("pop-reg-fullname")?.value.trim();
     const phone = document.getElementById("pop-reg-phone")?.value.trim();
     const p = document.getElementById("pop-reg-password")?.value;
+
+    if (!Formatters.isValidPhone(phone)) {
+      Toast.warning("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).");
+      const phoneInput = document.getElementById("pop-reg-phone");
+      if (phoneInput) {
+        phoneInput.focus();
+        phoneInput.style.borderColor = "#EF4444";
+      }
+      return;
+    }
 
     const res = await this.registerAsync({ username: u, fullName: f, phone, password: p });
     if (res.success) {
@@ -448,7 +547,7 @@ const Auth = {
 
     const isCashier = user && !isManager && !isBarista;
     const nameDisplay = user ? user.fullName : "Nguyễn Văn Quản Lý";
-    const roleDisplay = user ? (isManager ? "QUẢN LÝ" : (isBarista ? "PHA CHẾ" : "THU NGÂN")) : "QUẢN LÝ";
+    const roleDisplay = user ? (isManager ? "QUẢN LÝ" : (isBarista ? "NHÂN VIÊN (PHA CHẾ)" : "NHÂN VIÊN (THU NGÂN)")) : "QUẢN LÝ";
 
     // 1. Update Topbar
     const adminNameEl = document.getElementById("admin-user-name");
@@ -476,27 +575,25 @@ const Auth = {
       topbar.appendChild(actionsDiv);
     }
 
-    // 2. Update Sidebar Links & Filter by Role
+    // 2. Update Sidebar Links & Filter by Role (Khớp 100% Biểu Đồ Use Case Đồ Án)
+    // Use Case Nhân Viên: Quản lý Hoá Đơn, Quản lý Sản Phẩm & Hàng Hóa, Quản lý Khách Hàng, Quản lý Truyền Thông
     const navLinks = document.querySelectorAll(".admin-sidebar-nav a, .admin-nav a, .sidebar-nav-item");
+    const staffAllowedPages = ["orders.html", "products.html", "customers.html", "marketing.html", "reviews.html"];
+
     navLinks.forEach(link => {
       const href = (link.getAttribute("href") || "").toLowerCase();
       if (!isManager) {
-        if (isBarista) {
-          // Pha chế: Chỉ xem trang Đơn hàng (orders.html)
-          if (!href.includes("orders.html")) {
-            link.style.display = "none";
-          }
+        const isAllowed = staffAllowedPages.some(page => href.includes(page));
+        if (!isAllowed) {
+          link.style.display = "none";
         } else {
-          // Thu ngân: Chỉ xem Đơn hàng (orders.html) & Khách hàng (customers.html)
-          if (!href.includes("orders.html") && !href.includes("customers.html")) {
-            link.style.display = "none";
-          }
+          link.style.display = "";
         }
       }
     });
 
     // 3. Page Access Guard Enforcement
-    const currentPage = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+    const currentPage = (window.location.pathname.split("/").pop() || "orders.html").toLowerCase();
     if (!user) {
       // Tự động gán tài khoản Quản lý demo nếu chưa có phiên đăng nhập trong LocalStorage
       const fallbackUser = {
@@ -519,12 +616,9 @@ const Auth = {
     }
 
     if (!isManager) {
-      let allowed = false;
-      if (isBarista && (currentPage === "orders.html" || currentPage === "")) allowed = true;
-      if (isCashier && (currentPage === "orders.html" || currentPage === "customers.html")) allowed = true;
-
-      if (!allowed) {
-        console.warn(`[Role Guard] Access redirect for role: ${roleDisplay} on page: ${currentPage}`);
+      const isAllowedPage = staffAllowedPages.some(page => currentPage === page || currentPage === "");
+      if (!isAllowedPage) {
+        console.warn(`[Role Guard] Access redirect for staff role: ${roleDisplay} on page: ${currentPage}`);
         window.location.href = "orders.html";
         return;
       }

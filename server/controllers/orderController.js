@@ -36,6 +36,12 @@ const orderController = {
         return res.status(400).json({ success: false, message: 'Vui lòng cung cấp đầy đủ thông tin nhận hàng và danh sách món!' });
       }
 
+      const cleanPhone = clientPhone.replace(/\s+/g, '');
+      if (!/^(0|\+84)(3|5|7|8|9)[0-9]{8}$/.test(cleanPhone)) {
+        connection.release();
+        return res.status(400).json({ success: false, message: 'Số điện thoại nhận hàng không hợp lệ! Vui lòng nhập đúng 10 số (bắt đầu bằng 03, 05, 07, 08, 09).' });
+      }
+
       // Ưu tiên dùng mã đơn do client sinh (e.g. TS-4892) để đồng bộ tuyệt đối với LocalStorage
       const finalOrderCode = orderId || customOrderCode || `TS-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -50,16 +56,16 @@ const orderController = {
       const finalShipping = shippingFee !== undefined ? parseFloat(shippingFee) : 15000;
       const totalAmount = Math.max(0, itemsTotal + finalShipping - clientDiscount);
 
-      // 1. Insert into DON_HANG
+      // 1. Insert into HOA_DON
       const [orderResult] = await connection.query(
-        `INSERT INTO DON_HANG (ma_don_hang, ten_nguoi_nhan, sdt_nguoi_nhan, dia_chi_giao_hang, ghi_chu, tong_tien_mon, phi_van_chuyen, so_tien_giam_gia, tong_thanh_toan, trang_thai_don_hang, ngay_dat)
+        `INSERT INTO HOA_DON (ma_don_hang, ten_nguoi_nhan, sdt_nguoi_nhan, dia_chi_giao_hang, ghi_chu, tong_tien_mon, phi_van_chuyen, so_tien_giam_gia, tong_thanh_toan, trang_thai_don_hang, ngay_dat)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
         [finalOrderCode, clientName, clientPhone, clientAddress, clientNotes, itemsTotal, finalShipping, clientDiscount, totalAmount]
       );
 
       const dbOrderId = orderResult.insertId;
 
-      // 2. Insert into CHI_TIET_DON_HANG for each item
+      // 2. Insert into CHI_TIET_HOA_DON for each item
       for (const item of items) {
         const uPrice = parseFloat(item.unitPrice || item.price || 0);
         const qty = parseInt(item.quantity || 1);
@@ -67,13 +73,14 @@ const orderController = {
         const toppingsJson = item.toppings ? JSON.stringify(item.toppings.map(t => typeof t === 'string' ? { name: t } : t)) : '[]';
 
         // Get product ID or default to 1
-        const [pRows] = await connection.query('SELECT id FROM SAN_PHAM WHERE ma_sku = ? LIMIT 1', [item.productId || 'TS-01']);
+        const [pRows] = await connection.query('SELECT id, ten_san_pham FROM SAN_PHAM WHERE ma_sku = ? OR id = ? LIMIT 1', [item.productId || 'TS-01', item.productId || 1]);
         const productId = pRows.length > 0 ? pRows[0].id : 1;
+        const productName = item.name || item.productName || item.ten_san_pham || (pRows.length > 0 ? pRows[0].ten_san_pham : 'Trà Sữa Đô Đô');
 
         await connection.query(
-          `INSERT INTO CHI_TIET_DON_HANG (don_hang_id, san_pham_id, ten_san_pham, kich_thuoc, muc_duong, muc_da, danh_sach_topping, don_gia, so_luong, thanh_tien)
+          `INSERT INTO CHI_TIET_HOA_DON (hoa_don_id, san_pham_id, ten_san_pham, kich_thuoc, muc_duong, muc_da, danh_sach_topping, don_gia, so_luong, thanh_tien)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [dbOrderId, productId, item.name, item.size || 'M', item.sugar || '100%', item.ice || '100%', toppingsJson, uPrice, qty, itemTotal]
+          [dbOrderId, productId, productName, item.size || 'M', item.sugar || '100%', item.ice || '100%', toppingsJson, uPrice, qty, itemTotal]
         );
       }
 
@@ -83,7 +90,7 @@ const orderController = {
       const initialStatus = method === 'vietqr' ? 'cho_thanh_toan' : 'cho_thanh_toan';
 
       await connection.query(
-        `INSERT INTO THANH_TOAN (don_hang_id, phuong_thuc, so_tien, trang_thai, ngay_tao)
+        `INSERT INTO THANH_TOAN (hoa_don_id, phuong_thuc, so_tien, trang_thai, ngay_tao)
          VALUES (?, ?, ?, ?, NOW())`,
         [dbOrderId, method, totalAmount, initialStatus]
       );
@@ -122,10 +129,10 @@ const orderController = {
   async getAll(req, res) {
     try {
       const [orders] = await pool.query(
-        `SELECT dh.*, tt.phuong_thuc, tt.trang_thai as trang_thai_tt
-         FROM DON_HANG dh
-         LEFT JOIN THANH_TOAN tt ON dh.id = tt.don_hang_id
-         ORDER BY dh.ngay_dat DESC`
+        `SELECT hd.*, tt.phuong_thuc, tt.trang_thai as trang_thai_tt
+         FROM HOA_DON hd
+         LEFT JOIN THANH_TOAN tt ON hd.id = tt.hoa_don_id
+         ORDER BY hd.id DESC`
       );
 
       if (orders.length === 0) {
@@ -134,7 +141,7 @@ const orderController = {
 
       const orderIds = orders.map(o => o.id);
       const [allItems] = await pool.query(
-        `SELECT * FROM CHI_TIET_DON_HANG WHERE don_hang_id IN (?) ORDER BY id ASC`,
+        `SELECT *, hoa_don_id as don_hang_id FROM CHI_TIET_HOA_DON WHERE hoa_don_id IN (?) ORDER BY id ASC`,
         [orderIds]
       );
 
@@ -171,8 +178,11 @@ const orderController = {
       }
 
       const formattedOrders = orders.map(dh => ({
-        id: dh.ma_don_hang,
-        orderId: dh.ma_don_hang,
+        id: dh.ma_hoa_don || dh.ma_don_hang,
+        orderId: dh.ma_hoa_don || dh.ma_don_hang,
+        invoiceId: dh.ma_hoa_don || dh.ma_don_hang,
+        ma_hoa_don: dh.ma_hoa_don || dh.ma_don_hang,
+        ma_don_hang: dh.ma_hoa_don || dh.ma_don_hang,
         dbId: dh.id,
         customerName: dh.ten_nguoi_nhan,
         phone: dh.sdt_nguoi_nhan,
@@ -216,21 +226,21 @@ const orderController = {
       const numId = isNum ? parseInt(searchKey) : -1;
 
       const [orders] = await pool.query(
-        `SELECT dh.*, tt.phuong_thuc, tt.trang_thai as trang_thai_tt
-         FROM DON_HANG dh
-         LEFT JOIN THANH_TOAN tt ON dh.id = tt.don_hang_id
-         WHERE dh.ma_don_hang = ? OR dh.id = ? OR dh.sdt_nguoi_nhan = ?
-         ORDER BY dh.ngay_dat DESC LIMIT 1`,
-        [searchKey, numId, searchKey]
+        `SELECT hd.*, tt.phuong_thuc, tt.trang_thai as trang_thai_tt
+         FROM HOA_DON hd
+         LEFT JOIN THANH_TOAN tt ON hd.id = tt.hoa_don_id
+         WHERE hd.ma_hoa_don = ? OR hd.ma_don_hang = ? OR hd.id = ? OR hd.sdt_nguoi_nhan = ?
+         ORDER BY hd.id DESC LIMIT 1`,
+        [searchKey, searchKey, numId, searchKey]
       );
 
       if (orders.length === 0) {
-        return res.status(404).json({ success: false, message: `Không tìm thấy đơn hàng "${searchKey}"` });
+        return res.status(404).json({ success: false, message: `Không tìm thấy hóa đơn "${searchKey}"` });
       }
 
       const dh = orders[0];
       const [items] = await pool.query(
-        `SELECT * FROM CHI_TIET_DON_HANG WHERE don_hang_id = ? ORDER BY id ASC`,
+        `SELECT *, hoa_don_id as don_hang_id FROM CHI_TIET_HOA_DON WHERE hoa_don_id = ? ORDER BY id ASC`,
         [dh.id]
       );
 
@@ -261,8 +271,11 @@ const orderController = {
       });
 
       const formattedOrder = {
-        id: dh.ma_don_hang,
-        orderId: dh.ma_don_hang,
+        id: dh.ma_hoa_don || dh.ma_don_hang,
+        orderId: dh.ma_hoa_don || dh.ma_don_hang,
+        invoiceId: dh.ma_hoa_don || dh.ma_don_hang,
+        ma_hoa_don: dh.ma_hoa_don || dh.ma_don_hang,
+        ma_don_hang: dh.ma_hoa_don || dh.ma_don_hang,
         dbId: dh.id,
         customerName: dh.ten_nguoi_nhan,
         phone: dh.sdt_nguoi_nhan,
@@ -304,16 +317,16 @@ const orderController = {
       const numId = isNum ? parseInt(orderId) : -1;
       const { customerName, customerPhone, customerAddress, note, orderStatus, paymentStatus } = req.body;
 
-      // Cập nhật thông tin trong bảng DON_HANG
+      // Cập nhật thông tin trong bảng HOA_DON
       await pool.query(
-        `UPDATE DON_HANG 
+        `UPDATE HOA_DON 
          SET ten_nguoi_nhan = COALESCE(?, ten_nguoi_nhan),
              sdt_nguoi_nhan = COALESCE(?, sdt_nguoi_nhan),
              dia_chi_giao_hang = COALESCE(?, dia_chi_giao_hang),
              ghi_chu = COALESCE(?, ghi_chu),
              trang_thai_don_hang = COALESCE(?, trang_thai_don_hang)
-         WHERE ma_don_hang = ? OR id = ?`,
-        [customerName, customerPhone, customerAddress, note, orderStatus, orderId, numId]
+         WHERE ma_hoa_don = ? OR ma_don_hang = ? OR id = ?`,
+        [customerName, customerPhone, customerAddress, note, orderStatus, orderId, orderId, numId]
       );
 
       // Cập nhật trạng thái thanh toán nếu có
@@ -321,16 +334,16 @@ const orderController = {
         const payStatusDb = (paymentStatus === 'paid' || paymentStatus === 'da_thanh_toan') ? 'da_thanh_toan' : 'cho_thanh_toan';
         await pool.query(
           `UPDATE THANH_TOAN tt
-           JOIN DON_HANG dh ON tt.don_hang_id = dh.id
+           JOIN HOA_DON hd ON tt.hoa_don_id = hd.id
            SET tt.trang_thai = ?
-           WHERE dh.ma_don_hang = ? OR dh.id = ?`,
-          [payStatusDb, orderId, numId]
+           WHERE hd.ma_hoa_don = ? OR hd.ma_don_hang = ? OR hd.id = ?`,
+          [payStatusDb, orderId, orderId, numId]
         );
       }
 
-      return res.json({ success: true, message: `Đã cập nhật thông tin đơn hàng #${orderId} thành công!` });
+      return res.json({ success: true, message: `Đã cập nhật thông tin hóa đơn #${orderId} thành công!` });
     } catch (error) {
-      console.error('Lỗi khi chỉnh sửa đơn hàng:', error);
+      console.error('Lỗi khi chỉnh sửa hóa đơn:', error);
       return res.status(500).json({ success: false, message: error.message });
     }
   },
@@ -341,14 +354,30 @@ const orderController = {
       const orderId = String(req.params.id || '').trim();
       const isNum = /^\d+$/.test(orderId);
       const numId = isNum ? parseInt(orderId) : -1;
-      const { status, paymentStatus } = req.body;
+      const { status: inputStatus, orderStatus, paymentStatus } = req.body;
+      const rawStatus = inputStatus || orderStatus;
 
-      if (!status && !paymentStatus) return res.status(400).json({ success: false, message: 'Trạng thái là bắt buộc!' });
+      if (!rawStatus && !paymentStatus) return res.status(400).json({ success: false, message: 'Trạng thái là bắt buộc!' });
 
+      let status = rawStatus;
       if (status) {
+        const statusMap = {
+          'processing': 'preparing',
+          'dang_pha_che': 'preparing',
+          'delivering': 'shipping',
+          'dang_giao': 'shipping',
+          'completed': 'completed',
+          'hoan_thanh': 'completed',
+          'cancelled': 'cancelled',
+          'da_huy': 'cancelled',
+          'confirmed': 'confirmed',
+          'da_xac_nhan': 'confirmed',
+          'pending': 'pending'
+        };
+        status = statusMap[status] || status;
         await pool.query(
-          `UPDATE DON_HANG SET trang_thai_don_hang = ? WHERE ma_don_hang = ? OR id = ?`,
-          [status, orderId, numId]
+          `UPDATE HOA_DON SET trang_thai_don_hang = ? WHERE ma_hoa_don = ? OR ma_don_hang = ? OR id = ?`,
+          [status, orderId, orderId, numId]
         );
       }
 
@@ -356,10 +385,10 @@ const orderController = {
         const payStatusDb = (paymentStatus === 'paid' || paymentStatus === 'da_thanh_toan') ? 'da_thanh_toan' : 'cho_thanh_toan';
         await pool.query(
           `UPDATE THANH_TOAN tt
-           JOIN DON_HANG dh ON tt.don_hang_id = dh.id
+           JOIN HOA_DON hd ON tt.hoa_don_id = hd.id
            SET tt.trang_thai = ?
-           WHERE dh.ma_don_hang = ? OR dh.id = ?`,
-          [payStatusDb, orderId, numId]
+           WHERE hd.ma_hoa_don = ? OR hd.ma_don_hang = ? OR hd.id = ?`,
+          [payStatusDb, orderId, orderId, numId]
         );
       }
 
@@ -367,19 +396,19 @@ const orderController = {
       console.log(`\n========================================================================`);
       console.log(`🔔 [THÔNG BÁO MÁY CHỦ] [${time}]`);
       console.log(`   👤 Tác nhân:  Nhân Viên Quản Lý / Pha Chế / Thu Ngân`);
-      console.log(`   ⚡ Thao tác:  CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG #${orderId}`);
-      if (status) console.log(`   📊 Trạng thái đơn: [${status.toUpperCase()}]`);
+      console.log(`   ⚡ Thao tác:  CẬP NHẬT TRẠNG THÁI HÓA ĐƠN #${orderId}`);
+      if (status) console.log(`   📊 Trạng thái: [${status.toUpperCase()}]`);
       if (paymentStatus) console.log(`   💳 Thanh toán:     [${paymentStatus.toUpperCase()}]`);
       console.log(`========================================================================\n`);
 
-      return res.json({ success: true, message: `Cập nhật trạng thái đơn hàng sang ${status || paymentStatus} thành công!` });
+      return res.json({ success: true, message: `Cập nhật trạng thái hóa đơn sang ${status || paymentStatus} thành công!` });
 
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
   },
 
-  // DELETE /api/orders/:id -> Xóa đơn hàng khỏi MySQL
+  // DELETE /api/orders/:id -> Xóa hóa đơn khỏi MySQL
   async delete(req, res) {
     const connection = await pool.getConnection();
     try {
@@ -390,19 +419,19 @@ const orderController = {
 
       // Tìm DB id từ mã đơn hoặc id số
       const [orderRows] = await connection.query(
-        'SELECT id FROM DON_HANG WHERE ma_don_hang = ? OR id = ?',
-        [orderId, numId]
+        'SELECT id FROM HOA_DON WHERE ma_hoa_don = ? OR ma_don_hang = ? OR id = ?',
+        [orderId, orderId, numId]
       );
 
       if (orderRows.length === 0) {
         connection.release();
-        return res.status(404).json({ success: false, message: `Không tìm thấy đơn hàng "${orderId}"` });
+        return res.status(404).json({ success: false, message: `Không tìm thấy hóa đơn "${orderId}"` });
       }
 
       const dbId = orderRows[0].id;
 
-      // Xóa theo cascade (THANH_TOAN và CHI_TIET_DON_HANG đã có ON DELETE CASCADE)
-      await connection.query('DELETE FROM DON_HANG WHERE id = ?', [dbId]);
+      // Xóa theo cascade (THANH_TOAN và CHI_TIET_HOA_DON đã có ON DELETE CASCADE)
+      await connection.query('DELETE FROM HOA_DON WHERE id = ?', [dbId]);
 
       await connection.commit();
       connection.release();
@@ -411,11 +440,11 @@ const orderController = {
       console.log(`\n========================================================================`);
       console.log(`🔔 [THÔNG BÁO MÁY CHỦ] [${time}]`);
       console.log(`   👤 Tác nhân:  Quản Lý (Admin)`);
-      console.log(`   ⚡ Thao tác:  XÓA ĐƠN HÀNG KHỎI HỆ THỐNG`);
-      console.log(`   🗑️ Đơn hàng:  #${orderId} (DB ID: ${dbId})`);
+      console.log(`   ⚡ Thao tác:  XÓA HÓA ĐƠN KHỎI HỆ THỐNG`);
+      console.log(`   🗑️ Hóa đơn:   #${orderId} (DB ID: ${dbId})`);
       console.log(`========================================================================\n`);
 
-      return res.json({ success: true, message: `Đã xóa đơn hàng ${orderId} thành công!` });
+      return res.json({ success: true, message: `Đã xóa hóa đơn ${orderId} thành công!` });
     } catch (error) {
       await connection.rollback();
       connection.release();
@@ -424,28 +453,31 @@ const orderController = {
     }
   },
 
-  // GET /api/orders/customer/:phone -> Lấy toàn bộ đơn hàng theo SĐT
+  // GET /api/orders/customer/:phone -> Lấy toàn bộ hóa đơn theo SĐT
   async getByPhone(req, res) {
     try {
       const phone = req.params.phone.trim();
 
       const [orders] = await pool.query(
-        `SELECT dh.*, tt.phuong_thuc, tt.trang_thai as trang_thai_tt
-         FROM DON_HANG dh
-         LEFT JOIN THANH_TOAN tt ON dh.id = tt.don_hang_id
-         WHERE dh.sdt_nguoi_nhan = ?
-         ORDER BY dh.ngay_dat DESC
+        `SELECT hd.*, tt.phuong_thuc, tt.trang_thai as trang_thai_tt
+         FROM HOA_DON hd
+         LEFT JOIN THANH_TOAN tt ON hd.id = tt.hoa_don_id
+         WHERE hd.sdt_nguoi_nhan = ?
+         ORDER BY hd.id DESC
          LIMIT 20`,
         [phone]
       );
 
       if (orders.length === 0) {
-        return res.status(404).json({ success: false, message: `Chưa có đơn hàng nào cho số điện thoại ${phone}` });
+        return res.status(404).json({ success: false, message: `Chưa có hóa đơn nào cho số điện thoại ${phone}` });
       }
 
       const formattedOrders = orders.map(dh => ({
-        id: dh.ma_don_hang,
-        orderId: dh.ma_don_hang,
+        id: dh.ma_hoa_don || dh.ma_don_hang,
+        orderId: dh.ma_hoa_don || dh.ma_don_hang,
+        invoiceId: dh.ma_hoa_don || dh.ma_don_hang,
+        ma_hoa_don: dh.ma_hoa_don || dh.ma_don_hang,
+        ma_don_hang: dh.ma_hoa_don || dh.ma_don_hang,
         dbId: dh.id,
         customerName: dh.ten_nguoi_nhan,
         phone: dh.sdt_nguoi_nhan,

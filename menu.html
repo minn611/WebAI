@@ -107,6 +107,7 @@
   <script src="js/utils/formatters.js"></script>
   <script src="js/utils/toast.js"></script>
   <script src="js/utils/modal.js"></script>
+  <script src="js/utils/api-config.js?v=20260914"></script>
   <script src="js/auth.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/client.js"></script>
@@ -117,6 +118,8 @@
     let activeSort = "popular";
 
     function initMenuPage() {
+      const apiBase = (typeof APIConfig !== 'undefined') ? APIConfig.getBaseUrl() : (window.API_BASE || '/api');
+
       // 1. Parse URL Query Param
       const urlParams = new URLSearchParams(window.location.search);
       const catParam = urlParams.get("cat");
@@ -149,7 +152,7 @@
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 1500);
-        fetch("http://localhost:5000/api/products", { signal: controller.signal })
+        fetch(`${apiBase}/products`, { signal: controller.signal })
           .then(res => res.json())
           .then(data => {
             clearTimeout(timeoutId);

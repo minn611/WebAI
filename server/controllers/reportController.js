@@ -9,11 +9,12 @@ exports.getDashboardSummary = async (req, res) => {
       `SELECT 
         COALESCE(SUM(tong_thanh_toan), 0) AS tong_doanh_thu,
         COUNT(id) AS tong_don_hang,
+        COUNT(id) AS tong_hoa_don,
         COALESCE(SUM(CASE WHEN trang_thai_don_hang = 'completed' THEN tong_thanh_toan ELSE 0 END), 0) AS doanh_thu_thuc_te,
         COUNT(CASE WHEN trang_thai_don_hang = 'completed' THEN 1 END) AS don_hoan_thanh,
         COUNT(CASE WHEN trang_thai_don_hang = 'cancelled' THEN 1 END) AS don_da_huy,
         COUNT(CASE WHEN trang_thai_don_hang IN ('pending', 'confirmed', 'preparing', 'shipping') THEN 1 END) AS don_dang_xu_ly
-       FROM DON_HANG`
+       FROM HOA_DON`
     );
 
     // 2. Số lượng khách hàng
@@ -56,7 +57,7 @@ exports.getRevenueChart = async (req, res) => {
         DAYNAME(ngay_dat) AS thu,
         COALESCE(SUM(CASE WHEN trang_thai_don_hang != 'cancelled' THEN tong_thanh_toan ELSE 0 END), 0) AS doanh_thu,
         COUNT(id) AS so_don
-       FROM DON_HANG
+       FROM HOA_DON
        WHERE ngay_dat >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
        GROUP BY DATE(ngay_dat), DAYNAME(ngay_dat)
        ORDER BY DATE(ngay_dat) ASC`
@@ -102,7 +103,7 @@ exports.getTopProducts = async (req, res) => {
         sp.danh_muc,
         COALESCE(SUM(ct.so_luong), 0) AS da_ban,
         COALESCE(SUM(ct.thanh_tien), 0) AS tong_doanh_thu
-       FROM CHI_TIET_DON_HANG ct
+       FROM CHI_TIET_HOA_DON ct
        LEFT JOIN SAN_PHAM sp ON ct.san_pham_id = sp.id
        GROUP BY ct.san_pham_id, ct.ten_san_pham, sp.hinh_anh_url, sp.danh_muc
        ORDER BY da_ban DESC
@@ -128,7 +129,7 @@ exports.getCategorySales = async (req, res) => {
         COALESCE(sp.danh_muc, 'Khác') AS danh_muc,
         COALESCE(SUM(ct.so_luong), 0) AS so_luong,
         COALESCE(SUM(ct.thanh_tien), 0) AS tong_tien
-       FROM CHI_TIET_DON_HANG ct
+       FROM CHI_TIET_HOA_DON ct
        LEFT JOIN SAN_PHAM sp ON ct.san_pham_id = sp.id
        GROUP BY sp.danh_muc`
     );

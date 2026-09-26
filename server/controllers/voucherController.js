@@ -25,7 +25,7 @@ exports.getAllVouchers = async (req, res) => {
 // @route   POST /api/vouchers/apply
 exports.applyVoucher = async (req, res) => {
   try {
-    const { code, totalAmount } = req.body;
+    const { code, totalAmount, orderTotal } = req.body;
 
     if (!code) {
       return res.status(400).json({ success: false, message: 'Vui lòng nhập mã giảm giá!' });
@@ -48,7 +48,7 @@ exports.applyVoucher = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Mã giảm giá này đã hết lượt sử dụng!' });
     }
 
-    const subtotal = parseFloat(totalAmount || 0);
+    const subtotal = parseFloat(totalAmount !== undefined ? totalAmount : (orderTotal || 0));
     const minOrder = parseFloat(voucher.don_hang_toi_thieu || 0);
 
     if (subtotal < minOrder) {
@@ -128,5 +128,74 @@ exports.createVoucher = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Mã voucher này đã tồn tại!' });
     }
     res.status(500).json({ success: false, message: 'Lỗi máy chủ khi tạo voucher' });
+  }
+};
+
+// @desc    Cập nhật mã Voucher (Admin)
+// @route   PUT /api/vouchers/:id
+exports.updateVoucher = async (req, res) => {
+  try {
+    const rawId = String(req.params.id || '').trim();
+    const isNum = /^\d+$/.test(rawId);
+    const numId = isNum ? parseInt(rawId) : -1;
+    const { ma_voucher, loai_giam, gia_tri_giam, giam_toi_da, don_hang_toi_thieu, ngay_ket_thuc, mo_ta, trang_thai } = req.body;
+
+    const [result] = await pool.query(
+      `UPDATE VOUCHERS 
+       SET ma_voucher = COALESCE(?, ma_voucher),
+           loai_giam = COALESCE(?, loai_giam),
+           gia_tri_giam = COALESCE(?, gia_tri_giam),
+           giam_toi_da = COALESCE(?, giam_toi_da),
+           don_hang_toi_thieu = COALESCE(?, don_hang_toi_thieu),
+           ngay_ket_thuc = COALESCE(?, ngay_ket_thuc),
+           mo_ta = COALESCE(?, mo_ta),
+           trang_thai = COALESCE(?, trang_thai)
+       WHERE id = ? OR ma_voucher = ?`,
+      [
+        ma_voucher ? ma_voucher.trim().toUpperCase() : null,
+        loai_giam || null,
+        gia_tri_giam !== undefined ? gia_tri_giam : null,
+        giam_toi_da !== undefined ? giam_toi_da : null,
+        don_hang_toi_thieu !== undefined ? don_hang_toi_thieu : null,
+        ngay_ket_thuc || null,
+        mo_ta !== undefined ? mo_ta : null,
+        trang_thai !== undefined ? trang_thai : null,
+        numId,
+        rawId
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy voucher để cập nhật!' });
+    }
+
+    res.json({ success: true, message: 'Cập nhật voucher thành công!' });
+  } catch (error) {
+    console.error('Error updating voucher:', error);
+    res.status(500).json({ success: false, message: error.message || 'Lỗi máy chủ khi cập nhật voucher' });
+  }
+};
+
+// @desc    Xóa mã Voucher (Admin)
+// @route   DELETE /api/vouchers/:id
+exports.deleteVoucher = async (req, res) => {
+  try {
+    const rawId = String(req.params.id || '').trim();
+    const isNum = /^\d+$/.test(rawId);
+    const numId = isNum ? parseInt(rawId) : -1;
+
+    const [result] = await pool.query(
+      `DELETE FROM VOUCHERS WHERE id = ? OR ma_voucher = ?`,
+      [numId, rawId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy voucher để xóa!' });
+    }
+
+    res.json({ success: true, message: 'Đã xóa voucher khỏi cơ sở dữ liệu thành công!' });
+  } catch (error) {
+    console.error('Error deleting voucher:', error);
+    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi xóa voucher' });
   }
 };

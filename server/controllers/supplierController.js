@@ -64,7 +64,7 @@ exports.updateSupplier = async (req, res) => {
     const supContact = (nguoi_dai_dien || contact || '').trim();
     const supPhone = (so_dien_thoai || phone || '').trim();
     const supMat = (danh_muc_nguyen_lieu || materials || '').trim();
-    const supStatus = status === 'paused' || status === 'tam_dung' ? 'tam_dung' : 'hop_tac';
+    const supStatus = status === 'paused' || status === 'tam_dung' ? 'tam_dung' : 'dang_hop_tac';
 
     const [result] = await pool.query(
       `UPDATE NHA_CUNG_CAP 

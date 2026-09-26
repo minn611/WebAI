@@ -132,6 +132,7 @@
   <script src="js/utils/formatters.js"></script>
   <script src="js/utils/toast.js"></script>
   <script src="js/utils/modal.js"></script>
+  <script src="js/utils/api-config.js?v=20260914"></script>
   <script src="js/auth.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/client.js"></script>
@@ -168,7 +169,7 @@
               <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <h4 style="font-size: 1.05rem; margin-bottom: 2px;">${item.name}</h4>
                 <div style="display: flex; gap: 0.35rem; align-items: center;">
-                  <button onclick="ClientApp.openCustomizer('${item.productId}')" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: var(--radius-full);" title="Tùy chỉnh lại ly">✏️ Tùy Biến</button>
+                  <button onclick="ClientApp.openCustomizer('${item.productId}', '${item.itemKey}')" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: var(--radius-full);" title="Tùy chỉnh lại ly">✏️ Tùy Biến</button>
                   <button onclick="Cart.removeItem('${item.itemKey}'); renderFullCartPage();" class="btn btn-ghost btn-sm" style="color: var(--status-cancelled); font-size: 0.8rem; font-weight: 700; padding: 0.25rem 0.5rem;" title="Xóa món">✕ Xóa</button>
                 </div>
               </div>
@@ -238,9 +239,9 @@
       }
     }
 
-    function applyCartVoucher() {
+    async function applyCartVoucher() {
       const input = document.getElementById("cart-voucher-input");
-      const code = input.value.trim().toUpperCase();
+      const code = input ? input.value.trim().toUpperCase() : "";
       const infoEl = document.getElementById("applied-voucher-info");
       if (!code) {
         appliedVoucher = null;
@@ -250,6 +251,43 @@
         return;
       }
 
+      const itemsTotal = Cart.getItemsTotal();
+      const apiBase = (typeof APIConfig !== 'undefined' && typeof APIConfig.getBaseUrl === 'function')
+        ? APIConfig.getBaseUrl()
+        : (window.API_BASE || (window.location.origin.includes(':5000') ? '/api' : 'http://localhost:5000/api'));
+
+      try {
+        const response = await fetch(`${apiBase}/vouchers/apply`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, totalAmount: itemsTotal })
+        });
+        const data = await response.json();
+        if (data.success && data.voucher) {
+          appliedVoucher = {
+            code: data.voucher.code,
+            discountAmount: data.voucher.discountAmount,
+            desc: data.voucher.description || `Giảm ${Formatters.currency(data.voucher.discountAmount)}`
+          };
+          if (infoEl) {
+            infoEl.style.display = "block";
+            infoEl.textContent = `✓ Đã áp dụng: ${appliedVoucher.desc}`;
+          }
+          Toast.success(`Áp dụng mã ${data.voucher.code} thành công!`);
+          updateCartPagePrices();
+          return;
+        } else if (data.message && response.status !== 404) {
+          appliedVoucher = null;
+          if (infoEl) infoEl.style.display = "none";
+          Toast.error(data.message);
+          updateCartPagePrices();
+          return;
+        }
+      } catch (err) {
+        console.warn("Backend voucher offline, checking local DB...");
+      }
+
+      // Local DB Fallback
       const vouchers = DB.getVouchers();
       const found = vouchers.find(v => v.code === code);
       if (!found) {
@@ -269,7 +307,14 @@
       updateCartPagePrices();
     }
 
+    window.renderFullCartPage = renderFullCartPage;
     document.addEventListener("DOMContentLoaded", renderFullCartPage);
+
+    window.addEventListener("teajoy:storage_changed", (e) => {
+      if (!e.detail || e.detail.key === STORAGE_KEYS.CART) {
+        renderFullCartPage();
+      }
+    });
   </script>
 </body>
 </html>

@@ -12,8 +12,12 @@ USE `teajoy_store`;
 -- Disable Foreign Key checks during recreation
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP VIEW IF EXISTS `CHI_TIET_DON_HANG`;
+DROP VIEW IF EXISTS `DON_HANG`;
 DROP TABLE IF EXISTS `REVIEWS`;
 DROP TABLE IF EXISTS `THANH_TOAN`;
+DROP TABLE IF EXISTS `CHI_TIET_HOA_DON`;
+DROP TABLE IF EXISTS `HOA_DON`;
 DROP TABLE IF EXISTS `CHI_TIET_DON_HANG`;
 DROP TABLE IF EXISTS `DON_HANG`;
 DROP TABLE IF EXISTS `VOUCHERS`;
@@ -161,41 +165,44 @@ CREATE TABLE `VOUCHERS` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------------------------
--- 7. BẢNG DON_HANG (Orders)
+-- 7. BẢNG HOA_DON (Invoices / Orders)
 -- ----------------------------------------------------------------------------
-CREATE TABLE `DON_HANG` (
+CREATE TABLE `HOA_DON` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `ma_don_hang` VARCHAR(30) NOT NULL UNIQUE,
+    `ma_hoa_don` VARCHAR(30) NOT NULL UNIQUE,
+    `ma_don_hang` VARCHAR(30) GENERATED ALWAYS AS (`ma_hoa_don`) STORED,
     `khach_hang_id` BIGINT UNSIGNED NULL,
     `ten_nguoi_nhan` VARCHAR(100) NOT NULL,
     `sdt_nguoi_nhan` VARCHAR(15) NOT NULL,
     `dia_chi_giao_hang` VARCHAR(255) NOT NULL,
     `ghi_chu` TEXT NULL,
     `voucher_id` BIGINT UNSIGNED NULL,
-    `nhan_vien_id` BIGINT UNSIGNED NULL COMMENT 'Nhan vien thu ngan / pha che xu ly don',
+    `nhan_vien_id` BIGINT UNSIGNED NULL COMMENT 'Nhan vien thu ngan / pha che xu ly hoa don',
     `tong_tien_mon` DECIMAL(12, 2) NOT NULL,
     `phi_van_chuyen` DECIMAL(12, 2) NOT NULL DEFAULT 15000.00,
     `so_tien_giam_gia` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `tong_thanh_toan` DECIMAL(12, 2) NOT NULL,
-    `trang_thai_don_hang` ENUM('pending', 'confirmed', 'preparing', 'shipping', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
-    `ngay_dat` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `trang_thai_hoa_don` ENUM('pending', 'confirmed', 'preparing', 'shipping', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
+    `trang_thai_don_hang` VARCHAR(20) GENERATED ALWAYS AS (`trang_thai_hoa_don`) STORED,
+    `ngay_lap` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `ngay_dat` DATETIME GENERATED ALWAYS AS (`ngay_lap`) STORED,
     `ngay_cap_nhat` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX `idx_donhang_madon` (`ma_don_hang`),
-    INDEX `idx_donhang_sdt` (`sdt_nguoi_nhan`),
-    INDEX `idx_donhang_trangthai` (`trang_thai_don_hang`),
-    INDEX `idx_donhang_ngaydat` (`ngay_dat`),
-    CONSTRAINT `fk_donhang_khachhang` FOREIGN KEY (`khach_hang_id`) REFERENCES `KHACH_HANG` (`id`) ON DELETE SET NULL,
-    CONSTRAINT `fk_donhang_nhanvien` FOREIGN KEY (`nhan_vien_id`) REFERENCES `NHAN_VIEN` (`id`) ON DELETE SET NULL,
-    CONSTRAINT `fk_donhang_voucher` FOREIGN KEY (`voucher_id`) REFERENCES `VOUCHERS` (`id`) ON DELETE SET NULL
+    INDEX `idx_hoadon_mahd` (`ma_hoa_don`),
+    INDEX `idx_hoadon_sdt` (`sdt_nguoi_nhan`),
+    INDEX `idx_hoadon_trangthai` (`trang_thai_hoa_don`),
+    INDEX `idx_hoadon_ngaylap` (`ngay_lap`),
+    CONSTRAINT `fk_hoadon_khachhang` FOREIGN KEY (`khach_hang_id`) REFERENCES `KHACH_HANG` (`id`) ON DELETE SET NULL,
+    CONSTRAINT `fk_hoadon_nhanvien` FOREIGN KEY (`nhan_vien_id`) REFERENCES `NHAN_VIEN` (`id`) ON DELETE SET NULL,
+    CONSTRAINT `fk_hoadon_voucher` FOREIGN KEY (`voucher_id`) REFERENCES `VOUCHERS` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------------------------
--- 8. BẢNG CHI_TIET_DON_HANG (Order Items & Topping Details)
+-- 8. BẢNG CHI_TIET_HOA_DON (Invoice Items & Topping Details)
 -- ----------------------------------------------------------------------------
-CREATE TABLE `CHI_TIET_DON_HANG` (
+CREATE TABLE `CHI_TIET_HOA_DON` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `don_hang_id` BIGINT UNSIGNED NOT NULL,
-    `san_pham_id` BIGINT UNSIGNED NOT NULL,
+    `hoa_don_id` BIGINT UNSIGNED NOT NULL,
+    `san_pham_id` BIGINT UNSIGNED NULL,
     `ten_san_pham` VARCHAR(150) NOT NULL,
     `kich_thuoc` ENUM('M', 'L') NOT NULL DEFAULT 'M',
     `muc_duong` VARCHAR(10) NOT NULL DEFAULT '100%',
@@ -204,16 +211,20 @@ CREATE TABLE `CHI_TIET_DON_HANG` (
     `don_gia` DECIMAL(12, 2) NOT NULL,
     `so_luong` INT UNSIGNED NOT NULL DEFAULT 1,
     `thanh_tien` DECIMAL(12, 2) NOT NULL,
-    CONSTRAINT `fk_chitiet_donhang` FOREIGN KEY (`don_hang_id`) REFERENCES `DON_HANG` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_chitiet_sanpham` FOREIGN KEY (`san_pham_id`) REFERENCES `SAN_PHAM` (`id`) ON DELETE RESTRICT
+    CONSTRAINT `fk_chitiethoadon_hoadon` FOREIGN KEY (`hoa_don_id`) REFERENCES `HOA_DON` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_chitiethoadon_sanpham` FOREIGN KEY (`san_pham_id`) REFERENCES `SAN_PHAM` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- VIEWS TƯƠNG THÍCH NGƯỢC HỆ THỐNG
+CREATE OR REPLACE VIEW `DON_HANG` AS SELECT * FROM `HOA_DON`;
+CREATE OR REPLACE VIEW `CHI_TIET_DON_HANG` AS SELECT *, hoa_don_id AS don_hang_id FROM `CHI_TIET_HOA_DON`;
 
 -- ----------------------------------------------------------------------------
 -- 9. BẢNG THANH_TOAN (Payments & Transactions)
 -- ----------------------------------------------------------------------------
 CREATE TABLE `THANH_TOAN` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `don_hang_id` BIGINT UNSIGNED NOT NULL UNIQUE,
+    `hoa_don_id` BIGINT UNSIGNED NOT NULL UNIQUE,
     `phuong_thuc` ENUM('vietqr', 'momo', 'zalopay', 'vnpay', 'cod') NOT NULL,
     `ma_giao_dich_cong` VARCHAR(100) NULL,
     `so_tien` DECIMAL(12, 2) NOT NULL,
@@ -222,7 +233,7 @@ CREATE TABLE `THANH_TOAN` (
     `du_lieu_webhook` JSON NULL COMMENT 'Luu raw webhook tu ngan hang',
     `ngay_tao` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX `idx_thanhtoan_trangthai` (`trang_thai`),
-    CONSTRAINT `fk_thanhtoan_donhang` FOREIGN KEY (`don_hang_id`) REFERENCES `DON_HANG` (`id`) ON DELETE CASCADE
+    CONSTRAINT `fk_thanhtoan_hoadon` FOREIGN KEY (`hoa_don_id`) REFERENCES `HOA_DON` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------------------------
@@ -253,7 +264,7 @@ CREATE TABLE `REVIEWS` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `khach_hang_id` BIGINT UNSIGNED NOT NULL,
     `san_pham_id` BIGINT UNSIGNED NOT NULL,
-    `don_hang_id` BIGINT UNSIGNED NULL,
+    `hoa_don_id` BIGINT UNSIGNED NULL,
     `so_sao` TINYINT UNSIGNED NOT NULL CHECK (`so_sao` BETWEEN 1 AND 5),
     `noi_dung` TEXT NULL,
     `hinh_anh_kem_theo` JSON NULL,
@@ -263,7 +274,7 @@ CREATE TABLE `REVIEWS` (
     INDEX `idx_reviews_sanpham` (`san_pham_id`),
     CONSTRAINT `fk_reviews_khachhang` FOREIGN KEY (`khach_hang_id`) REFERENCES `KHACH_HANG` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_reviews_sanpham` FOREIGN KEY (`san_pham_id`) REFERENCES `SAN_PHAM` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_reviews_donhang` FOREIGN KEY (`don_hang_id`) REFERENCES `DON_HANG` (`id`) ON DELETE SET NULL
+    CONSTRAINT `fk_reviews_hoadon` FOREIGN KEY (`hoa_don_id`) REFERENCES `HOA_DON` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
@@ -274,13 +285,22 @@ CREATE TABLE `REVIEWS` (
 INSERT INTO `TAI_KHOAN` (`id`, `ten_dang_nhap`, `mat_khau_hash`, `email`, `so_dien_thoai`, `vai_tro`, `trang_thai`) VALUES
 (1, 'admin', '123456', 'admin@dodo.vn', '0901234567', 'admin', 'hoat_dong'),
 (2, 'thungan', '123456', 'thungan@dodo.vn', '0912345678', 'nhan_vien', 'hoat_dong'),
-(3, 'phache', '123456', 'phache@dodo.vn', '0933445566', 'nhan_vien', 'hoat_dong');
+(3, 'phache', '123456', 'phache@dodo.vn', '0933445566', 'nhan_vien', 'hoat_dong'),
+(4, 'phucle', '123456', 'phucle@gmail.com', '0987654321', 'khach_hang', 'hoat_dong'),
+(5, 'linhdan', '123456', 'danlinh@gmail.com', '0912345699', 'khach_hang', 'hoat_dong'),
+(6, 'minhanh', '123456', 'minhanh@gmail.com', '0978998877', 'khach_hang', 'hoat_dong');
 
 -- 2. SEED NHAN_VIEN
 INSERT INTO `NHAN_VIEN` (`id`, `tai_khoan_id`, `ma_nhan_vien`, `ho_ten`, `chuc_vu`, `cccd`, `ngay_sinh`, `gioi_tinh`, `luong_co_ban`, `ngay_vao_lam`, `trang_thai_lam_viec`) VALUES
 (1, 1, 'NV-001', 'Đỗ Trung Hiếu (Quản Lý)', 'Quản Lý Cửa Hàng', '079090001122', '1992-05-15', 'nam', 15000000.00, '2026-01-01', 'dang_lam'),
 (2, 2, 'NV-002', 'Nguyễn Văn Thu Ngân', 'Thu Ngân & Bán Hàng', '079195003344', '1998-08-20', 'nam', 7500000.00, '2026-02-15', 'dang_lam'),
 (3, 3, 'NV-003', 'Trần Thị Pha Chế', 'Nhân Viên Pha Chế', '079195005566', '2000-01-10', 'nu', 8000000.00, '2026-03-01', 'dang_lam');
+
+-- 2.1. SEED KHACH_HANG (Khách hàng CRM & Tích điểm)
+INSERT INTO `KHACH_HANG` (`id`, `tai_khoan_id`, `ho_ten`, `dia_chi_mac_dinh`, `diem_tich_luy`, `hang_thanh_vien`, `tong_chi_tieu`, `so_don_da_mua`) VALUES
+(1, 4, 'Lê Hoàng Phúc', '123 Nguyễn Trãi, Q.5, TP.HCM', 320, 'vang', 785000.00, 11),
+(2, 5, 'Đặng Linh Đan', '45 Hai Bà Trưng, Q.1, TP.HCM', 150, 'dong', 320000.00, 5),
+(3, 6, 'Trần Minh Anh', '88 Lê Lợi, Q.1, TP.HCM', 560, 'kim_cuong', 1450000.00, 22);
 
 -- 3. SEED NHA_CUNG_CAP
 INSERT INTO `NHA_CUNG_CAP` (`id`, `ma_ncc`, `ten_nha_cung_cap`, `nguoi_dai_dien`, `so_dien_thoai`, `email`, `dia_chi`, `danh_muc_nguyen_lieu`, `trang_thai`) VALUES
@@ -338,3 +358,12 @@ INSERT INTO `VOUCHERS` (`id`, `ma_voucher`, `loai_giam`, `gia_tri_giam`, `giam_t
 -- 7. SEED BAI_VIET
 INSERT INTO `BAI_VIET` (`id`, `tac_gia_id`, `tieu_de`, `slug`, `loai_bai_viet`, `anh_dai_dien`, `tom_tat`, `noi_dung`, `trang_thai`) VALUES
 (1, 1, 'Bí Quyết Chọn Lá Trà Ô Long Chuẩn Vị Tại Bảo Lộc', 'bi-quyet-chon-la-tra-o-long', 'tin_tuc', 'https://images.unsplash.com/photo-1558857563-b37fcdd72460?auto=format&fit=crop&w=1200&q=80', 'Khám phá quy trình thu hái búp trà 1 tôm 2 lá...', '<p>Chi tiết bài viết giới thiệu về nguồn gốc lá trà tự nhiên...</p>', 'xuat_ban');
+
+-- 8. SEED REVIEWS (Đánh giá sản phẩm & Phản hồi quản lý)
+INSERT INTO `REVIEWS` (`id`, `khach_hang_id`, `san_pham_id`, `don_hang_id`, `so_sao`, `noi_dung`, `phan_hoi_admin`, `trang_thai_hien_thi`, `ngay_tao`) VALUES
+(1, 1, 1, NULL, 5, 'Trà sữa hồng trà mochi đỉnh của chóp luôn, lớp mochi kéo dài dẻo quánh nhai siêu cuốn! Giá 25k quá hời.', 'Cảm ơn bạn Phúc nhiều nha! Đô Đô rất vui vì bạn yêu thích món signature Mochi Kéo Dài độc quyền của quán ạ ❤️ Chúc bạn một ngày ngọt ngào!', TRUE, '2026-03-10 14:20:00'),
+(2, 2, 1, NULL, 4, 'Trà sữa thơm béo, mochi ngon nhưng hôm nay giao hàng hơi lâu tầm 35 phút đá bị tan bớt chút.', 'Đô Đô chân thành xin lỗi bạn Đan về sự chậm trễ trong khâu giao hàng giờ cao điểm ạ! Quán đã nhắc nhở đội ngũ shipper tối ưu lộ trình để trà luôn mát lạnh đến tay bạn nhanh nhất.', TRUE, '2026-03-12 11:15:00'),
+(3, 3, 2, NULL, 5, 'Matcha đậm vị chuẩn Nhật, không bị ngọt gắt, mochi kéo dài bùi bùi chấm 10/10.', NULL, TRUE, '2026-03-13 16:45:00'),
+(4, 1, 3, NULL, 5, 'Sữa tươi đường đen mochi ngon nhức nách, trân châu mềm dẻo. Sẽ ủng hộ quán dài dài!', NULL, TRUE, '2026-03-14 08:30:00'),
+(5, 2, 7, NULL, 3, 'Hồng trà tiramisu lớp phô mai béo ngon nhưng vụn ovaltine hơi ít so với hình chụp menu.', NULL, TRUE, '2026-03-14 09:10:00');
+

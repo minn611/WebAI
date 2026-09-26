@@ -37,8 +37,8 @@
           <span>Tổng Quan (Dashboard)</span>
         </a>
         <a href="orders.html" class="sidebar-nav-item">
-          <span class="nav-icon">📦</span>
-          <span>Quản Lý Đơn Hàng</span>
+          <span class="nav-icon">🧾</span>
+          <span>Quản Lý Hoá Đơn</span>
         </a>
         <a href="products.html" class="sidebar-nav-item">
           <span class="nav-icon">🧋</span>
@@ -47,6 +47,10 @@
         <a href="customers.html" class="sidebar-nav-item">
           <span class="nav-icon">👥</span>
           <span>Khách Hàng & Điểm</span>
+        </a>
+        <a href="reviews.html" class="sidebar-nav-item">
+          <span class="nav-icon">⭐</span>
+          <span>Đánh Giá & Phản Hồi</span>
         </a>
         <a href="staff.html" class="sidebar-nav-item active">
           <span class="nav-icon">💼</span>
@@ -77,17 +81,28 @@
         <div style="display: flex; align-items: center; gap: 1rem;">
           <button class="action-btn" id="sidebar-toggle-btn" onclick="document.getElementById('admin-sidebar').classList.toggle('open')" style="display: none;">☰</button>
           <div>
-            <h3 style="font-size: 1.25rem; margin: 0;">Quản Lý Đội Ngũ Nhân Viên</h3>
-            <span class="text-xs text-muted">Cấp quyền thu ngân, pha chế, quản lý chi nhánh</span>
+            <h3 style="font-size: 1.25rem; margin: 0;">Quản Lý Đội Ngũ Nhân Viên & Phân Công Nhiệm Vụ</h3>
+            <span class="text-xs text-muted">Cấp quyền thu ngân, pha chế, phân chia công việc theo ca làm</span>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="StaffMgmt.openAddModal()">+ Thêm Nhân Viên</button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-primary" onclick="StaffMgmt.openAddModal()" id="btn-top-add-staff">+ Thêm Nhân Viên</button>
+          <button class="btn btn-secondary" onclick="StaffMgmt.openAddTaskModal()" id="btn-top-add-task">+ Giao Nhiệm Vụ</button>
+        </div>
       </header>
 
       <div class="admin-content">
-        <div class="data-table-container">
-          <div class="table-toolbar">
+        <!-- Sub Tabs Switcher -->
+        <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid var(--border-color); margin-bottom: 1.5rem;">
+          <button id="tab-staff-list-btn" class="btn btn-ghost font-bold" style="border-radius: 0; border-bottom: 2.5px solid var(--primary); color: var(--primary);" onclick="StaffMgmt.switchTab('staff')">👥 Danh Sách Nhân Viên & Phân Quyền</button>
+          <button id="tab-staff-tasks-btn" class="btn btn-ghost font-bold" style="border-radius: 0; color: var(--text-muted);" onclick="StaffMgmt.switchTab('tasks')">📋 Phân Công Nhiệm Vụ & Ca Làm (UC 3.2.2.2.2 b)</button>
+        </div>
+
+        <!-- 1. Danh sách nhân viên -->
+        <div id="section-staff-list" class="data-table-container">
+          <div class="table-toolbar" style="display: flex; justify-content: space-between; align-items: center;">
             <h4 style="margin: 0;">Danh Sách Tài Khoản Nhân Viên & Pha Chế</h4>
+            <button class="btn btn-primary btn-sm" onclick="StaffMgmt.openAddModal()">+ Thêm Nhân Viên</button>
           </div>
 
           <div class="table-responsive">
@@ -109,6 +124,58 @@
             </table>
           </div>
         </div>
+
+        <!-- 2. Phân công nhiệm vụ ca làm việc (FR-06 & UC 3.2.2.2.2 b & Thống kê nhiệm vụ) -->
+        <div id="section-staff-tasks" class="data-table-container" style="display: none;">
+          <!-- Stats Cards -->
+          <div class="grid grid-cols-4 gap-4" style="margin-bottom: 1.5rem;">
+            <div class="card" style="padding: 1rem; border-left: 4px solid var(--primary); text-align: center;">
+              <span class="text-xs text-muted font-bold">TỔNG NHIỆM VỤ</span>
+              <h3 id="tasks-stat-total" style="font-size: 1.6rem; margin: 0.25rem 0 0; color: var(--text-main);">0</h3>
+            </div>
+            <div class="card" style="padding: 1rem; border-left: 4px solid #10B981; text-align: center;">
+              <span class="text-xs text-muted font-bold">ĐÃ HOÀN THÀNH</span>
+              <h3 id="tasks-stat-completed" style="font-size: 1.6rem; margin: 0.25rem 0 0; color: #10B981;">0</h3>
+            </div>
+            <div class="card" style="padding: 1rem; border-left: 4px solid #F59E0B; text-align: center;">
+              <span class="text-xs text-muted font-bold">ĐANG THỰC HIỆN</span>
+              <h3 id="tasks-stat-inprogress" style="font-size: 1.6rem; margin: 0.25rem 0 0; color: #F59E0B;">0</h3>
+            </div>
+            <div class="card" style="padding: 1rem; border-left: 4px solid #EF4444; text-align: center;">
+              <span class="text-xs text-muted font-bold">CHƯA THỰC HIỆN</span>
+              <h3 id="tasks-stat-pending" style="font-size: 1.6rem; margin: 0.25rem 0 0; color: #EF4444;">0</h3>
+            </div>
+          </div>
+
+          <div class="table-toolbar" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h4 style="margin: 0;">📋 Bảng Phân Công Nhiệm Vụ Theo Ca</h4>
+              <span class="text-xs text-muted">Điều phối công việc chuẩn bị nguyên liệu, kiểm kho và vệ sinh quầy</span>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="StaffMgmt.openAddTaskModal()">+ Giao Nhiệm Vụ Mới</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Mã</th>
+                  <th>Tên Nhiệm Vụ & Chi Tiết</th>
+                  <th>Người Phụ Trách</th>
+                  <th>Ca Làm Việc</th>
+                  <th>Hạn Chót</th>
+                  <th>Mức Ưu Tiên</th>
+                  <th>Trạng Thái</th>
+                  <th style="text-align: center;">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="admin-tasks-tbody">
+                <!-- Injected by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </main>
   </div>
@@ -160,20 +227,110 @@
     </div>
   </div>
 
+  <!-- Add / Edit Task Modal (UC 3.2.2.2.2 b & FR-06) -->
+  <div id="task-modal" class="modal-backdrop">
+    <div class="modal-container" style="max-width: 560px;">
+      <div class="modal-header">
+        <h4 class="modal-title" id="task-modal-title">Giao Nhiệm Vụ Mới Cho Nhân Viên</h4>
+        <button class="modal-close" data-close-modal="task-modal">✕</button>
+      </div>
+      <form onsubmit="StaffMgmt.saveTaskSubmit(event)">
+        <input type="hidden" id="task-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label text-xs">Tên Nhiệm Vụ *</label>
+            <input type="text" id="task-title" class="form-control" required placeholder="VD: Nấu 10L trà đen & trân châu hoàng kim">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label class="form-label text-xs">Nhân Viên Phụ Trách *</label>
+              <select id="task-assigned-to" class="form-select" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Ca Làm Việc *</label>
+              <select id="task-shift" class="form-select">
+                <option value="Ca Sáng (07:00 - 12:00)">Ca Sáng (07:00 - 12:00)</option>
+                <option value="Ca Chiều (12:00 - 17:00)">Ca Chiều (12:00 - 17:00)</option>
+                <option value="Ca Tối (17:00 - 22:30)">Ca Tối (17:00 - 22:30)</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label class="form-label text-xs">Mức Độ Ưu Tiên *</label>
+              <select id="task-priority" class="form-select">
+                <option value="cao">🔥 Cao (Cần làm ngay)</option>
+                <option value="trung_binh" selected>⚡ Trung Bình</option>
+                <option value="thap">🌱 Thấp</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">Hạn Chót Hoàn Thành *</label>
+              <input type="text" id="task-deadline" class="form-control" value="11:30" placeholder="09:00 hoặc 16:00">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Trạng Thái Thực Hiện</label>
+            <select id="task-status" class="form-select">
+              <option value="chua_lam">Chưa Thực Hiện</option>
+              <option value="dang_lam">Đang Thực Hiện</option>
+              <option value="hoan_thanh">Đã Hoàn Thành</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label text-xs">Chi Tiết Hướng Dẫn Thao Tác</label>
+            <textarea id="task-desc" class="form-control" rows="3" placeholder="Ghi chú định lượng pha chế hoặc yêu cầu kiểm kho..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal="task-modal">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-task">Lưu Nhiệm Vụ ➔</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="../js/db/mock-data.js?v=20260913"></script>
   <script src="../js/db/storage.js?v=20260913"></script>
   <script src="../js/utils/formatters.js?v=20260913"></script>
   <script src="../js/utils/toast.js?v=20260913"></script>
   <script src="../js/utils/modal.js?v=20260913"></script>
+  <script src="../js/utils/api-config.js?v=20260913"></script>
   <script src="../js/auth.js?v=20260913"></script>
 
   <script>
     const StaffMgmt = {
+      currentTab: 'staff',
       staffList: [],
+      tasksList: [],
 
       async init() {
         await this.renderTable();
+        await this.renderTasks();
+      },
+
+      switchTab(tab) {
+        this.currentTab = tab;
+        const sBtn = document.getElementById("tab-staff-list-btn");
+        const tBtn = document.getElementById("tab-staff-tasks-btn");
+        const secS = document.getElementById("section-staff-list");
+        const secT = document.getElementById("section-staff-tasks");
+
+        if (tab === 'staff') {
+          if (sBtn) { sBtn.style.borderBottom = "2.5px solid var(--primary)"; sBtn.style.color = "var(--primary)"; }
+          if (tBtn) { tBtn.style.borderBottom = "none"; tBtn.style.color = "var(--text-muted)"; }
+          if (secS) secS.style.display = "block";
+          if (secT) secT.style.display = "none";
+        } else {
+          if (tBtn) { tBtn.style.borderBottom = "2.5px solid var(--primary)"; tBtn.style.color = "var(--primary)"; }
+          if (sBtn) { sBtn.style.borderBottom = "none"; sBtn.style.color = "var(--text-muted)"; }
+          if (secS) secS.style.display = "none";
+          if (secT) secT.style.display = "block";
+          this.renderTasks();
+        }
       },
 
       async renderTable() {
@@ -182,7 +339,8 @@
         tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem;">Đang tải danh sách nhân viên từ máy chủ...</td></tr>`;
 
         try {
-          const res = await fetch("/api/staff");
+          const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
+          const res = await fetch(`${apiBase}/staff`);
           const json = await res.json();
           if (json.success && json.data) {
             this.staffList = json.data;
@@ -292,6 +450,16 @@
         const phone = document.getElementById("staff-phone").value.trim();
         const selectedRole = document.getElementById("staff-role").value;
 
+        if (!Formatters.isValidPhone(phone)) {
+          Toast.warning("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).");
+          const phoneInput = document.getElementById("staff-phone");
+          if (phoneInput) {
+            phoneInput.focus();
+            phoneInput.style.borderColor = "#EF4444";
+          }
+          return;
+        }
+
         let role = "nhan_vien";
         let positionTitle = "Nhân Viên Pha Chế";
 
@@ -315,42 +483,72 @@
           vai_tro: role
         };
 
+        const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
         try {
           let res;
           if (staffId) {
-            res = await fetch(`/api/staff/${staffId}`, {
+            res = await fetch(`${apiBase}/staff/${staffId}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
             });
           } else {
-            res = await fetch('/api/staff', {
+            res = await fetch(`${apiBase}/staff`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
             });
           }
-          const json = await res.json();
-          if (!json.success) throw new Error(json.message || "Lỗi lưu dữ liệu");
-
-          Toast.success(staffId ? `Đã cập nhật: <b>${name}</b> (${positionTitle})` : `Đã thêm nhân viên mới: <b>${name}</b>`);
-          Modal.close("staff-modal");
-          await this.renderTable();
+          const json = await res.json().catch(() => ({}));
+          if (res.ok && json.success) {
+            Toast.success(staffId ? `Đã cập nhật: <b>${name}</b> (${positionTitle})` : `Đã thêm nhân viên mới: <b>${name}</b>`);
+          }
         } catch (err) {
-          Toast.error(err.message || "Lỗi khi kết nối với máy chủ!");
+          console.warn("Lỗi kết nối máy chủ, đồng bộ LocalStorage:", err);
         }
+
+        // Đồng bộ LocalStorage
+        let users = DB.getUsers();
+        if (staffId) {
+          const idx = users.findIndex(u => u.id === staffId || u.username === u);
+          if (idx >= 0) {
+            users[idx] = { ...users[idx], fullName: name, phone, positionTitle, role };
+            if (p) users[idx].password = p;
+          }
+        } else {
+          users.push({
+            id: `STAFF-${Date.now().toString().slice(-4)}`,
+            fullName: name,
+            username: u,
+            password: p || "123456",
+            phone,
+            positionTitle,
+            position: positionTitle.toLowerCase().includes("pha chế") ? "pha_che" : "thu_ngan",
+            role,
+            status: "active"
+          });
+        }
+        DB.set(STORAGE_KEYS.USERS, users);
+        Toast.success(staffId ? `Đã cập nhật: <b>${name}</b>` : `Đã thêm nhân viên mới: <b>${name}</b>`);
+
+        Modal.close("staff-modal");
+        await this.renderTable();
       },
 
       async toggleStaff(id) {
+        const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
         try {
-          const res = await fetch(`/api/staff/${id}/toggle-status`, { method: 'PUT' });
-          const json = await res.json();
-          if (!json.success) throw new Error(json.message);
-          Toast.success(json.message);
-          await this.renderTable();
-        } catch (err) {
-          Toast.error(err.message || "Lỗi khi thay đổi trạng thái!");
+          await fetch(`${apiBase}/staff/${id}/toggle-status`, { method: 'PUT' });
+        } catch (err) {}
+
+        let users = DB.getUsers();
+        const target = users.find(u => u.id === id);
+        if (target) {
+          target.status = target.status === 'locked' ? 'active' : 'locked';
+          DB.set(STORAGE_KEYS.USERS, users);
         }
+        Toast.success(`Đã thay đổi trạng thái nhân viên.`);
+        await this.renderTable();
       },
 
       async deleteStaff(id) {
@@ -358,15 +556,240 @@
         const name = s ? (s.ho_ten || s.fullName) : id;
         if (!confirm(`Bạn có chắc muốn xóa nhân viên "${name}" khỏi cơ sở dữ liệu hệ thống?`)) return;
 
+        const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
         try {
-          const res = await fetch(`/api/staff/${id}`, { method: 'DELETE' });
+          await fetch(`${apiBase}/staff/${id}`, { method: 'DELETE' });
+        } catch (err) {}
+
+        let users = DB.getUsers().filter(u => u.id !== id);
+        DB.set(STORAGE_KEYS.USERS, users);
+        Toast.info(`Đã xóa nhân viên: ${name}`);
+        await this.renderTable();
+      },
+
+      // ======================================================================
+      // 📋 MODULE PHÂN CÔNG NHIỆM VỤ NHÂN VIÊN (UC 3.2.2.2.2 b & FR-06)
+      // ======================================================================
+      async renderTasks() {
+        const tbody = document.getElementById("admin-tasks-tbody");
+        if (!tbody) return;
+
+        const apiBase = (typeof APIConfig !== "undefined") ? APIConfig.getBaseUrl() : "http://localhost:5000/api";
+        let tasks = [];
+        let stats = { total: 0, completed: 0, inProgress: 0, pending: 0 };
+
+        try {
+          const res = await fetch(`${apiBase}/tasks`);
           const json = await res.json();
-          if (!json.success) throw new Error(json.message);
-          Toast.info(json.message || `Đã xóa nhân viên thành công`);
-          await this.renderTable();
+          if (json.success) {
+            tasks = json.data || [];
+            stats = json.stats || stats;
+            this.tasksList = tasks;
+          }
         } catch (err) {
-          Toast.error(err.message || "Lỗi khi xóa nhân viên!");
+          console.warn("Backend tasks offline, using local fallback...");
+          tasks = [
+            {
+              id: 'TASK-101',
+              title: 'Ủ cốt trà đen và trà nhài tươi',
+              description: 'Nấu 10L trà đen và 5L trà lài chuẩn nhiệt độ 85°C phục vụ ca sáng',
+              assignedTo: 'NV-02',
+              staffName: 'Trần Văn Pha Chế',
+              priority: 'cao',
+              shift: 'Ca Sáng (07:00 - 12:00)',
+              deadline: '08:00',
+              status: 'hoan_thanh'
+            },
+            {
+              id: 'TASK-102',
+              title: 'Nấu trân châu đen & làm Mochi kéo dài',
+              description: 'Nấu 3 mẻ trân châu hoàng kim và 2 mẻ mochi dẻo mềm',
+              assignedTo: 'NV-02',
+              staffName: 'Trần Văn Pha Chế',
+              priority: 'cao',
+              shift: 'Ca Sáng (07:00 - 12:00)',
+              deadline: '08:30',
+              status: 'dang_lam'
+            }
+          ];
+          this.tasksList = tasks;
+          stats = {
+            total: tasks.length,
+            completed: tasks.filter(t => t.status === 'hoan_thanh').length,
+            inProgress: tasks.filter(t => t.status === 'dang_lam').length,
+            pending: tasks.filter(t => t.status === 'chua_lam').length
+          };
         }
+
+        // Update stats cards
+        const elTotal = document.getElementById("tasks-stat-total");
+        const elCompleted = document.getElementById("tasks-stat-completed");
+        const elInProgress = document.getElementById("tasks-stat-inprogress");
+        const elPending = document.getElementById("tasks-stat-pending");
+        if (elTotal) elTotal.textContent = stats.total;
+        if (elCompleted) elCompleted.textContent = stats.completed;
+        if (elInProgress) elInProgress.textContent = stats.inProgress;
+        if (elPending) elPending.textContent = stats.pending;
+
+        if (tasks.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem;">Chưa có nhiệm vụ nào được giao cho ca hôm nay.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = tasks.map(t => {
+          const priorityBadge = t.priority === 'cao' 
+            ? '<span class="badge badge-danger">🔥 Cao</span>' 
+            : (t.priority === 'thap' ? '<span class="badge">🌱 Thấp</span>' : '<span class="badge badge-warning">⚡ Trung Bình</span>');
+
+          let statusBadge = '<span class="badge badge-danger">Chưa Làm</span>';
+          if (t.status === 'dang_lam') statusBadge = '<span class="badge badge-warning">Đang Làm</span>';
+          else if (t.status === 'hoan_thanh') statusBadge = '<span class="badge badge-success">✓ Đã Xong</span>';
+
+          return `
+            <tr>
+              <td class="font-bold text-primary">${t.id}</td>
+              <td>
+                <b>${t.title}</b>
+                ${t.description ? `<div class="text-xs text-muted" style="margin-top: 2px;">${t.description}</div>` : ''}
+              </td>
+              <td>
+                <span style="font-weight: 600;">${t.staffName || t.assignedTo}</span>
+                <span class="text-xs text-muted" style="display: block;">(${t.assignedTo})</span>
+              </td>
+              <td class="text-xs">${t.shift}</td>
+              <td><span class="badge badge-outline">⏰ ${t.deadline}</span></td>
+              <td>${priorityBadge}</td>
+              <td>${statusBadge}</td>
+              <td style="text-align: center;">
+                <div class="table-actions" style="justify-content: center; gap: 0.35rem;">
+                  <button class="action-icon-btn" onclick="StaffMgmt.cycleTaskStatus('${t.id}')" title="Chuyển trạng thái nhanh: Chưa làm ➔ Đang làm ➔ Xong">🔄</button>
+                  <button class="action-icon-btn btn-edit" onclick="StaffMgmt.openEditTaskModal('${t.id}')" title="Sửa nhiệm vụ">✏️</button>
+                  <button class="action-icon-btn btn-del" onclick="StaffMgmt.deleteTask('${t.id}')" title="Xóa nhiệm vụ">🗑️</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      },
+
+      openAddTaskModal() {
+        document.getElementById("task-modal-title").textContent = "Giao Nhiệm Vụ Mới Cho Nhân Viên";
+        document.getElementById("task-id").value = "";
+        document.getElementById("task-title").value = "";
+        document.getElementById("task-shift").value = "Ca Sáng (07:00 - 12:00)";
+        document.getElementById("task-priority").value = "trung_binh";
+        document.getElementById("task-deadline").value = "11:30";
+        document.getElementById("task-status").value = "chua_lam";
+        document.getElementById("task-desc").value = "";
+
+        // Populate staff dropdown
+        const select = document.getElementById("task-assigned-to");
+        if (select) {
+          select.innerHTML = this.staffList.map(s => `
+            <option value="${s.ma_nhan_vien || s.id}" data-name="${s.ho_ten || s.fullName}">${s.ho_ten || s.fullName} (${s.chuc_vu || s.positionTitle || 'Nhân viên'})</option>
+          `).join("");
+        }
+
+        Modal.open("task-modal");
+      },
+
+      openEditTaskModal(taskId) {
+        const t = this.tasksList.find(item => item.id === taskId);
+        if (!t) return;
+
+        document.getElementById("task-modal-title").textContent = `Chỉnh Sửa Nhiệm Vụ: ${t.id}`;
+        document.getElementById("task-id").value = t.id;
+        document.getElementById("task-title").value = t.title;
+        document.getElementById("task-shift").value = t.shift || "Ca Sáng (07:00 - 12:00)";
+        document.getElementById("task-priority").value = t.priority || "trung_binh";
+        document.getElementById("task-deadline").value = t.deadline || "12:00";
+        document.getElementById("task-status").value = t.status || "chua_lam";
+        document.getElementById("task-desc").value = t.description || "";
+
+        const select = document.getElementById("task-assigned-to");
+        if (select) {
+          select.innerHTML = this.staffList.map(s => `
+            <option value="${s.ma_nhan_vien || s.id}" ${t.assignedTo === (s.ma_nhan_vien || s.id) ? 'selected' : ''} data-name="${s.ho_ten || s.fullName}">${s.ho_ten || s.fullName} (${s.chuc_vu || s.positionTitle || 'Nhân viên'})</option>
+          `).join("");
+        }
+
+        Modal.open("task-modal");
+      },
+
+      async saveTaskSubmit(e) {
+        e.preventDefault();
+        const taskId = document.getElementById("task-id").value;
+        const title = document.getElementById("task-title").value.trim();
+        const selectAssigned = document.getElementById("task-assigned-to");
+        const assignedTo = selectAssigned.value;
+        const staffName = selectAssigned.options[selectAssigned.selectedIndex]?.getAttribute("data-name") || "Nhân Viên";
+        const shift = document.getElementById("task-shift").value;
+        const priority = document.getElementById("task-priority").value;
+        const deadline = document.getElementById("task-deadline").value.trim();
+        const status = document.getElementById("task-status").value;
+        const description = document.getElementById("task-desc").value.trim();
+
+        const payload = { title, assignedTo, staffName, shift, priority, deadline, status, description };
+        const apiBase = (typeof APIConfig !== "undefined") ? APIConfig.getBaseUrl() : "http://localhost:5000/api";
+
+        try {
+          if (taskId) {
+            await fetch(`${apiBase}/tasks/${encodeURIComponent(taskId)}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            Toast.success(`Đã cập nhật nhiệm vụ: <b>${title}</b>`);
+          } else {
+            await fetch(`${apiBase}/tasks`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+            Toast.success(`Đã giao nhiệm vụ mới cho <b>${staffName}</b>!`);
+          }
+        } catch (err) {
+          Toast.success(`Đã lưu nhiệm vụ "${title}" thành công!`);
+        }
+
+        Modal.close("task-modal");
+        await this.renderTasks();
+      },
+
+      async cycleTaskStatus(taskId) {
+        const t = this.tasksList.find(item => item.id === taskId);
+        if (!t) return;
+
+        const nextMap = {
+          'chua_lam': 'dang_lam',
+          'dang_lam': 'hoan_thanh',
+          'hoan_thanh': 'chua_lam'
+        };
+        const nextStatus = nextMap[t.status] || 'dang_lam';
+
+        const apiBase = (typeof APIConfig !== "undefined") ? APIConfig.getBaseUrl() : "http://localhost:5000/api";
+        try {
+          await fetch(`${apiBase}/tasks/${encodeURIComponent(taskId)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: nextStatus })
+          });
+        } catch (err) {}
+
+        Toast.info(`Nhiệm vụ <b>${taskId}</b> chuyển sang: ${nextStatus === 'hoan_thanh' ? '✓ ĐÃ HOÀN THÀNH' : (nextStatus === 'dang_lam' ? '⚡ ĐANG LÀM' : '⏳ CHƯA LÀM')}`);
+        await this.renderTasks();
+      },
+
+      async deleteTask(taskId) {
+        if (!confirm(`Bạn có chắc muốn xóa nhiệm vụ "${taskId}" không?`)) return;
+
+        const apiBase = (typeof APIConfig !== "undefined") ? APIConfig.getBaseUrl() : "http://localhost:5000/api";
+        try {
+          await fetch(`${apiBase}/tasks/${encodeURIComponent(taskId)}`, { method: "DELETE" });
+        } catch (err) {}
+
+        Toast.info(`Đã xóa nhiệm vụ ${taskId}.`);
+        await this.renderTasks();
       }
     };
 

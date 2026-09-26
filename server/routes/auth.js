@@ -11,4 +11,7 @@ router.post('/login', authController.login);
 // GET /api/auth/me
 router.get('/me', authController.me);
 
+// PUT /api/auth/change-password
+router.put('/change-password', authController.changePassword);
+
 module.exports = router;

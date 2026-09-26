@@ -3,6 +3,13 @@
    ========================================================================== */
 
 const AdminDashboard = {
+  getApiBase() {
+    if (typeof APIConfig !== 'undefined' && typeof APIConfig.getBaseUrl === 'function') {
+      return APIConfig.getBaseUrl();
+    }
+    return window.API_BASE || (window.location.origin.includes(':5000') ? '/api' : 'http://localhost:5000/api');
+  },
+
   async init() {
     this.checkAuth();
     await this.syncFromAPI();
@@ -16,7 +23,7 @@ const AdminDashboard = {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2000);
-      const res = await fetch("http://localhost:5000/api/orders", { signal: controller.signal });
+      const res = await fetch(`${this.getApiBase()}/orders`, { signal: controller.signal });
       clearTimeout(timeoutId);
       const data = await res.json();
       const orderList = data.success && (Array.isArray(data.orders) ? data.orders : (Array.isArray(data.data) ? data.data : null));
@@ -89,6 +96,11 @@ const AdminDashboard = {
   },
 
   initCharts() {
+    if (typeof Chart === 'undefined') {
+      console.warn("Thư viện Chart.js chưa sẵn sàng hoặc ngoại tuyến.");
+      return;
+    }
+
     // 1. Revenue Line Chart
     const revCtx = document.getElementById("revenue-chart");
     if (revCtx) {

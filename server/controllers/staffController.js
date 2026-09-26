@@ -100,6 +100,15 @@ exports.createStaff = async (req, res) => {
       });
     }
 
+    const cleanPhone = (so_dien_thoai || '').toString().trim().replace(/\s+/g, '');
+    if (!/^(0|\+84)(3|5|7|8|9)[0-9]{8}$/.test(cleanPhone)) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Số điện thoại không hợp lệ! Vui lòng nhập số điện thoại Việt Nam gồm 10 số (bắt đầu bằng 03, 05, 07, 08, 09).'
+      });
+    }
+
     // Kiểm tra trùng tên đăng nhập hoặc số điện thoại
     const [existing] = await connection.query(
       `SELECT id FROM TAI_KHOAN WHERE ten_dang_nhap = ? OR so_dien_thoai = ?`,
@@ -200,6 +209,17 @@ exports.updateStaff = async (req, res) => {
       luong_co_ban,
       trang_thai_lam_viec
     } = req.body;
+
+    if (so_dien_thoai) {
+      const cleanPhone = so_dien_thoai.toString().trim().replace(/\s+/g, '');
+      if (!/^(0|\+84)(3|5|7|8|9)[0-9]{8}$/.test(cleanPhone)) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Số điện thoại không hợp lệ! Vui lòng nhập số điện thoại Việt Nam gồm 10 số (bắt đầu bằng 03, 05, 07, 08, 09).'
+        });
+      }
+    }
 
     // Cập nhật NHAN_VIEN
     await connection.query(

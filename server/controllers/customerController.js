@@ -7,7 +7,16 @@ exports.getAllCustomers = async (req, res) => {
     const { search } = req.query;
     let query = `
       SELECT kh.id, kh.tai_khoan_id, kh.ho_ten, kh.dia_chi_mac_dinh, kh.diem_tich_luy,
-             kh.hang_thanh_vien, kh.tong_chi_tieu, kh.so_don_da_mua, kh.ngay_tao,
+             kh.hang_thanh_vien,
+             GREATEST(
+               COALESCE(kh.so_don_da_mua, 0),
+               COALESCE((SELECT COUNT(*) FROM HOA_DON hd WHERE (hd.khach_hang_id = kh.id OR hd.sdt_nguoi_nhan = tk.so_dien_thoai) AND hd.trang_thai_don_hang != 'cancelled'), 0)
+             ) AS so_don_da_mua,
+             GREATEST(
+               COALESCE(kh.tong_chi_tieu, 0),
+               COALESCE((SELECT SUM(hd.tong_thanh_toan) FROM HOA_DON hd WHERE (hd.khach_hang_id = kh.id OR hd.sdt_nguoi_nhan = tk.so_dien_thoai) AND hd.trang_thai_don_hang != 'cancelled'), 0)
+             ) AS tong_chi_tieu,
+             kh.ngay_tao,
              tk.ten_dang_nhap, tk.so_dien_thoai, tk.email
       FROM KHACH_HANG kh
       JOIN TAI_KHOAN tk ON kh.tai_khoan_id = tk.id
@@ -43,7 +52,15 @@ exports.getCustomerProfile = async (req, res) => {
 
     const [rows] = await pool.query(
       `SELECT kh.id, kh.ho_ten, kh.dia_chi_mac_dinh, kh.diem_tich_luy,
-              kh.hang_thanh_vien, kh.tong_chi_tieu, kh.so_don_da_mua,
+              kh.hang_thanh_vien,
+              GREATEST(
+                COALESCE(kh.so_don_da_mua, 0),
+                COALESCE((SELECT COUNT(*) FROM HOA_DON hd WHERE (hd.khach_hang_id = kh.id OR hd.sdt_nguoi_nhan = tk.so_dien_thoai) AND hd.trang_thai_don_hang != 'cancelled'), 0)
+              ) AS so_don_da_mua,
+              GREATEST(
+                COALESCE(kh.tong_chi_tieu, 0),
+                COALESCE((SELECT SUM(hd.tong_thanh_toan) FROM HOA_DON hd WHERE (hd.khach_hang_id = kh.id OR hd.sdt_nguoi_nhan = tk.so_dien_thoai) AND hd.trang_thai_don_hang != 'cancelled'), 0)
+              ) AS tong_chi_tieu,
               tk.ten_dang_nhap, tk.so_dien_thoai, tk.email
        FROM KHACH_HANG kh
        JOIN TAI_KHOAN tk ON kh.tai_khoan_id = tk.id
@@ -120,7 +137,13 @@ exports.createCustomer = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Vui lòng nhập họ tên và số điện thoại!' });
     }
 
-    const username = phone.trim();
+    const cleanPhone = phone.trim().replace(/\s+/g, '');
+    if (!/^(0|\+84)(3|5|7|8|9)[0-9]{8}$/.test(cleanPhone)) {
+      connection.release();
+      return res.status(400).json({ success: false, message: 'Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 số (bắt đầu bằng 03, 05, 07, 08, 09).' });
+    }
+
+    const username = cleanPhone;
     const bcrypt = require('bcryptjs');
     const passwordHash = await bcrypt.hash('123456', 10);
 
@@ -138,8 +161,6 @@ exports.createCustomer = async (req, res) => {
       accountId = accResult.insertId;
     }
 
-    // Tạo mã khách hàng
-    const maKh = 'KH' + Date.now().toString().slice(-4);
     const pts = parseInt(points) || 0;
     let t = (tier || 'dong').toLowerCase();
     if (t.includes('kim')) t = 'kim_cuong';
@@ -148,9 +169,9 @@ exports.createCustomer = async (req, res) => {
     else t = 'dong';
 
     const [custResult] = await connection.query(
-      `INSERT INTO KHACH_HANG (tai_khoan_id, ma_khach_hang, ho_ten, dia_chi_mac_dinh, diem_tich_luy, hang_thanh_vien)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [accountId, maKh, fullName.trim(), address || '', pts, t]
+      `INSERT INTO KHACH_HANG (tai_khoan_id, ho_ten, dia_chi_mac_dinh, diem_tich_luy, hang_thanh_vien)
+       VALUES (?, ?, ?, ?, ?)`,
+      [accountId, fullName.trim(), address || '', pts, t]
     );
 
     await connection.commit();
@@ -177,7 +198,15 @@ exports.updateCustomer = async (req, res) => {
     await connection.beginTransaction();
     const rawId = req.params.id;
     const id = rawId.replace(/^CUST-/, '');
-    const { fullName, phone, email, points, tier } = req.body;
+    const { fullName, phone, email, points, tier, orderCount, totalSpent } = req.body;
+
+    if (phone) {
+      const cleanPhone = phone.trim().replace(/\s+/g, '');
+      if (!/^(0|\+84)(3|5|7|8|9)[0-9]{8}$/.test(cleanPhone)) {
+        connection.release();
+        return res.status(400).json({ success: false, message: 'Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 số (bắt đầu bằng 03, 05, 07, 08, 09).' });
+      }
+    }
 
     let t = (tier || 'dong').toLowerCase();
     if (t.includes('kim')) t = 'kim_cuong';
@@ -191,22 +220,40 @@ exports.updateCustomer = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy khách hàng!' });
     }
 
+    const oCount = orderCount !== undefined ? parseInt(orderCount) : (cust[0].so_don_da_mua || 0);
+    const tSpent = totalSpent !== undefined ? parseFloat(totalSpent) : (cust[0].tong_chi_tieu || 0);
+    const finalName = fullName ? fullName.trim() : cust[0].ho_ten;
+    const finalPoints = points !== undefined ? parseInt(points) : (cust[0].diem_tich_luy || 0);
+
     await connection.query(
-      `UPDATE KHACH_HANG SET ho_ten = ?, diem_tich_luy = ?, hang_thanh_vien = ? WHERE id = ?`,
-      [fullName.trim(), parseInt(points) || 0, t, id]
+      `UPDATE KHACH_HANG SET ho_ten = ?, diem_tich_luy = ?, hang_thanh_vien = ?, so_don_da_mua = ?, tong_chi_tieu = ? WHERE id = ?`,
+      [finalName, finalPoints, t, oCount, tSpent, id]
     );
 
-    if (cust[0].tai_khoan_id) {
-      await connection.query(
-        `UPDATE TAI_KHOAN SET so_dien_thoai = ?, email = ? WHERE id = ?`,
-        [phone.trim(), email ? email.trim() : null, cust[0].tai_khoan_id]
-      );
+    if (cust[0].tai_khoan_id && (phone || email !== undefined)) {
+      const updateFields = [];
+      const updateVals = [];
+      if (phone) {
+        updateFields.push('so_dien_thoai = ?');
+        updateVals.push(phone.trim());
+      }
+      if (email !== undefined) {
+        updateFields.push('email = ?');
+        updateVals.push(email ? email.trim() : null);
+      }
+      if (updateFields.length > 0) {
+        updateVals.push(cust[0].tai_khoan_id);
+        await connection.query(
+          `UPDATE TAI_KHOAN SET ${updateFields.join(', ')} WHERE id = ?`,
+          updateVals
+        );
+      }
     }
 
     await connection.commit();
     connection.release();
 
-    res.json({ success: true, message: `Đã cập nhật khách hàng ${fullName} thành công!` });
+    res.json({ success: true, message: `Đã cập nhật khách hàng ${finalName} thành công!` });
   } catch (error) {
     await connection.rollback();
     connection.release();

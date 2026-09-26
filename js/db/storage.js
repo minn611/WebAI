@@ -14,11 +14,12 @@ const STORAGE_KEYS = {
   BANNERS: "teajoy_banners",
   CART: "teajoy_cart",
   CURRENT_USER: "teajoy_current_user",
+  REVIEWS: "teajoy_reviews",
   THEME: "teajoy_theme",
   VERSION: "teajoy_version"
 };
 
-const DODO_VERSION = "dodo_v2026_full_menu_24_drinks";
+const DODO_VERSION = "dodo_v2026_full_menu_24_drinks_reviews_v1";
 
 const DB = {
   hasMojibake(text) {
@@ -34,7 +35,7 @@ const DB = {
     const needRefresh = currentVer !== DODO_VERSION;
 
     if (needRefresh) {
-      console.log("⚡ [Data Engine] Cập nhật phiên bản thực đơn Đô Đô mới nhất (24 món & 10 topping)...");
+      console.log("⚡ [Data Engine] Cập nhật phiên bản thực đơn & đánh giá Đô Đô mới nhất...");
       this.set(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
       this.set(STORAGE_KEYS.CATEGORIES, INITIAL_CATEGORIES);
       this.set(STORAGE_KEYS.TOPPINGS, INITIAL_TOPPINGS);
@@ -42,6 +43,7 @@ const DB = {
       this.set(STORAGE_KEYS.VOUCHERS, INITIAL_VOUCHERS);
       this.set(STORAGE_KEYS.SUPPLIERS, INITIAL_SUPPLIERS);
       this.set(STORAGE_KEYS.BANNERS, INITIAL_BANNERS);
+      this.set(STORAGE_KEYS.REVIEWS, INITIAL_REVIEWS);
 
       const existingUsers = this.get(STORAGE_KEYS.USERS, []);
       const mergedUsers = [...INITIAL_USERS];
@@ -111,7 +113,9 @@ const DB = {
   set(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
-      window.dispatchEvent(new CustomEvent("teajoy:storage_changed", { detail: { key, value } }));
+      if (typeof window !== "undefined" && typeof window.dispatchEvent === "function" && typeof CustomEvent !== "undefined") {
+        window.dispatchEvent(new CustomEvent("teajoy:storage_changed", { detail: { key, value } }));
+      }
     } catch (e) {
       console.error("Storage set error for key:", key, e);
     }
@@ -209,6 +213,55 @@ const DB = {
   getVouchers() { return this.get(STORAGE_KEYS.VOUCHERS, []); },
   getSuppliers() { return this.get(STORAGE_KEYS.SUPPLIERS, []); },
 
+  // Reviews & Management
+  getReviews() { return this.get(STORAGE_KEYS.REVIEWS, INITIAL_REVIEWS); },
+  saveReviews(reviews) { this.set(STORAGE_KEYS.REVIEWS, reviews); },
+  saveReview(rev) {
+    const list = this.getReviews();
+    const newRev = {
+      id: rev.id || (Date.now()),
+      productId: rev.productId || 'TS-01',
+      productName: rev.productName || 'Sản phẩm Đô Đô',
+      productImage: rev.productImage || 'images/products/hong-tra-mochi-keo-dai.jpg',
+      customerName: rev.customerName || 'Khách Hàng',
+      customerPhone: rev.customerPhone || '',
+      customerTier: rev.customerTier || 'VIP Đồng',
+      rating: rev.rating || 5,
+      comment: rev.comment || '',
+      adminReply: rev.adminReply || '',
+      visible: rev.visible !== undefined ? rev.visible : true,
+      createdAt: rev.createdAt || new Date().toISOString().replace('T', ' ').slice(0, 19)
+    };
+    list.unshift(newRev);
+    this.saveReviews(list);
+    return newRev;
+  },
+  replyReview(id, replyText) {
+    const list = this.getReviews();
+    const target = list.find(r => String(r.id) === String(id));
+    if (target) {
+      target.adminReply = replyText;
+      this.saveReviews(list);
+      return true;
+    }
+    return false;
+  },
+  toggleReview(id) {
+    const list = this.getReviews();
+    const target = list.find(r => String(r.id) === String(id));
+    if (target) {
+      target.visible = !target.visible;
+      this.saveReviews(list);
+      return target.visible;
+    }
+    return false;
+  },
+  deleteReview(id) {
+    let list = this.getReviews();
+    list = list.filter(r => String(r.id) !== String(id));
+    this.saveReviews(list);
+  },
+
   // Reset to initial demo data
   resetDatabase() {
     localStorage.clear();
@@ -231,7 +284,11 @@ const AuditLogger = {
       let actor = customActor || (user ? user.fullName : "Khách Hàng Trực Tuyến");
       let role = customRole || (user ? (user.positionTitle || user.role).toUpperCase() : "KHÁCH HÀNG");
 
-      fetch("http://localhost:5000/api/audit", {
+      const apiBase = (typeof APIConfig !== 'undefined' && typeof APIConfig.getBaseUrl === 'function')
+        ? APIConfig.getBaseUrl()
+        : (window.API_BASE || (window.location.origin.includes(':5000') ? '/api' : 'http://localhost:5000/api'));
+
+      fetch(`${apiBase}/audit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ actor, role, action, detail })
@@ -239,5 +296,19 @@ const AuditLogger = {
     } catch (e) {}
   }
 };
+
+if (typeof window !== "undefined") {
+  window.DB = DB;
+  window.STORAGE_KEYS = STORAGE_KEYS;
+  window.DODO_VERSION = DODO_VERSION;
+}
+if (typeof global !== "undefined") {
+  global.DB = DB;
+  global.STORAGE_KEYS = STORAGE_KEYS;
+  global.DODO_VERSION = DODO_VERSION;
+}
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = { DB, STORAGE_KEYS, DODO_VERSION };
+}
 
 window.AuditLogger = AuditLogger;

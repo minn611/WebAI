@@ -6,6 +6,13 @@
 const OrderMgmt = {
   currentStatus: "all",
 
+  getApiBase() {
+    if (typeof APIConfig !== 'undefined' && typeof APIConfig.getBaseUrl === 'function') {
+      return APIConfig.getBaseUrl();
+    }
+    return window.API_BASE || (window.location.origin.includes(':5000') ? '/api' : 'http://localhost:5000/api');
+  },
+
   async init() {
     const urlParams = new URLSearchParams(window.location.search);
     const orderId = urlParams.get("id");
@@ -31,7 +38,7 @@ const OrderMgmt = {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2500);
-      const res = await fetch("http://localhost:5000/api/orders", { signal: controller.signal });
+      const res = await fetch(`${this.getApiBase()}/orders`, { signal: controller.signal });
       clearTimeout(timeoutId);
       const data = await res.json();
       const orderList = data.success && (Array.isArray(data.orders) ? data.orders : (Array.isArray(data.data) ? data.data : null));
@@ -286,13 +293,13 @@ const OrderMgmt = {
         <button class="btn" style="background: #10B981; color: #fff; font-weight: 600;" onclick="OrderMgmt.confirmPayment('${order.id}')">💰 Đã Nhận Tiền</button>
       ` : ''}
       ${order.orderStatus === 'pending' ? `
-        <button class="btn btn-primary" onclick="OrderMgmt.updateStatus('${order.id}', 'confirmed')">✓ Duyệt Đơn</button>
+        <button class="btn btn-primary" onclick="OrderMgmt.updateStatus('${order.id}', 'confirmed')">✓ Duyệt Hoá Đơn</button>
         <button class="btn" style="background: #00529C; color: #fff; font-weight: 600;" onclick="OrderMgmt.updateStatus('${order.id}', 'preparing')">🧋 Duyệt & Pha Chế Ngay</button>
-        <button class="btn btn-danger" onclick="OrderMgmt.updateStatus('${order.id}', 'cancelled')">✕ Hủy Đơn</button>
+        <button class="btn btn-danger" onclick="OrderMgmt.updateStatus('${order.id}', 'cancelled')">✕ Hủy Hoá Đơn</button>
       ` : ''}
       ${order.orderStatus === 'confirmed' ? `
         <button class="btn btn-primary" style="background: #00529C; border-color: #00529C;" onclick="OrderMgmt.updateStatus('${order.id}', 'preparing')">🧋 Bắt Đầu Pha Chế</button>
-        <button class="btn btn-danger" onclick="OrderMgmt.updateStatus('${order.id}', 'cancelled')">✕ Hủy Đơn</button>
+        <button class="btn btn-danger" onclick="OrderMgmt.updateStatus('${order.id}', 'cancelled')">✕ Hủy Hoá Đơn</button>
       ` : ''}
       ${order.orderStatus === 'preparing' ? `
         <button class="btn btn-primary" onclick="OrderMgmt.updateStatus('${order.id}', 'shipping')">🛵 Pha Xong (Giao Cho Shipper)</button>
@@ -300,7 +307,7 @@ const OrderMgmt = {
       ${order.orderStatus === 'shipping' ? `
         <button class="btn btn-secondary" onclick="OrderMgmt.updateStatus('${order.id}', 'completed')">🎉 Xác Nhận Giao Thành Công</button>
       ` : ''}
-      <button class="btn btn-danger" onclick="OrderMgmt.deleteOrder('${order.id}')" style="margin-left: auto;" title="Xóa vĩnh viễn đơn hàng khỏi hệ thống">🗑️ Xóa Đơn Hàng</button>
+      <button class="btn btn-danger" onclick="OrderMgmt.deleteOrder('${order.id}')" style="margin-left: auto;" title="Xóa vĩnh viễn hóa đơn khỏi hệ thống">🗑️ Xóa Hoá Đơn</button>
     `;
 
     Modal.open("order-detail-modal");
@@ -309,7 +316,7 @@ const OrderMgmt = {
   async updateStatus(orderId, newStatus) {
     DB.updateOrderStatus(orderId, newStatus);
     try {
-      await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      await fetch(`${this.getApiBase()}/orders/${orderId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus })
@@ -318,10 +325,10 @@ const OrderMgmt = {
       console.warn("Backend offline, status saved locally");
     }
 
-    Toast.success(`Đã cập nhật đơn <b>#${orderId}</b> sang: <b>${newStatus.toUpperCase()}</b>`);
+    Toast.success(`Đã cập nhật hoá đơn <b>#${orderId}</b> sang: <b>${newStatus.toUpperCase()}</b>`);
     if (typeof AuditLogger !== "undefined") {
       AuditLogger.notifyServer(
-        `CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG #${orderId}`,
+        `CẬP NHẬT TRẠNG THÁI HÓA ĐƠN #${orderId}`,
         `Trạng thái mới: [${newStatus.toUpperCase()}]`
       );
     }
@@ -342,7 +349,7 @@ const OrderMgmt = {
     DB.saveOrder(order);
 
     try {
-      await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+      await fetch(`${this.getApiBase()}/orders/${orderId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentStatus: newPaymentStatus })
@@ -363,7 +370,7 @@ const OrderMgmt = {
     
     const executeDelete = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/orders/${encodeURIComponent(orderId)}`, {
+        const res = await fetch(`${this.getApiBase()}/orders/${encodeURIComponent(orderId)}`, {
           method: "DELETE"
         });
         const data = await res.json().catch(() => ({}));
@@ -508,30 +515,6 @@ const OrderMgmt = {
   },
 
   // --------------------------------------------------------------------------
-  // Delete Order
-  // --------------------------------------------------------------------------
-  async deleteOrder(orderId) {
-    if (confirm(`Bạn có chắc muốn xóa đơn hàng #${orderId} khỏi hệ thống?`)) {
-      DB.deleteOrder(orderId);
-      
-      try {
-        await fetch(`http://localhost:5000/api/orders/${orderId}`, { method: "DELETE" });
-      } catch (err) {}
-
-      Toast.info(`Đã xóa đơn hàng #${orderId}.`);
-      if (typeof AuditLogger !== "undefined") {
-        AuditLogger.notifyServer(
-          `XÓA ĐƠN HÀNG #${orderId}`,
-          `Đã xóa đơn hàng #${orderId} khỏi cơ sở dữ liệu`
-        );
-      }
-      this.renderOrdersTable();
-      this.updateStatusCounts();
-      Modal.close("order-detail-modal");
-    }
-  },
-
-  // --------------------------------------------------------------------------
   // Edit Order Modal & Save
   // --------------------------------------------------------------------------
   openEditOrderModal(orderId) {
@@ -559,6 +542,16 @@ const OrderMgmt = {
     const paymentStatus = document.getElementById("edit-order-payment-status").value;
     const note = document.getElementById("edit-order-note").value.trim();
 
+    if (!Formatters.isValidPhone(customerPhone)) {
+      Toast.warning("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).");
+      const phoneInput = document.getElementById("edit-order-phone");
+      if (phoneInput) {
+        phoneInput.focus();
+        phoneInput.style.borderColor = "#EF4444";
+      }
+      return;
+    }
+
     let orders = DB.getOrders();
     const idx = orders.findIndex(o => o.id === orderId);
     if (idx >= 0) {
@@ -574,14 +567,14 @@ const OrderMgmt = {
       DB.saveOrders(orders);
 
       try {
-        await fetch(`http://localhost:5000/api/orders/${orderId}`, {
+        await fetch(`${this.getApiBase()}/orders/${orderId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ customerName, customerPhone, customerAddress, orderStatus, paymentStatus, note })
         });
       } catch (err) {}
 
-      Toast.success(`Đã cập nhật thông tin đơn hàng <b>#${orderId}</b> thành công!`);
+      Toast.success(`Đã cập nhật thông tin hoá đơn <b>#${orderId}</b> thành công!`);
       Modal.close("order-edit-modal");
       this.renderOrdersTable();
       this.updateStatusCounts();
@@ -615,6 +608,16 @@ const OrderMgmt = {
     const customerName = document.getElementById("create-order-name").value.trim();
     const customerPhone = document.getElementById("create-order-phone").value.trim() || "0868870869";
     const customerAddress = document.getElementById("create-order-address").value.trim();
+
+    if (customerPhone && !Formatters.isValidPhone(customerPhone)) {
+      Toast.warning("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).");
+      const phoneInput = document.getElementById("create-order-phone");
+      if (phoneInput) {
+        phoneInput.focus();
+        phoneInput.style.borderColor = "#EF4444";
+      }
+      return;
+    }
     const prodSelect = document.getElementById("create-order-product");
     const productId = prodSelect.value;
     const selectedOpt = prodSelect.options[prodSelect.selectedIndex];
@@ -664,7 +667,7 @@ const OrderMgmt = {
     DB.saveOrders(orders);
 
     try {
-      await fetch("http://localhost:5000/api/orders", {
+      await fetch(`${this.getApiBase()}/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -683,10 +686,10 @@ const OrderMgmt = {
       });
     } catch (err) {}
 
-    Toast.success(`🎉 Đã tạo thành công đơn hàng tại quầy: <b>#${orderId}</b>!`);
+    Toast.success(`🎉 Đã tạo thành công hoá đơn tại quầy: <b>#${orderId}</b>!`);
     if (typeof AuditLogger !== "undefined") {
       AuditLogger.notifyServer(
-        `TẠO ĐƠN HÀNG TẠI QUẦY POS #${orderId}`,
+        `TẠO HÓA ĐƠN TẠI QUẦY POS #${orderId}`,
         `1x ${productName} (x${quantity}) | Khách: ${customerName} | Tổng: ${Formatters.currency(totalAmount)} | PT: ${paymentMethod.toUpperCase()}`
       );
     }

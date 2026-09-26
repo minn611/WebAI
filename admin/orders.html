@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xử Lý & Quản Lý Đơn Hàng - Đô Đô POS Admin</title>
+  <title>Xử Lý & Quản Lý Hoá Đơn - Đô Đô POS Admin</title>
 
   <!-- Google Fonts for Vietnamese Support -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,8 +37,8 @@
           <span>Tổng Quan (Dashboard)</span>
         </a>
         <a href="orders.html" class="sidebar-nav-item active">
-          <span class="nav-icon">📦</span>
-          <span>Quản Lý Đơn Hàng</span>
+          <span class="nav-icon">🧾</span>
+          <span>Quản Lý Hoá Đơn</span>
         </a>
         <a href="products.html" class="sidebar-nav-item">
           <span class="nav-icon">🧋</span>
@@ -47,6 +47,10 @@
         <a href="customers.html" class="sidebar-nav-item">
           <span class="nav-icon">👥</span>
           <span>Khách Hàng & Điểm</span>
+        </a>
+        <a href="reviews.html" class="sidebar-nav-item">
+          <span class="nav-icon">⭐</span>
+          <span>Đánh Giá & Phản Hồi</span>
         </a>
         <a href="staff.html" class="sidebar-nav-item">
           <span class="nav-icon">💼</span>
@@ -77,14 +81,14 @@
         <div style="display: flex; align-items: center; gap: 1rem;">
           <button class="action-btn" id="sidebar-toggle-btn" onclick="document.getElementById('admin-sidebar').classList.toggle('open')" style="display: none;">☰</button>
           <div>
-            <h3 style="font-size: 1.25rem; margin: 0;">Trung Tâm Xử Lý Đơn Hàng</h3>
-            <span class="text-xs text-muted">Tiếp nhận, đổi trạng thái đơn, điều phối shipper và in hóa đơn POS</span>
+            <h3 style="font-size: 1.25rem; margin: 0;">Trung Tâm Xử Lý Hoá Đơn</h3>
+            <span class="text-xs text-muted">Tiếp nhận, đổi trạng thái hoá đơn, điều phối shipper và in hóa đơn POS</span>
           </div>
         </div>
         <div style="display: flex; gap: 0.75rem; align-items: center;">
           <button class="btn btn-outline btn-sm" onclick="OrderMgmt.refresh()">Làm mới 🔄</button>
           <button class="btn btn-primary" onclick="OrderMgmt.openCreateOrderModal()">
-            <span>+ Tạo Đơn Tại Quầy (POS)</span>
+            <span>+ Lập Hoá Đơn Tại Quầy (POS)</span>
           </button>
         </div>
       </header>
@@ -106,10 +110,10 @@
           <div class="table-toolbar">
             <div class="input-with-icon" style="max-width: 340px;">
               <span class="input-icon">🔍</span>
-              <input type="text" id="admin-order-search" class="form-control form-control-sm" placeholder="Tìm theo Mã đơn, Tên khách hoặc SĐT...">
+              <input type="text" id="admin-order-search" class="form-control form-control-sm" placeholder="Tìm theo Mã hoá đơn, Tên khách hoặc SĐT...">
             </div>
             <div style="font-size: 0.85rem; color: var(--text-muted);">
-              💡 <i>Thao tác: Xem chi tiết, Chỉnh sửa thông tin, In hóa đơn POS hoặc Xóa đơn</i>
+              💡 <i>Thao tác: Xem chi tiết, Chỉnh sửa thông tin, In hóa đơn POS hoặc Xóa hoá đơn</i>
             </div>
           </div>
 
@@ -117,7 +121,7 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Mã Đơn</th>
+                  <th>Mã Hoá Đơn</th>
                   <th>Thời Gian</th>
                   <th>Khách Hàng & SĐT</th>
                   <th>Món Cần Pha Chế (Barista)</th>
@@ -143,7 +147,7 @@
   <div id="order-detail-modal" class="modal-backdrop">
     <div class="modal-container" style="max-width: 680px;">
       <div class="modal-header">
-        <h4 class="modal-title" id="detail-modal-title">Chi Tiết Đơn Hàng</h4>
+        <h4 class="modal-title" id="detail-modal-title">Chi Tiết Hoá Đơn</h4>
         <button class="modal-close" data-close-modal="order-detail-modal">✕</button>
       </div>
       <div class="modal-body" id="detail-modal-body">
@@ -159,7 +163,7 @@
   <div id="order-edit-modal" class="modal-backdrop">
     <div class="modal-container" style="max-width: 580px;">
       <div class="modal-header">
-        <h4 class="modal-title" id="order-edit-modal-title">Chỉnh Sửa Thông Tin Đơn Hàng</h4>
+        <h4 class="modal-title" id="order-edit-modal-title">Chỉnh Sửa Thông Tin Hoá Đơn</h4>
         <button class="modal-close" data-close-modal="order-edit-modal">✕</button>
       </div>
       <form onsubmit="OrderMgmt.saveOrderEditSubmit(event)">
@@ -181,14 +185,14 @@
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div class="form-group">
-              <label class="form-label text-xs">Trạng Thái Đơn Hàng</label>
+              <label class="form-label text-xs">Trạng Thái Hoá Đơn</label>
               <select id="edit-order-status" class="form-select">
                 <option value="pending">Chờ xác nhận</option>
                 <option value="confirmed">Đã duyệt (Chờ pha)</option>
                 <option value="preparing">Đang pha chế</option>
                 <option value="shipping">Đang giao hàng</option>
                 <option value="completed">Đã hoàn thành</option>
-                <option value="cancelled">Đã hủy đơn</option>
+                <option value="cancelled">Đã hủy hoá đơn</option>
               </select>
             </div>
             <div class="form-group">
@@ -217,7 +221,7 @@
   <div id="order-create-modal" class="modal-backdrop">
     <div class="modal-container" style="max-width: 650px;">
       <div class="modal-header">
-        <h4 class="modal-title">+ Tạo Đơn Hàng Tại Quầy / Điện Thoại (POS)</h4>
+        <h4 class="modal-title">+ Lập Hoá Đơn Tại Quầy / Điện Thoại (POS)</h4>
         <button class="modal-close" data-close-modal="order-create-modal">✕</button>
       </div>
       <form onsubmit="OrderMgmt.saveCreateOrderSubmit(event)">
@@ -267,13 +271,13 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label text-xs">Ghi Chú Đơn Hàng (Đường, đá, vị đặc biệt)</label>
+            <label class="form-label text-xs">Ghi Chú Hoá Đơn (Đường, đá, vị đặc biệt)</label>
             <input type="text" id="create-order-note" class="form-control" placeholder="Ví dụ: 70% đường, ít đá, nhiều mochi...">
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" data-close-modal="order-create-modal">Hủy</button>
-          <button type="submit" class="btn btn-primary">Tạo Đơn Hàng ➔</button>
+          <button type="submit" class="btn btn-primary">Lập Hoá Đơn ➔</button>
         </div>
       </form>
     </div>
@@ -290,6 +294,7 @@
   <script src="../js/utils/formatters.js?v=20260913"></script>
   <script src="../js/utils/toast.js?v=20260913"></script>
   <script src="../js/utils/modal.js?v=20260913"></script>
+  <script src="../js/utils/api-config.js?v=20260914"></script>
   <script src="../js/auth.js?v=20260913"></script>
   <script src="../js/admin/order-mgmt.js?v=20260913"></script>
   <script src="../js/admin/admin-notifications.js?v=20260913"></script>

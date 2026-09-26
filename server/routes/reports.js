@@ -9,6 +9,7 @@ const {
 
 router.get('/summary', getDashboardSummary);
 router.get('/revenue', getRevenueChart);
+router.get('/revenue-by-day', getRevenueChart);
 router.get('/top-products', getTopProducts);
 router.get('/categories', getCategorySales);
 

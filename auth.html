@@ -46,8 +46,24 @@
       <div class="form-group">
         <label class="form-label text-xs">Mật khẩu</label>
         <input type="password" id="login-password" class="form-control" placeholder="Mật khẩu demo: 123456" required>
+        <div style="display: flex; justify-content: flex-end; margin-top: 0.25rem;">
+          <a href="#" onclick="openForgotModal(); return false;" class="text-xs text-primary" style="text-decoration: underline; cursor: pointer;">Quên mật khẩu?</a>
+        </div>
       </div>
-      <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 0.5rem;">Đăng Nhập ➔</button>
+      <button type="submit" class="btn btn-primary btn-lg" id="btn-login-submit" style="width: 100%; margin-top: 0.5rem;">Đăng Nhập ➔</button>
+
+      <!-- Social Login / Liên kết tài khoản (UC 3.2.2.2.3 a) -->
+      <div style="margin-top: 1.25rem; text-align: center;">
+        <span class="text-xs text-muted" style="display: block; margin-bottom: 0.5rem;">Hoặc đăng nhập nhanh bằng:</span>
+        <div style="display: flex; gap: 0.5rem; justify-content: center;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="handleSocialAuth('Google')" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.35rem;">
+            <span style="font-weight: 800; color: #EA4335;">G</span> Google
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="handleSocialAuth('Facebook')" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.35rem;">
+            <span style="font-weight: 800; color: #1877F2;">f</span> Facebook
+          </button>
+        </div>
+      </div>
 
       <!-- Quick Demo Login Buttons -->
       <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); text-align: center;">
@@ -78,8 +94,45 @@
         <label class="form-label text-xs">Mật khẩu *</label>
         <input type="password" id="reg-password" class="form-control" required>
       </div>
-      <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 0.5rem;">Tạo Tài Khoản</button>
+      <button type="submit" class="btn btn-primary btn-lg" id="btn-register-submit" style="width: 100%; margin-top: 0.5rem;">Tạo Tài Khoản</button>
     </form>
+  </div>
+
+  <!-- Modal Quên Mật Khẩu (Xác thực OTP - UC 3.2.2.2.3 a) -->
+  <div id="forgot-password-modal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="modal-container card" style="max-width: 420px; width: 90%; padding: 2rem; position: relative;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h4 style="margin: 0; font-size: 1.2rem;">🔒 Quên Mật Khẩu</h4>
+        <button type="button" class="action-btn" onclick="closeForgotModal()" style="border: none; background: none; font-size: 1.25rem; cursor: pointer;">✕</button>
+      </div>
+      <p class="text-xs text-muted" style="margin-bottom: 1.25rem;">Nhập số điện thoại đã đăng ký để nhận mã OTP xác thực đặt lại mật khẩu mới.</p>
+
+      <form id="forgot-form" onsubmit="handleForgotSubmit(event)">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label text-xs">Số điện thoại đăng ký *</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="tel" id="forgot-phone" class="form-control" placeholder="09xxxxxxx" required>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-send-otp" onclick="sendOtpCode()">Gửi OTP</button>
+          </div>
+        </div>
+
+        <div id="otp-group" style="display: none; margin-bottom: 1rem;">
+          <div style="padding: 0.6rem 0.75rem; background: var(--primary-bg); border-radius: var(--radius-sm); margin-bottom: 0.75rem;">
+            <span class="text-xs" style="color: var(--primary); font-weight: 600;">Mã OTP của bạn là: <b id="mock-otp-code" style="font-size: 1.1rem; letter-spacing: 2px;">8899</b></span>
+          </div>
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label text-xs">Nhập mã OTP (4 số) *</label>
+            <input type="text" id="forgot-otp-input" class="form-control" maxlength="4" placeholder="Nhập 4 số OTP">
+          </div>
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label text-xs">Mật khẩu mới (tối thiểu 6 ký tự) *</label>
+            <input type="password" id="forgot-new-pass" class="form-control" placeholder="Nhập mật khẩu mới">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="btn-confirm-reset" style="width: 100%; display: none;">Xác Nhận Đổi Mật Khẩu ➔</button>
+      </form>
+    </div>
   </div>
 
   <!-- Scripts -->
@@ -88,6 +141,7 @@
   <script src="js/utils/formatters.js"></script>
   <script src="js/utils/toast.js"></script>
   <script src="js/utils/modal.js"></script>
+  <script src="js/utils/api-config.js"></script>
   <script src="js/auth.js"></script>
 
   <script>
@@ -117,11 +171,16 @@
     const urlTab = new URLSearchParams(window.location.search).get('tab');
     if (urlTab === 'register') switchAuthTab('register');
 
-    function handleLoginSubmit(e) {
+    async function handleLoginSubmit(e) {
       e.preventDefault();
-      const u = document.getElementById("login-username").value;
-      const p = document.getElementById("login-password").value;
-      const res = Auth.login(u, p);
+      const u = document.getElementById("login-username").value.trim();
+      const p = document.getElementById("login-password").value.trim();
+      const btn = document.getElementById("btn-login-submit");
+      if (btn) btn.disabled = true;
+
+      const res = await Auth.loginAsync(u, p);
+      if (btn) btn.disabled = false;
+
       if (res.success) {
         Toast.success(`Chào mừng <b>${res.user.fullName}</b>!`);
         setTimeout(() => {
@@ -132,25 +191,40 @@
           } else {
             window.location.href = "index.html";
           }
-        }, 600);
+        }, 500);
       } else {
         Toast.error(res.message);
       }
     }
 
-    function handleRegisterSubmit(e) {
+    async function handleRegisterSubmit(e) {
       e.preventDefault();
-      const u = document.getElementById("reg-username").value;
-      const f = document.getElementById("reg-fullname").value;
-      const phone = document.getElementById("reg-phone").value;
-      const p = document.getElementById("reg-password").value;
+      const u = document.getElementById("reg-username").value.trim();
+      const f = document.getElementById("reg-fullname").value.trim();
+      const phone = document.getElementById("reg-phone").value.trim();
+      const p = document.getElementById("reg-password").value.trim();
+      const btn = document.getElementById("btn-register-submit");
 
-      const res = Auth.register({ username: u, fullName: f, phone, password: p });
+      if (!Formatters.isValidPhone(phone)) {
+        Toast.warning("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).");
+        const phoneEl = document.getElementById("reg-phone");
+        if (phoneEl) {
+          phoneEl.focus();
+          phoneEl.style.borderColor = "#EF4444";
+        }
+        return;
+      }
+
+      if (btn) btn.disabled = true;
+
+      const res = await Auth.registerAsync({ username: u, fullName: f, phone, password: p });
+      if (btn) btn.disabled = false;
+
       if (res.success) {
         Toast.success("Đăng ký tài khoản thành công! Tặng bạn 50 điểm thưởng.");
         setTimeout(() => {
           window.location.href = "index.html";
-        }, 800);
+        }, 700);
       } else {
         Toast.error(res.message);
       }
@@ -170,7 +244,75 @@
           } else {
             window.location.href = "index.html";
           }
-        }, 500);
+        }, 400);
+      }
+    }
+
+    function handleSocialAuth(provider) {
+      const res = Auth.loginWithSocial(provider);
+      if (res.success) {
+        Toast.success(res.message);
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 600);
+      }
+    }
+
+    // Modal Quên mật khẩu logic
+    let generatedOtp = "8899";
+
+    function openForgotModal() {
+      const modal = document.getElementById("forgot-password-modal");
+      if (modal) modal.style.display = "flex";
+    }
+
+    function closeForgotModal() {
+      const modal = document.getElementById("forgot-password-modal");
+      if (modal) modal.style.display = "none";
+    }
+
+    function sendOtpCode() {
+      const phone = document.getElementById("forgot-phone").value.trim();
+      if (!Formatters.isValidPhone(phone)) {
+        Toast.warning("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).");
+        const phoneEl = document.getElementById("forgot-phone");
+        if (phoneEl) {
+          phoneEl.focus();
+          phoneEl.style.borderColor = "#EF4444";
+        }
+        return;
+      }
+      generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+      document.getElementById("mock-otp-code").textContent = generatedOtp;
+      document.getElementById("otp-group").style.display = "block";
+      document.getElementById("btn-confirm-reset").style.display = "block";
+      document.getElementById("btn-send-otp").textContent = "Gửi lại OTP";
+      Toast.info(`Mã OTP xác thực đã gửi tới SĐT ${phone}: <b>${generatedOtp}</b>`);
+    }
+
+    async function handleForgotSubmit(e) {
+      e.preventDefault();
+      const phone = document.getElementById("forgot-phone").value.trim();
+      const otp = document.getElementById("forgot-otp-input").value.trim();
+      const newPass = document.getElementById("forgot-new-pass").value.trim();
+
+      if (otp !== generatedOtp) {
+        Toast.error("Mã OTP không chính xác! Vui lòng nhập đúng 4 số.");
+        return;
+      }
+      if (!newPass || newPass.length < 6) {
+        Toast.warning("Mật khẩu mới phải có ít nhất 6 ký tự!");
+        return;
+      }
+
+      const res = await Auth.resetPasswordWithOtpAsync(phone, newPass);
+      if (res.success) {
+        Toast.success(res.message);
+        closeForgotModal();
+        document.getElementById("login-username").value = phone;
+        document.getElementById("login-password").value = newPass;
+      } else {
+        Toast.error(res.message);
       }
     }
   </script>

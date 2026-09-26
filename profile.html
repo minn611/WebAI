@@ -86,10 +86,30 @@
       <div style="margin-top: 1.5rem; max-width: 480px;">
         <div class="flex justify-between text-xs" style="color: #DDB892; margin-bottom: 4px;">
           <span>Tiến độ lên hạng Kim Cương</span>
-          <span>320 / 500 Điểm</span>
+          <span id="user-points-progress">320 / 500 Điểm</span>
         </div>
         <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.2); border-radius: var(--radius-full); overflow: hidden;">
-          <div style="width: 64%; height: 100%; background: linear-gradient(90deg, #F4A261, #E9C46A);"></div>
+          <div id="user-tier-progressbar" style="width: 64%; height: 100%; background: linear-gradient(90deg, #F4A261, #E9C46A);"></div>
+        </div>
+      </div>
+
+      <!-- Member Stats: Số đơn hàng mua & Tổng chi tiêu -->
+      <div style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.15); display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem;">
+        <div style="background: rgba(255,255,255,0.08); padding: 0.85rem 1rem; border-radius: var(--radius-md); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08);">
+          <div style="font-size: 0.75rem; color: #DDB892; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">🧾 Hoá Đơn Đã Mua</div>
+          <div id="user-orders-count" style="font-size: 1.45rem; font-weight: 800; color: #fff; margin-top: 3px;">0 đơn</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); padding: 0.85rem 1rem; border-radius: var(--radius-md); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08);">
+          <div style="font-size: 0.75rem; color: #DDB892; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">💰 Tổng Chi Tiêu</div>
+          <div id="user-total-spent" style="font-size: 1.45rem; font-weight: 800; color: #E9C46A; margin-top: 3px;">0đ</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); padding: 0.85rem 1rem; border-radius: var(--radius-md); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08);">
+          <div style="font-size: 0.75rem; color: #DDB892; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">⭐ Điểm Thưởng</div>
+          <div id="user-points-summary" style="font-size: 1.45rem; font-weight: 800; color: #fff; margin-top: 3px;">0 pts</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); padding: 0.85rem 1rem; border-radius: var(--radius-md); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08);">
+          <div style="font-size: 0.75rem; color: #DDB892; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">🎖️ Hạng Hiện Tại</div>
+          <div id="user-tier-name" style="font-size: 1.45rem; font-weight: 800; color: #F4A261; margin-top: 3px;">VIP Đồng</div>
         </div>
       </div>
     </div>
@@ -98,7 +118,7 @@
     <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
       <!-- Left: Order History -->
       <div class="card" style="padding: 1.75rem;">
-        <h4 style="margin-bottom: 1.25rem;">📜 Lịch Sử Đơn Hàng Của Bạn</h4>
+        <h4 style="margin-bottom: 1.25rem;">📜 Lịch Sử Hoá Đơn / Đơn Hàng Của Bạn</h4>
         <div id="profile-orders-list" style="display: flex; flex-direction: column; gap: 1rem;">
           <!-- Injected by JS -->
         </div>
@@ -192,6 +212,7 @@
   <script src="js/utils/formatters.js"></script>
   <script src="js/utils/toast.js"></script>
   <script src="js/utils/modal.js"></script>
+  <script src="js/utils/api-config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/client.js"></script>
@@ -220,6 +241,62 @@
         (user.phone && o.customerPhone === user.phone) || 
         (user.fullName && o.customerName === user.fullName)
       );
+
+      // Compute Orders Count & Total Spent
+      let orderCount = userOrders.filter(o => o.orderStatus !== 'cancelled').length;
+      let totalSpent = userOrders
+        .filter(o => o.orderStatus !== 'cancelled')
+        .reduce((sum, o) => sum + (parseFloat(o.totalAmount) || 0), 0);
+
+      if (user.orderCount && user.orderCount > orderCount) orderCount = user.orderCount;
+      if (user.totalSpent && user.totalSpent > totalSpent) totalSpent = user.totalSpent;
+
+      const updateStatsUI = (orders, spent, pts, tier) => {
+        const elOrders = document.getElementById("user-orders-count");
+        const elSpent = document.getElementById("user-total-spent");
+        const elPts = document.getElementById("user-points-summary");
+        const elTier = document.getElementById("user-tier-name");
+        const elProgressText = document.getElementById("user-points-progress");
+        const elProgressBar = document.getElementById("user-tier-progressbar");
+
+        if (elOrders) elOrders.textContent = `${orders} đơn`;
+        if (elSpent) elSpent.textContent = Formatters.currency(spent);
+        if (elPts) elPts.textContent = `${pts} pts`;
+        if (elTier) elTier.textContent = tier;
+
+        if (elProgressText && elProgressBar) {
+          const nextTarget = pts >= 500 ? 1000 : (pts >= 200 ? 500 : 200);
+          const percent = Math.min(100, Math.round((pts / nextTarget) * 100));
+          elProgressText.textContent = `${pts} / ${nextTarget} Điểm`;
+          elProgressBar.style.width = `${percent}%`;
+        }
+      };
+
+      updateStatsUI(orderCount, totalSpent, user.points || 0, user.tier || "VIP ĐỒNG");
+
+      // Optional sync with backend profile
+      const accId = user.id || user.accountId || user.rawId || user.dbId;
+      if (accId) {
+        const apiBase = window.API_BASE || 'http://localhost:5000/api';
+        fetch(`${apiBase}/customers/profile/${encodeURIComponent(accId)}`)
+          .then(res => res.json())
+          .then(resData => {
+            if (resData.success && resData.data) {
+              const d = resData.data;
+              const backendOrders = parseInt(d.so_don_da_mua) || 0;
+              const backendSpent = parseFloat(d.tong_chi_tieu) || 0;
+              const backendPts = parseInt(d.diem_tich_luy) || (user.points || 0);
+              const tierName = d.hang_thanh_vien === 'kim_cuong' ? 'VIP Kim Cương' : (d.hang_thanh_vien === 'vang' ? 'VIP Vàng' : (d.hang_thanh_vien === 'bac' ? 'VIP Bạc' : 'VIP Đồng'));
+
+              const finalOrders = Math.max(orderCount, backendOrders);
+              const finalSpent = Math.max(totalSpent, backendSpent);
+              updateStatsUI(finalOrders, finalSpent, backendPts, tierName);
+              document.getElementById("user-points-display").textContent = backendPts;
+              document.getElementById("user-tier-badge").textContent = tierName.toUpperCase();
+            }
+          })
+          .catch(() => {});
+      }
 
       const orderListEl = document.getElementById("profile-orders-list");
       if (orderListEl) {
@@ -269,19 +346,51 @@
       }
     }
 
-    function saveProfileInfo(e) {
+    async function saveProfileInfo(e) {
       e.preventDefault();
       const user = Auth.getCurrentUser() || DB.getUsers()[2];
-      user.fullName = document.getElementById("prof-name").value;
-      user.phone = document.getElementById("prof-phone").value;
-      user.address = document.getElementById("prof-address").value;
+      const newName = document.getElementById("prof-name").value.trim();
+      const newPhone = document.getElementById("prof-phone").value.trim();
+      const newAddress = document.getElementById("prof-address").value.trim();
+
+      if (!Formatters.isValidPhone(newPhone)) {
+        Toast.warning("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).");
+        const phoneEl = document.getElementById("prof-phone");
+        if (phoneEl) {
+          phoneEl.focus();
+          phoneEl.style.borderColor = "#EF4444";
+        }
+        return;
+      }
+
+      user.fullName = newName;
+      user.phone = newPhone;
+      user.address = newAddress;
       DB.saveUser(user);
       DB.setCurrentUser(user);
+
+      // Đồng bộ cập nhật lên CSDL MySQL Backend
+      try {
+        const apiBase = window.API_BASE || 'http://localhost:5000/api';
+        const targetId = user.dbId || user.id || user.username;
+        await fetch(`${apiBase}/customers/${encodeURIComponent(targetId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fullName: newName,
+            phone: newPhone,
+            address: newAddress
+          })
+        });
+      } catch (err) {
+        console.warn("Backend offline, profile saved in LocalStorage");
+      }
+
       Toast.success("Cập nhật thông tin thành công!");
       initProfilePage();
     }
 
-    function changePasswordSubmit(e) {
+    async function changePasswordSubmit(e) {
       e.preventDefault();
       const oldP = document.getElementById("old-pass").value;
       const newP = document.getElementById("new-pass").value;
@@ -296,26 +405,41 @@
         return;
       }
 
-      const user = Auth.getCurrentUser();
-      if (user) {
-        user.password = newP;
-        DB.saveUser(user);
-        DB.setCurrentUser(user);
+      const res = await Auth.changePasswordAsync(oldP, newP);
+      if (res.success) {
+        Toast.success(res.message || "Đổi mật khẩu thành công! Mật khẩu mới đã được cập nhật an toàn.");
+        document.getElementById("old-pass").value = "";
+        document.getElementById("new-pass").value = "";
+        document.getElementById("confirm-pass").value = "";
+      } else {
+        Toast.error(res.message || "Đổi mật khẩu thất bại!");
       }
-      Toast.success("Đổi mật khẩu thành công! Mật khẩu mới đã được cập nhật an toàn.");
-      document.getElementById("old-pass").value = "";
-      document.getElementById("new-pass").value = "";
-      document.getElementById("confirm-pass").value = "";
     }
 
-    function submitComplaint(e) {
+    async function submitComplaint(e) {
       e.preventDefault();
       const orderId = document.getElementById("comp-order-id").value.trim();
       const content = document.getElementById("comp-content").value.trim();
       const user = Auth.getCurrentUser() || { fullName: "Khách Hàng", phone: "0900000000" };
+      const apiBase = (typeof APIConfig !== 'undefined') ? APIConfig.getBaseUrl() : (window.API_BASE || 'http://localhost:5000/api');
+
+      // Gửi vào hệ thống tiếp nhận khiếu nại của Quản lý
+      try {
+        await fetch(`${apiBase}/complaints`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: orderId || 'Vãng lai',
+            customerName: user.fullName || "Khách Hàng",
+            phone: user.phone || "",
+            category: 'chat_luong',
+            content: content
+          })
+        });
+      } catch (err) {}
 
       // Gửi thông báo tới hệ thống Audit Logger máy chủ
-      fetch("/api/audit", {
+      fetch(`${apiBase}/audit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -7,6 +7,13 @@ const Checkout = {
   shippingFee: 15000,
   paymentMethod: "vietqr",
 
+  getApiBase() {
+    if (typeof APIConfig !== 'undefined' && typeof APIConfig.getBaseUrl === 'function') {
+      return APIConfig.getBaseUrl();
+    }
+    return window.API_BASE || (window.location.origin.includes(':5000') ? '/api' : 'http://localhost:5000/api');
+  },
+
   init() {
     this.renderOrderSummary();
     this.initEventListeners();
@@ -29,23 +36,108 @@ const Checkout = {
           if (vInput) vInput.value = parsed.code || '';
           // Show discount immediately without re-validating (already validated on cart page)
           this.calculateFinalTotals();
-        } catch (e) {
-          console.warn('Invalid pending voucher in sessionStorage');
-        }
+        } catch (e) {}
       }
     }
   },
 
+  initEventListeners() {
+    // Payment method selector cards
+    document.querySelectorAll(".payment-method-card").forEach(card => {
+      card.addEventListener("click", () => {
+        const method = card.getAttribute("data-method");
+        if (method) {
+          const radio = card.querySelector('input[type="radio"]');
+          if (radio) radio.checked = true;
+          this.selectPaymentMethod(method);
+        }
+      });
+    });
+
+    // Auto update totals if cart changes
+    window.addEventListener("teajoy:storage_changed", (e) => {
+      if (!e.detail || e.detail.key === STORAGE_KEYS.CART) {
+        this.renderOrderSummary();
+      }
+    });
+  },
+
   fillCurrentUserAddress() {
     const user = Auth.getCurrentUser();
-    if (user) {
-      const nameInput = document.getElementById("checkout-name");
-      const phoneInput = document.getElementById("checkout-phone");
-      const addrInput = document.getElementById("checkout-address");
-      if (nameInput && !nameInput.value) nameInput.value = user.fullName || "";
-      if (phoneInput && !phoneInput.value) phoneInput.value = user.phone || "";
-      if (addrInput && !addrInput.value) addrInput.value = user.address || "";
+    if (!user) return;
+
+    const nameInput = document.getElementById("checkout-name");
+    const phoneInput = document.getElementById("checkout-phone");
+    const addressInput = document.getElementById("checkout-address");
+
+    if (nameInput && !nameInput.value) nameInput.value = user.fullName || "";
+    if (phoneInput && !phoneInput.value) phoneInput.value = user.phone || "";
+    if (addressInput && !addressInput.value) addressInput.value = user.address || "";
+  },
+
+  // --------------------------------------------------------------------------
+  // Voucher Validation (Database API with Fallback)
+  // --------------------------------------------------------------------------
+  async applyVoucherCode() {
+    const input = document.getElementById("voucher-input");
+    const code = input ? input.value.trim().toUpperCase() : "";
+    if (!code) {
+      this.appliedVoucher = null;
+      Toast.warning("Vui lòng nhập mã giảm giá!");
+      this.calculateFinalTotals();
+      return;
     }
+
+    const itemsTotal = Cart.getItemsTotal();
+
+    try {
+      const response = await fetch(`${this.getApiBase()}/vouchers/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, totalAmount: itemsTotal })
+      });
+      const data = await response.json();
+
+      if (data.success && data.voucher) {
+        this.appliedVoucher = {
+          code: data.voucher.code,
+          discountAmount: data.voucher.discountAmount,
+          description: data.voucher.description
+        };
+        Toast.success(data.message || `Áp dụng mã <b>${data.voucher.code}</b> thành công!`);
+        this.calculateFinalTotals();
+        return;
+      } else if (data.message) {
+        this.appliedVoucher = null;
+        Toast.error(data.message);
+        this.calculateFinalTotals();
+        return;
+      }
+    } catch (err) {
+      console.warn("Backend voucher API offline, falling back to local DB...");
+    }
+
+    // Local DB Fallback
+    const vouchers = DB.getVouchers();
+    const found = vouchers.find(v => v.code === code);
+
+    if (!found) {
+      this.appliedVoucher = null;
+      Toast.error("Mã giảm giá không hợp lệ hoặc đã hết hạn!");
+      this.calculateFinalTotals();
+      return;
+    }
+
+    if (found.minOrder && itemsTotal < found.minOrder) {
+      this.appliedVoucher = null;
+      Toast.warning(`Mã này chỉ áp dụng cho đơn hàng từ ${Formatters.currency(found.minOrder)} trở lên!`);
+      this.calculateFinalTotals();
+      return;
+    }
+
+    this.appliedVoucher = found;
+    Toast.success(`Áp dụng mã <b>${found.code}</b> thành công!`);
+    this.calculateFinalTotals();
   },
 
   renderOrderSummary() {
@@ -256,7 +348,7 @@ const Checkout = {
 
     // 2. Gửi API máy chủ Backend
     try {
-      await fetch("http://localhost:5000/api/notifications/transfer", {
+      await fetch(`${this.getApiBase()}/notifications/transfer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -287,15 +379,6 @@ const Checkout = {
     }
   },
 
-  initEventListeners() {
-    document.querySelectorAll(".payment-method-card").forEach(c => {
-      c.addEventListener("click", () => {
-        const method = c.getAttribute("data-method");
-        this.selectPaymentMethod(method);
-      });
-    });
-  },
-
   submitOrder() {
     const cart = Cart.getCart();
     if (cart.length === 0) {
@@ -313,10 +396,14 @@ const Checkout = {
       return;
     }
 
-    // Phone regex check
-    const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/;
-    if (!phoneRegex.test(phone)) {
-      Toast.warning("Số điện thoại không đúng định dạng!");
+    // Phone validation: Chuẩn 10 số di động Việt Nam (03, 05, 07, 08, 09)
+    if (!Formatters.isValidPhone(phone)) {
+      Toast.warning("Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số (bắt đầu bằng 03, 05, 07, 08, 09).");
+      const phoneInput = document.getElementById("checkout-phone");
+      if (phoneInput) {
+        phoneInput.focus();
+        phoneInput.style.borderColor = "#EF4444";
+      }
       return;
     }
 
@@ -343,7 +430,7 @@ const Checkout = {
 
     // Try posting to Backend API Server (MySQL Database)
     try {
-      fetch("http://localhost:5000/api/orders", {
+      fetch(`${this.getApiBase()}/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

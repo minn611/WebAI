@@ -15,6 +15,7 @@ const ClientApp = {
   init() {
     this.initCustomizerModal();
     this.initLuckyWheel();
+    this.initLiveChat();
   },
 
   // Render a standard product card HTML
@@ -73,11 +74,12 @@ const ClientApp = {
   // --------------------------------------------------------------------------
   // Visual Milk Tea Builder & Customizer Modal
   // --------------------------------------------------------------------------
-  openCustomizer(productId) {
+  openCustomizer(productId, editingItemKey = null) {
     const product = DB.getProductById(productId);
     if (!product) return;
 
     this.activeCustomizerProduct = product;
+    this.editingItemKey = editingItemKey;
     this.customizerState = {
       size: "M",
       sugar: "100%",
@@ -85,6 +87,20 @@ const ClientApp = {
       toppings: [],
       quantity: 1
     };
+
+    if (editingItemKey) {
+      const cart = Cart.getCart();
+      const existing = cart.find(i => i.itemKey === editingItemKey);
+      if (existing) {
+        this.customizerState = {
+          size: existing.size || "M",
+          sugar: existing.sugar || "100%",
+          ice: existing.ice || "100%",
+          toppings: Array.isArray(existing.toppings) ? [...existing.toppings] : [],
+          quantity: existing.quantity || 1
+        };
+      }
+    }
 
     const modal = document.getElementById("product-customizer-modal");
     if (!modal) return;
@@ -98,30 +114,32 @@ const ClientApp = {
     const toppings = DB.getToppings();
     const toppingListEl = document.getElementById("cust-toppings-list");
     if (toppingListEl) {
-      toppingListEl.innerHTML = toppings.map(top => `
-        <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;" class="topping-option-label" id="cust-top-label-${top.id}">
+      toppingListEl.innerHTML = toppings.map(top => {
+        const isChecked = this.customizerState.toppings.includes(top.name);
+        return `
+        <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;" class="topping-option-label ${isChecked ? 'checked' : ''}" id="cust-top-label-${top.id}">
           <div style="display: flex; align-items: center; gap: 0.65rem;">
-            <input type="checkbox" value="${top.name}" data-price="${top.price}" onchange="ClientApp.toggleTopping('${top.name}', ${top.price}, this.checked, 'cust-top-label-${top.id}')">
+            <input type="checkbox" value="${top.name}" data-price="${top.price}" ${isChecked ? 'checked' : ''} onchange="ClientApp.toggleTopping('${top.name}', ${top.price}, this.checked, 'cust-top-label-${top.id}')">
             <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-main);">${top.name}</span>
           </div>
           <span style="font-size: 0.85rem; font-weight: 800; color: var(--primary); background: rgba(230,0,35,0.08); padding: 2px 8px; border-radius: 20px;">+${Formatters.currency(top.price)}</span>
         </label>
-      `).join("");
+      `;}).join("");
     }
 
     // Reset controls
     document.querySelectorAll(".cust-size-btn").forEach(btn => {
-      btn.classList.toggle("active", btn.getAttribute("data-size") === "M");
+      btn.classList.toggle("active", btn.getAttribute("data-size") === this.customizerState.size);
     });
     document.querySelectorAll(".cust-sugar-btn").forEach(btn => {
-      btn.classList.toggle("active", btn.getAttribute("data-sugar") === "100%");
+      btn.classList.toggle("active", btn.getAttribute("data-sugar") === this.customizerState.sugar);
     });
     document.querySelectorAll(".cust-ice-btn").forEach(btn => {
-      btn.classList.toggle("active", btn.getAttribute("data-ice") === "100%");
+      btn.classList.toggle("active", btn.getAttribute("data-ice") === this.customizerState.ice);
     });
 
     const qtyInput = document.getElementById("cust-qty-input");
-    if (qtyInput) qtyInput.value = 1;
+    if (qtyInput) qtyInput.value = this.customizerState.quantity;
 
     this.updateCustomizerVisual();
     this.calculateCustomizerPrice();
@@ -278,6 +296,11 @@ const ClientApp = {
     }
     const { unitPrice } = this.calculateCustomizerPrice();
 
+    if (this.editingItemKey) {
+      Cart.removeItem(this.editingItemKey);
+      this.editingItemKey = null;
+    }
+
     Cart.addItem({
       productId: this.activeCustomizerProduct.id,
       name: this.activeCustomizerProduct.name,
@@ -291,6 +314,9 @@ const ClientApp = {
     });
 
     Modal.close("product-customizer-modal");
+    if (typeof renderFullCartPage === "function") {
+      renderFullCartPage();
+    }
   },
 
   // --------------------------------------------------------------------------
@@ -498,6 +524,207 @@ const ClientApp = {
     `;
 
     document.body.insertAdjacentHTML("beforeend", modalMarkup);
+  },
+
+  // ==========================================================================
+  // 💬 LIVE CHAT WIDGET - NHẮN TIN TRỰC TUYẾN VỚI CỬA HÀNG (UC 3.2.2.2.3 d)
+  // ==========================================================================
+  initLiveChat() {
+    if (document.getElementById("teajoy-chat-widget")) return;
+
+    const chatHtml = `
+      <div id="teajoy-chat-widget" style="position: fixed; bottom: 22px; right: 22px; z-index: 9998; font-family: inherit;">
+        <!-- Nút Bong Bóng Chat -->
+        <button id="teajoy-chat-bubble" onclick="ClientApp.toggleLiveChat()" style="
+          width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--primary, #E60023), #FF4B63);
+          border: none; color: white; font-size: 1.55rem; cursor: pointer; box-shadow: 0 8px 24px rgba(230,0,35,0.4);
+          display: flex; align-items: center; justify-content: center; position: relative; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        " title="Nhắn tin trò chuyện với Trà Sữa ĐÔ ĐÔ">
+          💬
+          <span style="position: absolute; top: 1px; right: 1px; width: 13px; height: 13px; background: #10B981; border: 2.5px solid white; border-radius: 50%;"></span>
+        </button>
+
+        <!-- Khung Cửa Sổ Trò Chuyện -->
+        <div id="teajoy-chat-window" style="
+          display: none; position: absolute; bottom: 68px; right: 0; width: 350px; max-width: 90vw; height: 460px; max-height: 80vh;
+          background: #ffffff; border-radius: 16px; box-shadow: 0 12px 36px rgba(0,0,0,0.22); border: 1px solid rgba(0,0,0,0.08);
+          flex-direction: column; overflow: hidden;
+        ">
+          <!-- Chat Header -->
+          <div style="background: linear-gradient(135deg, var(--primary, #E60023), #FF4B63); color: white; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                🧋
+              </div>
+              <div>
+                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; line-height: 1.2;">Trà Sữa ĐÔ ĐÔ</h4>
+                <span style="font-size: 0.72rem; opacity: 0.9; display: flex; align-items: center; gap: 4px;">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: #10B981; display: inline-block;"></span> Trực tuyến tư vấn
+                </span>
+              </div>
+            </div>
+            <button onclick="ClientApp.toggleLiveChat()" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; padding: 2px 6px;">✕</button>
+          </div>
+
+          <!-- Danh sách tin nhắn -->
+          <div id="teajoy-chat-messages" style="flex: 1; padding: 12px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #F9FAFB;">
+            <!-- Rendered by JS -->
+          </div>
+
+          <!-- Mẫu câu hỏi nhanh (Quick Chips) -->
+          <div style="padding: 6px 10px; background: #FFFFFF; border-top: 1px solid #F3F4F6; display: flex; gap: 6px; overflow-x: auto; white-space: nowrap;">
+            <button type="button" onclick="ClientApp.sendQuickMessage('Món nào đang bán chạy nhất quán ạ?')" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; cursor: pointer;">🍡 Món Best-seller</button>
+            <button type="button" onclick="ClientApp.sendQuickMessage('Hôm nay có mã giảm giá nào không?')" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; cursor: pointer;">🎟️ Mã giảm giá</button>
+            <button type="button" onclick="ClientApp.sendQuickMessage('Cho mình hỏi cách tra cứu đơn hàng')" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; cursor: pointer;">🛵 Tra cứu đơn</button>
+          </div>
+
+          <!-- Form nhập tin nhắn -->
+          <form onsubmit="ClientApp.handleChatSubmit(event)" style="display: flex; padding: 8px 10px; background: #ffffff; border-top: 1px solid #EEEEEE; gap: 6px;">
+            <input type="text" id="teajoy-chat-input" placeholder="Nhập câu hỏi tư vấn..." style="flex: 1; border: 1px solid #E5E7EB; border-radius: 20px; padding: 8px 12px; font-size: 0.82rem; outline: none;">
+            <button type="submit" style="width: 36px; height: 36px; border-radius: 50%; background: var(--primary, #E60023); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">➤</button>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML("beforeend", chatHtml);
+    this.loadChatMessages();
+  },
+
+  toggleLiveChat() {
+    const win = document.getElementById("teajoy-chat-window");
+    if (!win) return;
+    const isHidden = win.style.display === "none" || win.style.display === "";
+    win.style.display = isHidden ? "flex" : "none";
+    if (isHidden) {
+      setTimeout(() => {
+        const inp = document.getElementById("teajoy-chat-input");
+        if (inp) inp.focus();
+        const container = document.getElementById("teajoy-chat-messages");
+        if (container) container.scrollTop = container.scrollHeight;
+      }, 100);
+    }
+  },
+
+  async loadChatMessages() {
+    const container = document.getElementById("teajoy-chat-messages");
+    if (!container) return;
+
+    let messages = [
+      {
+        id: "msg-0",
+        sender: "bot",
+        senderName: "Trợ Lý Đô Đô 🧋",
+        message: "Xin chào quý khách! Trà Sữa ĐÔ ĐÔ hân hạnh phục vụ. Bạn có thể hỏi về các món bán chạy, ưu đãi hôm nay hoặc nhờ hỗ trợ đơn hàng nhé!",
+        createdAt: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })
+      }
+    ];
+
+    try {
+      const apiBase = (typeof APIConfig !== "undefined") ? APIConfig.getBaseUrl() : "http://localhost:5000/api";
+      const res = await fetch(`${apiBase}/messages`);
+      const json = await res.json();
+      if (json.success && json.data && json.data.length > 0) {
+        messages = json.data;
+      }
+    } catch (e) {
+      // Offline fallback to local array
+    }
+
+    container.innerHTML = "";
+    messages.forEach(m => this.appendChatMessage(m));
+    container.scrollTop = container.scrollHeight;
+  },
+
+  appendChatMessage(m) {
+    const container = document.getElementById("teajoy-chat-messages");
+    if (!container) return;
+
+    const isMe = m.sender === "customer";
+    const timeStr = m.createdAt ? (m.createdAt.includes("T") ? new Date(m.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : m.createdAt) : "";
+
+    const msgItem = document.createElement("div");
+    msgItem.style.display = "flex";
+    msgItem.style.flexDirection = "column";
+    msgItem.style.alignItems = isMe ? "flex-end" : "flex-start";
+    msgItem.style.maxWidth = "85%";
+    msgItem.style.alignSelf = isMe ? "flex-end" : "flex-start";
+
+    msgItem.innerHTML = `
+      <span style="font-size: 0.68rem; color: #9CA3AF; margin-bottom: 2px;">${isMe ? "Bạn" : (m.senderName || "Trợ Lý Đô Đô")} ${timeStr ? "• " + timeStr : ""}</span>
+      <div style="
+        padding: 8px 12px; border-radius: ${isMe ? "14px 14px 2px 14px" : "14px 14px 14px 2px"};
+        background: ${isMe ? "var(--primary, #E60023)" : "#FFFFFF"};
+        color: ${isMe ? "#FFFFFF" : "#1F2937"};
+        font-size: 0.82rem; line-height: 1.35;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        border: ${isMe ? "none" : "1px solid #E5E7EB"};
+        word-break: break-word;
+      ">
+        ${m.message}
+      </div>
+    `;
+
+    container.appendChild(msgItem);
+    container.scrollTop = container.scrollHeight;
+  },
+
+  sendQuickMessage(text) {
+    const inp = document.getElementById("teajoy-chat-input");
+    if (inp) {
+      inp.value = text;
+      this.handleChatSubmit();
+    }
+  },
+
+  async handleChatSubmit(e) {
+    if (e) e.preventDefault();
+    const inp = document.getElementById("teajoy-chat-input");
+    if (!inp) return;
+    const text = inp.value.trim();
+    if (!text) return;
+    inp.value = "";
+
+    const user = (typeof Auth !== "undefined" && Auth.getCurrentUser) ? Auth.getCurrentUser() : null;
+    const myMsg = {
+      sender: "customer",
+      senderName: (user && user.fullName) || "Khách Hàng",
+      message: text,
+      createdAt: new Date().toISOString()
+    };
+    this.appendChatMessage(myMsg);
+
+    try {
+      const apiBase = (typeof APIConfig !== "undefined") ? APIConfig.getBaseUrl() : "http://localhost:5000/api";
+      const res = await fetch(`${apiBase}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(myMsg)
+      });
+      const json = await res.json();
+      if (json.success && json.autoReply) {
+        setTimeout(() => {
+          this.appendChatMessage(json.autoReply);
+        }, 400);
+      }
+    } catch (err) {
+      // Offline smart fallback
+      setTimeout(() => {
+        let reply = "Dạ Trà Sữa Đô Đô đã nhận được thông tin! Cửa hàng sẽ liên hệ phản hồi ngay ạ.";
+        const low = text.toLowerCase();
+        if (low.includes("món") || low.includes("menu")) {
+          reply = "Quán khuyên bạn nên thử dòng Mochi kéo dài (Trà Sữa Tiramisu Mochi hoặc Hồng Trà Mochi) đang là best-seller số 1 nhé! 🍡";
+        } else if (low.includes("voucher") || low.includes("giảm")) {
+          reply = "Bạn có thể áp dụng mã 'BANMOI10' để được giảm 10% tại giỏ hàng nha! 🎟️";
+        }
+        this.appendChatMessage({
+          sender: "bot",
+          senderName: "Trợ Lý Đô Đô 🧋",
+          message: reply,
+          createdAt: new Date().toISOString()
+        });
+      }, 500);
+    }
   }
 };
 
