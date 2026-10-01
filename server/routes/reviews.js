@@ -10,6 +10,7 @@ router.delete('/:id', reviewController.deleteReview);
 
 // Đánh giá sản phẩm (Client)
 router.get('/product/:productId', reviewController.getProductReviews);
+router.get('/customer/:identifier', reviewController.getCustomerReviews);
 router.post('/', reviewController.createReview);
 router.put('/:id', reviewController.updateReview);
 

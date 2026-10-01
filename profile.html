@@ -116,11 +116,23 @@
 
     <!-- Tabs: Lịch sử đơn hàng, Ví voucher, Thông tin -->
     <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem;">
-      <!-- Left: Order History -->
-      <div class="card" style="padding: 1.75rem;">
-        <h4 style="margin-bottom: 1.25rem;">📜 Lịch Sử Hoá Đơn / Đơn Hàng Của Bạn</h4>
-        <div id="profile-orders-list" style="display: flex; flex-direction: column; gap: 1rem;">
-          <!-- Injected by JS -->
+      <!-- Left: Order History & My Reviews -->
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="card" style="padding: 1.75rem;">
+          <h4 style="margin-bottom: 1.25rem;">📜 Lịch Sử Hoá Đơn / Đơn Hàng Của Bạn</h4>
+          <div id="profile-orders-list" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <div class="card" style="padding: 1.75rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <h4 style="margin: 0;">⭐ Đánh Giá Của Bạn</h4>
+            <span class="text-xs text-muted" id="profile-reviews-count">0 đánh giá</span>
+          </div>
+          <div id="profile-reviews-list" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Injected by JS -->
+          </div>
         </div>
       </div>
 
@@ -204,7 +216,42 @@
         <div>© 2026 Trà Sữa Đô Đô. All rights reserved.</div>
       </div>
     </div>
-  </footer>
+  <!-- Modal Chỉnh Sửa Đánh Giá Của Khách Hàng (Liên Kết CSDL MySQL) -->
+  <div id="profile-edit-review-modal" class="modal-backdrop">
+    <div class="modal-container" style="max-width: 500px;">
+      <div class="modal-header">
+        <h4 class="modal-title">✏️ Chỉnh Sửa Đánh Giá</h4>
+        <button class="modal-close" data-close-modal="profile-edit-review-modal">✕</button>
+      </div>
+      <form id="profile-edit-review-form" onsubmit="submitProfileEditReview(event)">
+        <input type="hidden" id="prof-edit-review-id">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label text-xs font-bold">Số sao đánh giá *</label>
+            <select id="prof-edit-review-stars" class="form-control" required style="font-size: 1rem;">
+              <option value="5">⭐⭐⭐⭐⭐ (5 sao - Tuyệt vời)</option>
+              <option value="4">⭐⭐⭐⭐ (4 sao - Rất ngon)</option>
+              <option value="3">⭐⭐⭐ (3 sao - Tạm ổn)</option>
+              <option value="2">⭐⭐ (2 sao - Cần cải thiện)</option>
+              <option value="1">⭐ (1 sao - Thất vọng)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label text-xs font-bold">Họ và tên người đánh giá *</label>
+            <input type="text" id="prof-edit-review-name" class="form-control" required placeholder="Họ và tên...">
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label text-xs font-bold">Cảm nhận về thức uống *</label>
+            <textarea id="prof-edit-review-content" class="form-control" rows="4" required placeholder="Cập nhật cảm nhận..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal="profile-edit-review-modal">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-profile-review">💾 Lưu Cập Nhật ➔</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Scripts -->
   <script src="js/db/mock-data.js"></script>
@@ -344,6 +391,134 @@
           </div>
         `).join("");
       }
+
+      // Render Customer Reviews
+      loadCustomerReviews(user);
+    }
+
+    async function loadCustomerReviews(user) {
+      const container = document.getElementById("profile-reviews-list");
+      const countEl = document.getElementById("profile-reviews-count");
+      if (!container) return;
+
+      const apiBase = window.API_BASE || 'http://localhost:5000/api';
+      const identifier = user.username || user.phone || user.id || user.dbId || user.fullName;
+
+      let reviews = [];
+      try {
+        const res = await fetch(`${apiBase}/reviews/customer/${encodeURIComponent(identifier)}`);
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          reviews = json.data;
+        }
+      } catch (e) {}
+
+      // Fallback LocalStorage if offline or no DB reviews
+      if (reviews.length === 0) {
+        const localRevs = DB.getReviews().filter(r => 
+          (user.phone && r.customerPhone === user.phone) || 
+          (user.fullName && r.customerName && r.customerName.toLowerCase() === user.fullName.toLowerCase())
+        );
+        reviews = localRevs.map(r => ({
+          id: r.id,
+          ten_san_pham: r.productName || 'Trà Sữa Đô Đô',
+          so_sao: r.rating || 5,
+          noi_dung: r.comment || '',
+          phan_hoi_admin: r.adminReply || '',
+          ngay_tao: r.createdAt,
+          ten_khach_hang: r.customerName
+        }));
+      }
+
+      if (countEl) countEl.textContent = `${reviews.length} đánh giá`;
+
+      if (reviews.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: 0.9rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.35rem;">⭐</div>
+            Bạn chưa có đánh giá nào. Hãy thử thưởng thức thức uống và chia sẻ cảm nhận nhé!
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = reviews.map(r => `
+        <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; background-color: var(--bg-card-hover);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <span class="font-bold text-sm" style="color: var(--primary);">🧋 ${r.ten_san_pham || 'Sản phẩm'}</span>
+              <div style="color: #F4A261; font-weight: 800; font-size: 0.85rem; margin-top: 2px;">${'⭐'.repeat(r.so_sao || 5)}</div>
+            </div>
+            <button class="btn btn-sm btn-outline" onclick="openProfileEditReviewModal('${r.id}', ${r.so_sao || 5}, '${encodeURIComponent(r.ten_khach_hang || user.fullName || '')}', '${encodeURIComponent(r.noi_dung || '')}')" style="font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+              ✏️ Sửa Đánh Giá
+            </button>
+          </div>
+          <p style="font-size: 0.88rem; color: var(--text-main); margin: 0.4rem 0 0.25rem;">"${r.noi_dung}"</p>
+          ${r.phan_hoi_admin ? `
+            <div style="margin-top: 0.5rem; padding: 0.4rem 0.65rem; background: rgba(42, 157, 143, 0.08); border-left: 3px solid #2a9d8f; border-radius: var(--radius-sm); font-size: 0.82rem;">
+              <b style="color: #2a9d8f;">💬 Phản hồi từ Đô Đô:</b> ${r.phan_hoi_admin}
+            </div>
+          ` : ''}
+          <div class="text-xs text-muted" style="margin-top: 0.4rem;">Ngày: ${r.ngay_tao ? r.ngay_tao.split('T')[0] : '2026-02-20'}</div>
+        </div>
+      `).join("");
+    }
+
+    function openProfileEditReviewModal(reviewId, stars, nameEnc, contentEnc) {
+      document.getElementById("prof-edit-review-id").value = reviewId;
+      document.getElementById("prof-edit-review-stars").value = String(stars || 5);
+      document.getElementById("prof-edit-review-name").value = decodeURIComponent(nameEnc || '');
+      document.getElementById("prof-edit-review-content").value = decodeURIComponent(contentEnc || '');
+      Modal.open("profile-edit-review-modal");
+    }
+
+    async function submitProfileEditReview(e) {
+      e.preventDefault();
+      const reviewId = document.getElementById("prof-edit-review-id").value;
+      const stars = parseInt(document.getElementById("prof-edit-review-stars").value) || 5;
+      const name = document.getElementById("prof-edit-review-name").value.trim() || "Khách Hàng";
+      const content = document.getElementById("prof-edit-review-content").value.trim();
+      const btn = document.getElementById("btn-save-profile-review");
+      if (btn) btn.disabled = true;
+
+      const apiBase = window.API_BASE || 'http://localhost:5000/api';
+      try {
+        const res = await fetch(`${apiBase}/reviews/${encodeURIComponent(reviewId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            so_sao: stars,
+            noi_dung: content,
+            author_name: name,
+            ho_ten: name
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          Toast.success("🎉 Đã cập nhật đánh giá thành công!");
+        } else {
+          Toast.warning(json.message || "Không thể cập nhật đánh giá!");
+        }
+      } catch (err) {
+        console.warn("Lỗi cập nhật đánh giá:", err);
+      }
+
+      // Update LocalStorage cache
+      try {
+        const localRevs = DB.getReviews();
+        const idx = localRevs.findIndex(r => String(r.id) === String(reviewId));
+        if (idx >= 0) {
+          localRevs[idx].customerName = name;
+          localRevs[idx].rating = stars;
+          localRevs[idx].comment = content;
+          DB.set(STORAGE_KEYS.REVIEWS, localRevs);
+        }
+      } catch (err) {}
+
+      if (btn) btn.disabled = false;
+      Modal.close("profile-edit-review-modal");
+      const user = Auth.getCurrentUser();
+      if (user) loadCustomerReviews(user);
     }
 
     async function saveProfileInfo(e) {

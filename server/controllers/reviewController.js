@@ -59,10 +59,11 @@ exports.getProductReviews = async (req, res) => {
     const { productId } = req.params;
 
     const [rows] = await pool.query(
-      `SELECT r.id, r.so_sao, r.noi_dung, r.phan_hoi_admin, r.ngay_tao,
-              kh.ho_ten AS ten_khach_hang, kh.hang_thanh_vien
+      `SELECT r.id, r.khach_hang_id, r.san_pham_id, r.so_sao, r.noi_dung, r.phan_hoi_admin, r.ngay_tao,
+              kh.ho_ten AS ten_khach_hang, kh.hang_thanh_vien, tk.id AS tai_khoan_id, tk.ten_dang_nhap, tk.so_dien_thoai
        FROM REVIEWS r
        JOIN KHACH_HANG kh ON r.khach_hang_id = kh.id
+       LEFT JOIN TAI_KHOAN tk ON kh.tai_khoan_id = tk.id
        JOIN SAN_PHAM sp ON r.san_pham_id = sp.id
        WHERE (sp.ma_sku = ? OR sp.id = ?) AND r.trang_thai_hien_thi = TRUE
        ORDER BY r.ngay_tao DESC`,
@@ -77,6 +78,37 @@ exports.getProductReviews = async (req, res) => {
   } catch (error) {
     console.error('Error fetching product reviews:', error);
     res.status(500).json({ success: false, message: 'Lỗi máy chủ khi lấy đánh giá sản phẩm' });
+  }
+};
+
+// @desc    Lấy danh sách đánh giá của khách hàng (Profile)
+// @route   GET /api/reviews/customer/:identifier
+exports.getCustomerReviews = async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const isNum = /^\d+$/.test(identifier);
+    const numId = isNum ? parseInt(identifier) : -1;
+
+    const [rows] = await pool.query(
+      `SELECT r.id, r.khach_hang_id, r.san_pham_id, r.so_sao, r.noi_dung, r.phan_hoi_admin, r.ngay_tao,
+              kh.ho_ten AS ten_khach_hang, sp.ten_san_pham, sp.ma_sku, sp.hinh_anh_url, tk.ten_dang_nhap
+       FROM REVIEWS r
+       JOIN KHACH_HANG kh ON r.khach_hang_id = kh.id
+       LEFT JOIN TAI_KHOAN tk ON kh.tai_khoan_id = tk.id
+       JOIN SAN_PHAM sp ON r.san_pham_id = sp.id
+       WHERE kh.id = ? OR kh.tai_khoan_id = ? OR tk.id = ? OR tk.ten_dang_nhap = ? OR tk.so_dien_thoai = ? OR kh.ho_ten = ?
+       ORDER BY r.ngay_tao DESC`,
+      [numId, numId, numId, identifier, identifier, identifier]
+    );
+
+    res.json({
+      success: true,
+      count: rows.length,
+      data: rows
+    });
+  } catch (error) {
+    console.error('Error fetching customer reviews:', error);
+    res.status(500).json({ success: false, message: 'Lỗi máy chủ khi lấy danh sách đánh giá của khách hàng' });
   }
 };
 
@@ -301,7 +333,7 @@ exports.toggleReviewVisibility = async (req, res) => {
 exports.updateReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { so_sao, noi_dung, phan_hoi_admin, trang_thai_hien_thi } = req.body;
+    const { so_sao, noi_dung, phan_hoi_admin, trang_thai_hien_thi, author_name, ho_ten } = req.body;
 
     const [existing] = await pool.query(`SELECT * FROM REVIEWS WHERE id = ?`, [id]);
     if (existing.length === 0) {
@@ -314,6 +346,13 @@ exports.updateReview = async (req, res) => {
     let newVisibility = existing[0].trang_thai_hien_thi;
     if (trang_thai_hien_thi !== undefined) {
       newVisibility = (trang_thai_hien_thi === 1 || trang_thai_hien_thi === true || String(trang_thai_hien_thi) === '1' || String(trang_thai_hien_thi) === 'true') ? 1 : 0;
+    }
+
+    if (author_name || ho_ten) {
+      const newName = (author_name || ho_ten).trim();
+      if (newName) {
+        await pool.query('UPDATE KHACH_HANG SET ho_ten = ? WHERE id = ?', [newName, existing[0].khach_hang_id]);
+      }
     }
 
     await pool.query(
