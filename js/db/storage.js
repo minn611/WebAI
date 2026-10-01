@@ -146,7 +146,16 @@ const DB = {
   // Orders CRUD
   getOrders() { return this.get(STORAGE_KEYS.ORDERS, []); },
   getOrderById(id) {
-    return this.getOrders().find(o => o.id === id);
+    if (!id) return null;
+    const clean = String(id).trim().replace(/^#/, '');
+    return this.getOrders().find(o => 
+      o.id === id || 
+      o.orderId === id || 
+      String(o.id || '') === clean || 
+      String(o.orderId || '') === clean || 
+      String(o.dbId || '') === clean ||
+      String(o.id || '').toUpperCase() === clean.toUpperCase()
+    );
   },
   saveOrder(order) {
     const list = this.getOrders();

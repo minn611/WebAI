@@ -11,6 +11,8 @@ const OrderTracking = {
   },
 
   init() {
+    this.initRealtimeListener();
+
     const urlParams = new URLSearchParams(window.location.search);
     const orderId = urlParams.get("id");
 
@@ -46,6 +48,71 @@ const OrderTracking = {
     }
   },
 
+  initRealtimeListener() {
+    // 1. Lắng nghe liên kết cập nhật trực tiếp từ Nhân viên Quầy / Pha Chế
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        const bc = new BroadcastChannel("trasua_dodo_orders");
+        bc.onmessage = (e) => {
+          if (!e.data) return;
+          if (e.data.type === "ORDER_STATUS_UPDATED" && this.activeOrder) {
+            const updatedOrderId = String(e.data.orderId || '').replace(/^#/, '');
+            const currentOrderId = String(this.activeOrder.id || '').replace(/^#/, '');
+            if (updatedOrderId === currentOrderId) {
+              this.activeOrder.orderStatus = e.data.status;
+              this.renderOrderDetails(this.activeOrder);
+              Toast.info(`🔔 Trạng thái đơn hàng của bạn đã cập nhật: <b>${(e.data.status || '').toUpperCase()}</b>`);
+            }
+          } else if (e.data.type === "PAYMENT_STATUS_UPDATED" && this.activeOrder) {
+            const updatedOrderId = String(e.data.orderId || '').replace(/^#/, '');
+            const currentOrderId = String(this.activeOrder.id || '').replace(/^#/, '');
+            if (updatedOrderId === currentOrderId) {
+              this.activeOrder.paymentStatus = e.data.paymentStatus;
+              this.renderOrderDetails(this.activeOrder);
+              Toast.info(`💰 Trạng thái thanh toán: <b>${(e.data.paymentStatus || '').toUpperCase()}</b>`);
+            }
+          }
+        };
+      } catch (err) {}
+    }
+
+    // 2. Lắng nghe qua storage event (liên tab)
+    window.addEventListener("storage", (e) => {
+      if (e.key === "dodo_order_status_changed" && e.newValue && this.activeOrder) {
+        try {
+          const evt = JSON.parse(e.newValue);
+          const updatedOrderId = String(evt.orderId || '').replace(/^#/, '');
+          const currentOrderId = String(this.activeOrder.id || '').replace(/^#/, '');
+          if (updatedOrderId === currentOrderId) {
+            if (evt.status) this.activeOrder.orderStatus = evt.status;
+            if (evt.paymentStatus) this.activeOrder.paymentStatus = evt.paymentStatus;
+            this.renderOrderDetails(this.activeOrder);
+          }
+        } catch (err) {}
+      }
+    });
+
+    // 3. Polling đồng bộ trạng thái hoá đơn từ máy chủ mỗi 3 giây
+    setInterval(() => {
+      if (this.activeOrder && this.activeOrder.id) {
+        const orderId = String(this.activeOrder.id).replace(/^#/, '');
+        const apiBase = this.getApiBase();
+        fetch(`${apiBase}/orders/${encodeURIComponent(orderId)}`)
+          .then(r => r.json())
+          .then(resData => {
+            if (resData.success && (resData.order || resData.data)) {
+              const fresh = resData.order || resData.data;
+              if (fresh.orderStatus !== this.activeOrder.orderStatus || fresh.paymentStatus !== this.activeOrder.paymentStatus) {
+                this.activeOrder = { ...this.activeOrder, ...fresh };
+                this.renderOrderDetails(this.activeOrder);
+              }
+            }
+          })
+          .catch(() => {});
+      }
+    }, 3000);
+  },
+
   search() {
     const input = document.getElementById("tracking-search-input");
     if (!input) return;
@@ -60,17 +127,17 @@ const OrderTracking = {
 
   async lookupOrder(query) {
     let found = null;
-
-    const isPhone = /^[0-9]{9,11}$/.test(query.replace(/\s+/g, ''));
+    const cleanQuery = String(query || '').replace(/^#/, '').trim();
+    const isPhone = /^[0-9]{9,11}$/.test(cleanQuery.replace(/\s+/g, ''));
 
     // 1. Thử tra cứu trực tiếp thời gian thực từ Backend API Server (MySQL)
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 1800);
       const apiBase = this.getApiBase();
-      let endpoint = `${apiBase}/orders/${encodeURIComponent(query)}`;
+      let endpoint = `${apiBase}/orders/${encodeURIComponent(cleanQuery)}`;
       if (isPhone) {
-        endpoint = `${apiBase}/orders/customer/${encodeURIComponent(query)}`;
+        endpoint = `${apiBase}/orders/customer/${encodeURIComponent(cleanQuery)}`;
       }
       const res = await fetch(endpoint, { signal: controller.signal });
       clearTimeout(timeoutId);
@@ -91,13 +158,16 @@ const OrderTracking = {
 
     // 2. Fallback sang LocalStorage nếu không có từ API
     if (!found) {
-      const orders = DB.getOrders();
-      found = orders.find(o => 
-        (o.id && o.id.toUpperCase() === query.toUpperCase()) || 
-        (o.orderId && o.orderId.toUpperCase() === query.toUpperCase()) ||
-        (o.customerPhone && o.customerPhone.trim() === query.trim()) ||
-        (o.phone && o.phone.trim() === query.trim())
-      );
+      found = DB.getOrderById(cleanQuery);
+      if (!found) {
+        const orders = DB.getOrders();
+        found = orders.find(o => 
+          (o.id && o.id.toUpperCase() === cleanQuery.toUpperCase()) || 
+          (o.orderId && o.orderId.toUpperCase() === cleanQuery.toUpperCase()) ||
+          (o.customerPhone && o.customerPhone.trim() === cleanQuery) ||
+          (o.phone && o.phone.trim() === cleanQuery)
+        );
+      }
     }
 
     if (!found) {

@@ -21,17 +21,76 @@ const OrderMgmt = {
     this.renderOrdersTable();
     this.updateStatusCounts();
     this.initSearch();
+    this.initRealtimeSync();
 
     if (orderId) {
       setTimeout(() => {
         this.openOrderDetail(orderId);
-      }, 200);
+      }, 50);
     }
     if (urlParams.get("action") === "pos") {
       setTimeout(() => {
         this.openCreateOrderModal();
       }, 200);
     }
+
+    // Tự động kiểm tra và nhận hoá đơn mới từ khách hàng mỗi 4 giây
+    if (!this.pollInterval) {
+      this.pollInterval = setInterval(async () => {
+        const hasChange = await this.syncOrdersFromAPI();
+        if (hasChange) {
+          this.renderOrdersTable();
+          this.updateStatusCounts();
+        }
+      }, 4000);
+    }
+  },
+
+  initRealtimeSync() {
+    // 1. Lắng nghe BroadcastChannel từ khách hàng đặt hàng hoặc cập nhật trạng thái
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        this.broadcastChannel = new BroadcastChannel("trasua_dodo_orders");
+        this.broadcastChannel.onmessage = async (e) => {
+          if (!e.data) return;
+          if (e.data.type === "NEW_ORDER") {
+            console.log("[OrderMgmt] Nhận hoá đơn mới từ khách hàng:", e.data.orderId);
+            if (typeof AdminNotifications !== "undefined" && typeof AdminNotifications.playNotificationSound === "function") {
+              AdminNotifications.playNotificationSound();
+            }
+            Toast.success(`🔔 Khách hàng vừa đặt hoá đơn mới: <b>#${e.data.orderId}</b>!`);
+            await this.syncOrdersFromAPI();
+            this.renderOrdersTable();
+            this.updateStatusCounts();
+          } else if (e.data.type === "ORDER_STATUS_UPDATED" || e.data.type === "ORDER_DELETED") {
+            await this.syncOrdersFromAPI();
+            this.renderOrdersTable();
+            this.updateStatusCounts();
+          }
+        };
+      } catch (err) {}
+    }
+
+    // 2. Lắng nghe storage event liên tab trình duyệt
+    window.addEventListener("storage", async (e) => {
+      if (e.key === "dodo_latest_order_event" && e.newValue) {
+        try {
+          const evt = JSON.parse(e.newValue);
+          if (evt.type === "NEW_ORDER") {
+            if (typeof AdminNotifications !== "undefined" && typeof AdminNotifications.playNotificationSound === "function") {
+              AdminNotifications.playNotificationSound();
+            }
+            Toast.success(`🔔 Hoá đơn mới từ khách: <b>#${evt.orderId}</b>!`);
+            await this.syncOrdersFromAPI();
+            this.renderOrdersTable();
+            this.updateStatusCounts();
+          }
+        } catch (err) {}
+      } else if (e.key === "dodo_order_status_changed" || e.key === "teajoy_orders") {
+        this.renderOrdersTable();
+        this.updateStatusCounts();
+      }
+    });
   },
 
   async syncOrdersFromAPI() {
@@ -76,11 +135,15 @@ const OrderMgmt = {
           };
         });
         if (normalizedList.length > 0) {
+          const currentCount = DB.getOrders().length;
           DB.saveOrders(normalizedList);
+          return currentCount !== normalizedList.length;
         }
       }
+      return false;
     } catch (err) {
       console.warn("Backend offline or unreachable, using local database cache.");
+      return false;
     }
   },
 
@@ -177,7 +240,9 @@ const OrderMgmt = {
 
       return `
         <tr>
-          <td class="font-bold text-primary">#${o.id}</td>
+          <td class="font-bold text-primary">
+            <a href="javascript:void(0)" onclick="OrderMgmt.openOrderDetail('${o.id}')" style="color: var(--primary); text-decoration: underline; cursor: pointer; font-weight: 700;" title="Nhấp để xem chi tiết hoá đơn">#${o.id}</a>
+          </td>
           <td class="text-xs text-muted">${Formatters.dateTime(o.createdAt)}</td>
           <td>
             <div class="font-bold">${o.customerName}</div>
@@ -205,6 +270,7 @@ const OrderMgmt = {
           <td style="text-align: center;">
             <div class="table-actions" style="justify-content: center; gap: 0.35rem;">
               <button class="action-icon-btn btn-view" onclick="OrderMgmt.openOrderDetail('${o.id}')" title="Xem chi tiết đơn & Thao tác">👁️</button>
+              <a href="../order-tracking.html?id=${encodeURIComponent(o.id)}" target="_blank" class="action-icon-btn" title="🔗 Mở liên kết hoá đơn khách hàng (Tra cứu online)" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">🔗</a>
               <button class="action-icon-btn btn-edit" onclick="OrderMgmt.openEditOrderModal('${o.id}')" title="Chỉnh sửa thông tin đơn">✏️</button>
               <button class="action-icon-btn btn-print" onclick="OrderMgmt.printReceipt('${o.id}')" title="In Hóa Đơn 80mm">🖨️</button>
               <button class="action-icon-btn btn-del" onclick="OrderMgmt.deleteOrder('${o.id}')" title="Xóa đơn hàng">🗑️</button>
@@ -213,6 +279,20 @@ const OrderMgmt = {
         </tr>
       `;
     }).join("");
+  },
+
+  copyInvoiceLink(orderId) {
+    const cleanId = String(orderId || '').replace(/^#/, '');
+    const url = `${window.location.origin}/order-tracking.html?id=${encodeURIComponent(cleanId)}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        Toast.success(`📋 Đã sao chép liên kết hoá đơn <b>#${cleanId}</b>!`);
+      }).catch(() => {
+        prompt("Sao chép liên kết hoá đơn gửi cho khách:", url);
+      });
+    } else {
+      prompt("Sao chép liên kết hoá đơn gửi cho khách:", url);
+    }
   },
 
   openOrderDetail(orderId) {
@@ -225,6 +305,20 @@ const OrderMgmt = {
 
     const bodyEl = document.getElementById("detail-modal-body");
     bodyEl.innerHTML = `
+      <!-- Link Tra Cứu Hoá Đơn Khách Hàng -->
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 8px; padding: 10px 14px; margin-bottom: 1.25rem; flex-wrap: wrap;">
+        <div style="font-size: 0.85rem; color: #1E40AF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: calc(100% - 190px);">
+          🔗 <b>Liên kết hoá đơn khách:</b> 
+          <a href="../order-tracking.html?id=${encodeURIComponent(order.id)}" target="_blank" style="color: #2563EB; text-decoration: underline; font-weight: 600;" title="Mở trang tra cứu đơn hàng của khách">
+            order-tracking.html?id=${order.id}
+          </a>
+        </div>
+        <div style="display: flex; gap: 0.35rem; flex-shrink: 0;">
+          <button type="button" class="btn btn-sm btn-outline" onclick="OrderMgmt.copyInvoiceLink('${order.id}')" style="padding: 3px 8px; font-size: 0.75rem;" title="Sao chép liên kết hoá đơn gửi khách">📋 Sao chép</button>
+          <a href="../order-tracking.html?id=${encodeURIComponent(order.id)}" target="_blank" class="btn btn-sm btn-primary" style="padding: 3px 8px; font-size: 0.75rem; text-decoration: none;">Mở link ➔</a>
+        </div>
+      </div>
+
       <!-- Status Bar -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; background-color: var(--bg-subtle); padding: 1rem; border-radius: var(--radius-md);">
         <div>
@@ -288,6 +382,7 @@ const OrderMgmt = {
     // Render action buttons based on status
     const footerEl = document.getElementById("detail-modal-footer");
     footerEl.innerHTML = `
+      <a href="../order-tracking.html?id=${encodeURIComponent(order.id)}" target="_blank" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: none;">🔗 Link Khách Hàng</a>
       <button class="btn btn-outline" onclick="OrderMgmt.printReceipt('${order.id}')">🖨️ In Hóa Đơn (POS)</button>
       ${order.paymentStatus !== 'paid' ? `
         <button class="btn" style="background: #10B981; color: #fff; font-weight: 600;" onclick="OrderMgmt.confirmPayment('${order.id}')">💰 Đã Nhận Tiền</button>
@@ -325,6 +420,20 @@ const OrderMgmt = {
       console.warn("Backend offline, status saved locally");
     }
 
+    // Bắn thông báo realtime sang trang Khách hàng (order-tracking.html)
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        const bc = new BroadcastChannel("trasua_dodo_orders");
+        bc.postMessage({ type: "ORDER_STATUS_UPDATED", orderId, status: newStatus });
+        bc.close();
+      }
+      localStorage.setItem("dodo_order_status_changed", JSON.stringify({
+        orderId,
+        status: newStatus,
+        timestamp: Date.now()
+      }));
+    } catch (e) {}
+
     Toast.success(`Đã cập nhật hoá đơn <b>#${orderId}</b> sang: <b>${newStatus.toUpperCase()}</b>`);
     if (typeof AuditLogger !== "undefined") {
       AuditLogger.notifyServer(
@@ -355,6 +464,20 @@ const OrderMgmt = {
         body: JSON.stringify({ paymentStatus: newPaymentStatus })
       });
     } catch (err) {}
+
+    // Bắn thông báo cập nhật thanh toán liên kết sang khách hàng
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        const bc = new BroadcastChannel("trasua_dodo_orders");
+        bc.postMessage({ type: "PAYMENT_STATUS_UPDATED", orderId, paymentStatus: newPaymentStatus });
+        bc.close();
+      }
+      localStorage.setItem("dodo_order_status_changed", JSON.stringify({
+        orderId,
+        paymentStatus: newPaymentStatus,
+        timestamp: Date.now()
+      }));
+    } catch (e) {}
 
     Toast.success(`Đã cập nhật trạng thái thanh toán đơn #${orderId}: <b>${newPaymentStatus.toUpperCase()}</b>`);
     this.renderOrdersTable();

@@ -455,6 +455,21 @@ const Checkout = {
 
     DB.saveOrder(newOrder);
 
+    // Phát thông báo Real-time sang trang Quản lý Hoá đơn bên Nhân viên (Đồng bộ tức thời không cần F5)
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        const bc = new BroadcastChannel("trasua_dodo_orders");
+        bc.postMessage({ type: "NEW_ORDER", order: newOrder, orderId: orderId });
+        bc.close();
+      }
+      localStorage.setItem("dodo_latest_order_event", JSON.stringify({
+        type: "NEW_ORDER",
+        orderId: orderId,
+        order: newOrder,
+        timestamp: Date.now()
+      }));
+    } catch (err) {}
+
     // Gửi thông báo chuyển khoản nếu chọn phương thức VietQR
     if (this.paymentMethod === "vietqr") {
       this.notifyTransferCompleted(true);

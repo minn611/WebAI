@@ -221,7 +221,8 @@ const orderController = {
   // GET /api/orders/:id -> Tra cứu 1 đơn hàng theo mã đơn, dbId hoặc số điện thoại
   async getById(req, res) {
     try {
-      const searchKey = String(req.params.id || '').trim();
+      const rawKey = String(req.params.id || '').trim();
+      const searchKey = rawKey.replace(/^#/, '').trim();
       const isNum = /^\d+$/.test(searchKey);
       const numId = isNum ? parseInt(searchKey) : -1;
 
@@ -312,7 +313,7 @@ const orderController = {
   // PUT /api/orders/:id -> Chỉnh sửa toàn diện thông tin đơn hàng
   async update(req, res) {
     try {
-      const orderId = String(req.params.id || '').trim();
+      const orderId = String(req.params.id || '').replace(/^#/, '').trim();
       const isNum = /^\d+$/.test(orderId);
       const numId = isNum ? parseInt(orderId) : -1;
       const { customerName, customerPhone, customerAddress, note, orderStatus, paymentStatus } = req.body;
@@ -351,7 +352,7 @@ const orderController = {
   // PUT /api/orders/:id/status -> Update status
   async updateStatus(req, res) {
     try {
-      const orderId = String(req.params.id || '').trim();
+      const orderId = String(req.params.id || '').replace(/^#/, '').trim();
       const isNum = /^\d+$/.test(orderId);
       const numId = isNum ? parseInt(orderId) : -1;
       const { status: inputStatus, orderStatus, paymentStatus } = req.body;
@@ -413,7 +414,7 @@ const orderController = {
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
-      const orderId = String(req.params.id || '').trim();
+      const orderId = String(req.params.id || '').replace(/^#/, '').trim();
       const isNum = /^\d+$/.test(orderId);
       const numId = isNum ? parseInt(orderId) : -1;
 
