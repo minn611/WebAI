@@ -52,6 +52,7 @@ const authController = {
       const user = {
         id: `USR-${taiKhoanId}`,
         dbId: taiKhoanId,
+        customerId: custResult.insertId,
         username: username.trim(),
         fullName: fullName.trim() || username.trim(),
         role: 'customer',
@@ -95,8 +96,8 @@ const authController = {
 
       // Query TAI_KHOAN joined with KHACH_HANG and NHAN_VIEN
       const [users] = await pool.query(
-        `SELECT tk.*, kh.ho_ten as kh_ho_ten, kh.diem_tich_luy, kh.hang_thanh_vien, 
-                nv.ho_ten as nv_ho_ten, nv.chuc_vu as nv_chuc_vu, nv.ma_nhan_vien as nv_ma_nv 
+        `SELECT tk.*, kh.id as kh_id, kh.ho_ten as kh_ho_ten, kh.diem_tich_luy, kh.hang_thanh_vien, 
+                nv.id as nv_id, nv.ho_ten as nv_ho_ten, nv.chuc_vu as nv_chuc_vu, nv.ma_nhan_vien as nv_ma_nv 
          FROM TAI_KHOAN tk
          LEFT JOIN KHACH_HANG kh ON tk.id = kh.tai_khoan_id
          LEFT JOIN NHAN_VIEN nv ON tk.id = nv.tai_khoan_id
@@ -139,9 +140,20 @@ const authController = {
       const role = roleMap[dbUser.vai_tro] || 'customer';
       const fullName = dbUser.nv_ho_ten || dbUser.kh_ho_ten || dbUser.ten_dang_nhap;
 
+      let customerId = dbUser.kh_id;
+      if (!customerId && (dbUser.vai_tro === 'khach_hang' || role === 'customer')) {
+        const [newCust] = await pool.query(
+          `INSERT INTO KHACH_HANG (tai_khoan_id, ho_ten, diem_tich_luy, hang_thanh_vien)
+           VALUES (?, ?, 0, 'dong')`,
+          [dbUser.id, fullName || dbUser.ten_dang_nhap]
+        );
+        customerId = newCust.insertId;
+      }
+
       const user = {
         id: dbUser.nv_ma_nv || `USR-${dbUser.id}`,
         dbId: dbUser.id,
+        customerId: customerId || null,
         username: dbUser.ten_dang_nhap,
         fullName,
         role,
@@ -181,8 +193,8 @@ const authController = {
       if (!userId) return res.status(401).json({ success: false, message: 'Chưa đăng nhập' });
 
       const [users] = await pool.query(
-        `SELECT tk.*, kh.ho_ten as kh_ho_ten, kh.diem_tich_luy, kh.hang_thanh_vien, 
-                nv.ho_ten as nv_ho_ten, nv.chuc_vu as nv_chuc_vu, nv.ma_nhan_vien as nv_ma_nv 
+        `SELECT tk.*, kh.id as kh_id, kh.ho_ten as kh_ho_ten, kh.diem_tich_luy, kh.hang_thanh_vien, 
+                nv.id as nv_id, nv.ho_ten as nv_ho_ten, nv.chuc_vu as nv_chuc_vu, nv.ma_nhan_vien as nv_ma_nv 
          FROM TAI_KHOAN tk
          LEFT JOIN KHACH_HANG kh ON tk.id = kh.tai_khoan_id
          LEFT JOIN NHAN_VIEN nv ON tk.id = nv.tai_khoan_id
@@ -196,9 +208,20 @@ const authController = {
       const roleMap = { 'admin': 'admin', 'nhan_vien': 'staff', 'khach_hang': 'customer' };
       const role = roleMap[dbUser.vai_tro] || 'customer';
 
+      let customerId = dbUser.kh_id;
+      if (!customerId && (dbUser.vai_tro === 'khach_hang' || role === 'customer')) {
+        const [newCust] = await pool.query(
+          `INSERT INTO KHACH_HANG (tai_khoan_id, ho_ten, diem_tich_luy, hang_thanh_vien)
+           VALUES (?, ?, 0, 'dong')`,
+          [dbUser.id, dbUser.nv_ho_ten || dbUser.kh_ho_ten || dbUser.ten_dang_nhap]
+        );
+        customerId = newCust.insertId;
+      }
+
       const user = {
         id: dbUser.nv_ma_nv || `USR-${dbUser.id}`,
         dbId: dbUser.id,
+        customerId: customerId || null,
         username: dbUser.ten_dang_nhap,
         fullName: dbUser.nv_ho_ten || dbUser.kh_ho_ten || dbUser.ten_dang_nhap,
         role,

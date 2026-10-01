@@ -363,17 +363,17 @@
           }
         } catch (err) {
           console.warn("Lỗi gọi API /api/staff, dùng dữ liệu fallback:", err);
-          this.staffList = DB.getUsers().filter(u => u.role === "admin" || u.role === "staff").map(u => ({
+          this.staffList = DB.getUsers().filter(u => u.role === "admin" || u.role === "staff" || u.role === "nhan_vien" || u.vai_tro === "nhan_vien").map(u => ({
             id: u.id,
-            ma_nhan_vien: u.id,
-            ho_ten: u.fullName,
-            ten_dang_nhap: u.username,
-            so_dien_thoai: u.phone,
-            chuc_vu: u.positionTitle || u.position || "Nhân viên",
-            vai_tro: u.role,
-            gioi_tinh: u.gender || u.gioi_tinh || "nam",
-            dia_chi: u.address || u.dia_chi || "",
-            trang_thai_tai_khoan: u.status === "locked" ? "tam_khoa" : "hoat_dong"
+            ma_nhan_vien: u.ma_nhan_vien || u.id,
+            ho_ten: u.ho_ten || u.fullName,
+            ten_dang_nhap: u.ten_dang_nhap || u.username,
+            so_dien_thoai: u.so_dien_thoai || u.phone,
+            chuc_vu: u.chuc_vu || u.positionTitle || u.position || "Nhân viên",
+            vai_tro: u.vai_tro || u.role,
+            gioi_tinh: u.gioi_tinh || u.gender || "nam",
+            dia_chi: u.dia_chi || u.address || "",
+            trang_thai_tai_khoan: (u.trang_thai_tai_khoan === "tam_khoa" || u.status === "locked") ? "tam_khoa" : "hoat_dong"
           }));
         }
 
@@ -519,6 +519,7 @@
         };
 
         const apiBase = (typeof window !== "undefined" && window.API_BASE) || "http://localhost:5000/api";
+        let apiSucceeded = false;
         try {
           let res;
           if (staffId) {
@@ -536,7 +537,11 @@
           }
           const json = await res.json().catch(() => ({}));
           if (res.ok && json.success) {
-            Toast.success(staffId ? `Đã cập nhật: <b>${name}</b> (${positionTitle})` : `Đã thêm nhân viên mới: <b>${name}</b>`);
+            apiSucceeded = true;
+            Toast.success(staffId ? `Đã cập nhật: <b>${name}</b>` : `Đã thêm nhân viên mới: <b>${name}</b>`);
+          } else if (json.message) {
+            Toast.error(json.message);
+            return;
           }
         } catch (err) {
           console.warn("Lỗi kết nối máy chủ, đồng bộ LocalStorage:", err);
@@ -545,30 +550,68 @@
         // Đồng bộ LocalStorage
         let users = DB.getUsers();
         if (staffId) {
-          const idx = users.findIndex(u => u.id === staffId || u.username === u);
+          const idx = users.findIndex(item => String(item.id) === String(staffId) || item.username === u || item.ten_dang_nhap === u);
           if (idx >= 0) {
-            users[idx] = { ...users[idx], fullName: name, phone, positionTitle, role, gender, address, gioi_tinh: gender, dia_chi: address };
+            users[idx] = { 
+              ...users[idx], 
+              fullName: name, 
+              ho_ten: name,
+              username: u, 
+              ten_dang_nhap: u, 
+              phone, 
+              so_dien_thoai: phone,
+              positionTitle, 
+              chuc_vu: positionTitle,
+              role: (role === "admin" ? "admin" : "staff"), 
+              vai_tro: role,
+              gender, 
+              gioi_tinh: gender, 
+              address, 
+              dia_chi: address 
+            };
             if (p) users[idx].password = p;
           }
         } else {
           users.push({
             id: `STAFF-${Date.now().toString().slice(-4)}`,
             fullName: name,
+            ho_ten: name,
             username: u,
+            ten_dang_nhap: u,
             password: p || "123456",
             phone,
+            so_dien_thoai: phone,
             positionTitle,
+            chuc_vu: positionTitle,
             position: positionTitle.toLowerCase().includes("pha chế") ? "pha_che" : "thu_ngan",
-            role,
+            role: (role === "admin" ? "admin" : "staff"),
+            vai_tro: role,
             gender,
-            address,
             gioi_tinh: gender,
+            address,
             dia_chi: address,
             status: "active"
           });
         }
         DB.set(STORAGE_KEYS.USERS, users);
-        Toast.success(staffId ? `Đã cập nhật: <b>${name}</b>` : `Đã thêm nhân viên mới: <b>${name}</b>`);
+
+        // Cập nhật session currentUser nếu là cùng tài khoản
+        const currentUser = DB.getCurrentUser();
+        if (currentUser && (String(currentUser.id) === String(staffId) || currentUser.username === u || currentUser.ten_dang_nhap === u)) {
+          DB.setCurrentUser({
+            ...currentUser,
+            fullName: name,
+            ho_ten: name,
+            username: u,
+            ten_dang_nhap: u,
+            phone,
+            so_dien_thoai: phone
+          });
+        }
+
+        if (!apiSucceeded) {
+          Toast.success(staffId ? `Đã cập nhật (offline): <b>${name}</b>` : `Đã thêm nhân viên mới (offline): <b>${name}</b>`);
+        }
 
         Modal.close("staff-modal");
         await this.renderTable();

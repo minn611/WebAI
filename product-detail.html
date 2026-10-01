@@ -379,8 +379,12 @@
     function openAddReviewModal() {
       const user = (typeof Auth !== 'undefined' && Auth.getCurrentUser) ? Auth.getCurrentUser() : null;
       const nameInput = document.getElementById("review-author-name");
-      if (nameInput && user && user.fullName) {
-        nameInput.value = user.fullName;
+      if (nameInput) {
+        if (user && (user.fullName || user.username)) {
+          nameInput.value = user.fullName || user.username;
+        } else {
+          nameInput.value = "";
+        }
       }
       Modal.open("add-review-modal");
     }
@@ -403,6 +407,11 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             khach_hang_id: (user && user.customerId) || null,
+            tai_khoan_id: (user && (user.dbId || user.tai_khoan_id)) || null,
+            username: (user && (user.username || user.ten_dang_nhap)) || null,
+            author_name: authorName,
+            ho_ten: authorName,
+            phone: (user && (user.phone || user.so_dien_thoai)) || null,
             san_pham_id: prodId,
             so_sao: stars,
             noi_dung: content

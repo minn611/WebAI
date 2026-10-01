@@ -84,15 +84,124 @@ exports.getProductReviews = async (req, res) => {
 // @route   POST /api/reviews
 exports.createReview = async (req, res) => {
   try {
-    const { khach_hang_id, san_pham_id, hoa_don_id, don_hang_id, so_sao, noi_dung } = req.body;
+    const { 
+      khach_hang_id, 
+      tai_khoan_id, 
+      user_id, 
+      username, 
+      ten_dang_nhap, 
+      author_name, 
+      ho_ten, 
+      phone, 
+      san_pham_id, 
+      hoa_don_id, 
+      don_hang_id, 
+      so_sao, 
+      noi_dung 
+    } = req.body;
     const targetInvoiceId = hoa_don_id || don_hang_id || null;
 
     if (!so_sao) {
       return res.status(400).json({ success: false, message: 'Vui lòng cung cấp số sao đánh giá!' });
     }
 
-    // Nếu không có khach_hang_id (khách vãng lai), gán mặc định khách 1
-    const targetCustId = khach_hang_id || 1;
+    let targetCustId = null;
+
+    // 1. Kiểm tra theo khach_hang_id
+    if (khach_hang_id && !isNaN(khach_hang_id)) {
+      const [custRows] = await pool.query('SELECT id, ho_ten FROM KHACH_HANG WHERE id = ?', [khach_hang_id]);
+      if (custRows.length > 0) {
+        targetCustId = custRows[0].id;
+        const newName = (author_name || ho_ten || '').trim();
+        if (newName && custRows[0].ho_ten !== newName) {
+          await pool.query('UPDATE KHACH_HANG SET ho_ten = ? WHERE id = ?', [newName, targetCustId]);
+        }
+      }
+    }
+
+    // 2. Tìm theo tai_khoan_id hoặc user_id
+    const targetAccId = tai_khoan_id || user_id;
+    if (!targetCustId && targetAccId && !isNaN(targetAccId)) {
+      const [custRows] = await pool.query('SELECT id, ho_ten FROM KHACH_HANG WHERE tai_khoan_id = ?', [targetAccId]);
+      if (custRows.length > 0) {
+        targetCustId = custRows[0].id;
+        const newName = (author_name || ho_ten || '').trim();
+        if (newName && custRows[0].ho_ten !== newName) {
+          await pool.query('UPDATE KHACH_HANG SET ho_ten = ? WHERE id = ?', [newName, targetCustId]);
+        }
+      } else {
+        const [accRows] = await pool.query('SELECT id, ten_dang_nhap FROM TAI_KHOAN WHERE id = ?', [targetAccId]);
+        if (accRows.length > 0) {
+          const newName = (author_name || ho_ten || accRows[0].ten_dang_nhap).trim();
+          const [ins] = await pool.query(
+            `INSERT INTO KHACH_HANG (tai_khoan_id, ho_ten, diem_tich_luy, hang_thanh_vien)
+             VALUES (?, ?, 0, 'dong')`,
+            [accRows[0].id, newName]
+          );
+          targetCustId = ins.insertId;
+        }
+      }
+    }
+
+    // 3. Tìm theo username hoặc ten_dang_nhap
+    const userLookup = (username || ten_dang_nhap || '').trim();
+    if (!targetCustId && userLookup) {
+      const [accRows] = await pool.query(
+        `SELECT tk.id, kh.id AS kh_id, kh.ho_ten
+         FROM TAI_KHOAN tk
+         LEFT JOIN KHACH_HANG kh ON tk.id = kh.tai_khoan_id
+         WHERE tk.ten_dang_nhap = ? OR tk.so_dien_thoai = ?`,
+        [userLookup, userLookup]
+      );
+      if (accRows.length > 0) {
+        if (accRows[0].kh_id) {
+          targetCustId = accRows[0].kh_id;
+          const newName = (author_name || ho_ten || '').trim();
+          if (newName && accRows[0].ho_ten !== newName) {
+            await pool.query('UPDATE KHACH_HANG SET ho_ten = ? WHERE id = ?', [newName, targetCustId]);
+          }
+        } else {
+          const newName = (author_name || ho_ten || userLookup).trim();
+          const [ins] = await pool.query(
+            `INSERT INTO KHACH_HANG (tai_khoan_id, ho_ten, diem_tich_luy, hang_thanh_vien)
+             VALUES (?, ?, 0, 'dong')`,
+            [accRows[0].id, newName]
+          );
+          targetCustId = ins.insertId;
+        }
+      }
+    }
+
+    // 4. Nếu vẫn chưa có (khách vãng lai), thử tìm hoặc tạo theo author_name
+    if (!targetCustId) {
+      const inputName = (author_name || ho_ten || '').trim();
+      if (inputName) {
+        const [matchRows] = await pool.query('SELECT id FROM KHACH_HANG WHERE ho_ten = ? LIMIT 1', [inputName]);
+        if (matchRows.length > 0) {
+          targetCustId = matchRows[0].id;
+        } else {
+          try {
+            const guestPhone = (phone || `09${Date.now().toString().slice(-8)}`).trim();
+            const guestUsername = `guest_${Date.now()}`;
+            const [accRes] = await pool.query(
+              `INSERT INTO TAI_KHOAN (ten_dang_nhap, mat_khau_hash, so_dien_thoai, vai_tro, trang_thai)
+               VALUES (?, 'guest_pass_no_login', ?, 'khach_hang', 'hoat_dong')`,
+              [guestUsername, guestPhone]
+            );
+            const [khRes] = await pool.query(
+              `INSERT INTO KHACH_HANG (tai_khoan_id, ho_ten, diem_tich_luy, hang_thanh_vien)
+               VALUES (?, ?, 0, 'dong')`,
+              [accRes.insertId, inputName]
+            );
+            targetCustId = khRes.insertId;
+          } catch (e) {
+            targetCustId = 1;
+          }
+        }
+      } else {
+        targetCustId = 1;
+      }
+    }
 
     // Tìm id thật của sản phẩm nếu truyền sku (e.g. TS-01)
     let finalProdId = san_pham_id;

@@ -200,6 +200,7 @@ exports.updateStaff = async (req, res) => {
 
     const {
       ho_ten,
+      ten_dang_nhap,
       chuc_vu,
       so_dien_thoai,
       email,
@@ -211,13 +212,40 @@ exports.updateStaff = async (req, res) => {
       trang_thai_lam_viec
     } = req.body;
 
+    const cleanUsername = ten_dang_nhap !== undefined ? ten_dang_nhap.toString().trim() : null;
+    if (cleanUsername) {
+      const [duplicateUsername] = await connection.query(
+        `SELECT id FROM TAI_KHOAN WHERE ten_dang_nhap = ? AND id != ?`,
+        [cleanUsername, tai_khoan_id]
+      );
+      if (duplicateUsername.length > 0) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Tên đăng nhập này đã được sử dụng bởi tài khoản khác!'
+        });
+      }
+    }
+
+    let cleanPhone = null;
     if (so_dien_thoai) {
-      const cleanPhone = so_dien_thoai.toString().trim().replace(/\s+/g, '');
+      cleanPhone = so_dien_thoai.toString().trim().replace(/\s+/g, '');
       if (!/^(0|\+84)(3|5|7|8|9)[0-9]{8}$/.test(cleanPhone)) {
         await connection.rollback();
         return res.status(400).json({
           success: false,
           message: 'Số điện thoại không hợp lệ! Vui lòng nhập số điện thoại Việt Nam gồm 10 số (bắt đầu bằng 03, 05, 07, 08, 09).'
+        });
+      }
+      const [duplicatePhone] = await connection.query(
+        `SELECT id FROM TAI_KHOAN WHERE so_dien_thoai = ? AND id != ?`,
+        [cleanPhone, tai_khoan_id]
+      );
+      if (duplicatePhone.length > 0) {
+        await connection.rollback();
+        return res.status(400).json({
+          success: false,
+          message: 'Số điện thoại này đã được sử dụng bởi tài khoản khác!'
         });
       }
     }
@@ -236,26 +264,29 @@ exports.updateStaff = async (req, res) => {
     );
 
     // Cập nhật TAI_KHOAN
+    const phoneToUpdate = cleanPhone || so_dien_thoai;
     if (mat_khau) {
       const salt = await bcrypt.genSalt(10);
       const hash = await bcrypt.hash(mat_khau, salt);
       await connection.query(
         `UPDATE TAI_KHOAN 
-         SET so_dien_thoai = COALESCE(?, so_dien_thoai),
+         SET ten_dang_nhap = COALESCE(?, ten_dang_nhap),
+             so_dien_thoai = COALESCE(?, so_dien_thoai),
              email = COALESCE(?, email),
              vai_tro = COALESCE(?, vai_tro),
              mat_khau_hash = ?
          WHERE id = ?`,
-        [so_dien_thoai, email, vai_tro, hash, tai_khoan_id]
+        [cleanUsername, phoneToUpdate, email, vai_tro, hash, tai_khoan_id]
       );
     } else {
       await connection.query(
         `UPDATE TAI_KHOAN 
-         SET so_dien_thoai = COALESCE(?, so_dien_thoai),
+         SET ten_dang_nhap = COALESCE(?, ten_dang_nhap),
+             so_dien_thoai = COALESCE(?, so_dien_thoai),
              email = COALESCE(?, email),
              vai_tro = COALESCE(?, vai_tro)
          WHERE id = ?`,
-        [so_dien_thoai, email, vai_tro, tai_khoan_id]
+        [cleanUsername, phoneToUpdate, email, vai_tro, tai_khoan_id]
       );
     }
 
