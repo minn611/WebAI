@@ -76,6 +76,10 @@ const INITIAL_USERS = [
     positionTitle: "Quản Lý Cửa Hàng",
     email: "admin@dodo.vn",
     phone: "0901234567",
+    gender: "nam",
+    gioi_tinh: "nam",
+    address: "Số 25 Hoàng Cầu, Đống Đa, Hà Nội",
+    dia_chi: "Số 25 Hoàng Cầu, Đống Đa, Hà Nội",
     status: "active",
     createdAt: "2026-01-01"
   },
@@ -89,6 +93,10 @@ const INITIAL_USERS = [
     positionTitle: "Thu Ngân & Bán Hàng",
     email: "thungan@dodo.vn",
     phone: "0912345678",
+    gender: "nu",
+    gioi_tinh: "nu",
+    address: "Số 48 Cầu Giấy, Hà Nội",
+    dia_chi: "Số 48 Cầu Giấy, Hà Nội",
     status: "active",
     createdAt: "2026-02-15"
   },
@@ -102,6 +110,10 @@ const INITIAL_USERS = [
     positionTitle: "Nhân Viên Pha Chế",
     email: "phache@dodo.vn",
     phone: "0933445566",
+    gender: "nu",
+    gioi_tinh: "nu",
+    address: "Số 89 Nguyễn Trãi, Thanh Xuân, Hà Nội",
+    dia_chi: "Số 89 Nguyễn Trãi, Thanh Xuân, Hà Nội",
     status: "active",
     createdAt: "2026-03-01"
   },

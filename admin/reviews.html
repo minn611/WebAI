@@ -163,7 +163,7 @@
                   <th style="min-width: 240px;">Nhận Xét & Đánh Giá</th>
                   <th style="min-width: 240px;">Phản Hồi Của Quản Lý</th>
                   <th style="text-align: center;">Trạng Thái</th>
-                  <th style="text-align: center; width: 140px;">Thao Tác</th>
+                  <th style="text-align: center; width: 160px;">Thao Tác</th>
                 </tr>
               </thead>
               <tbody id="admin-reviews-tbody">
@@ -222,6 +222,74 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" data-close-modal="reply-modal">Hủy</button>
           <button type="submit" class="btn btn-primary">Gửi Phản Hồi ➔</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Chỉnh Sửa Đánh Giá & Phản Hồi -->
+  <div id="edit-review-modal" class="modal-backdrop">
+    <div class="modal-container" style="max-width: 620px;">
+      <div class="modal-header">
+        <h4 class="modal-title">✏️ Chỉnh Sửa Đánh Giá & Phản Hồi</h4>
+        <button class="modal-close" data-close-modal="edit-review-modal">✕</button>
+      </div>
+      <form onsubmit="ReviewMgmt.submitEditReview(event)">
+        <div class="modal-body">
+          <input type="hidden" id="edit-review-id">
+
+          <!-- Product & Customer Header Info -->
+          <div style="background: var(--bg-card-hover); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+              <div>
+                <b id="edit-cust-name" style="color: var(--text-heading);">Khách Hàng</b>
+                <span id="edit-cust-tier" class="badge badge-primary" style="margin-left: 0.35rem; font-size: 0.75rem;">VIP Đồng</span>
+              </div>
+              <span id="edit-review-date" class="text-xs text-muted">2026-03-14 10:00</span>
+            </div>
+            <div class="text-xs text-muted" id="edit-prod-info">Sản phẩm: Hồng Trà Mochi Kéo Dài</div>
+          </div>
+
+          <!-- Rating Stars Selection -->
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label text-xs font-bold">Số Sao Đánh Giá *</label>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <select id="edit-rating-select" class="form-select form-control" style="width: 170px; font-weight: 700; color: #f4a261;">
+                <option value="5">⭐⭐⭐⭐⭐ (5 sao)</option>
+                <option value="4">⭐⭐⭐⭐ (4 sao)</option>
+                <option value="3">⭐⭐⭐ (3 sao)</option>
+                <option value="2">⭐⭐ (2 sao)</option>
+                <option value="1">⭐ (1 sao)</option>
+              </select>
+              <span class="text-xs text-muted">Điều chỉnh số sao phù hợp với thực tế</span>
+            </div>
+          </div>
+
+          <!-- Review Comment Content -->
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label text-xs font-bold">Nội Dung Đánh Giá Của Khách Hàng *</label>
+            <textarea id="edit-comment-content" class="form-control" rows="3" required placeholder="Nội dung nhận xét đánh giá..."></textarea>
+            <span class="text-xs text-muted" style="display: block; margin-top: 3px;">Quản lý / Nhân viên có thể chỉnh sửa nội dung hoặc khắc phục lỗi chính tả theo yêu cầu</span>
+          </div>
+
+          <!-- Admin Reply Content -->
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label text-xs font-bold">Phản Hồi Của Cửa Hàng (Quản Lý / Nhân Viên)</label>
+            <textarea id="edit-reply-content" class="form-control" rows="3" placeholder="Nhập phản hồi của cửa hàng gửi tới khách hàng..."></textarea>
+          </div>
+
+          <!-- Visibility Status -->
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label text-xs font-bold">Trạng Thái Hiển Thị</label>
+            <select id="edit-visibility-select" class="form-select form-control" style="width: 100%;">
+              <option value="1">✅ Hiển thị công khai trên website</option>
+              <option value="0">🚫 Tạm ẩn đánh giá khỏi website</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal="edit-review-modal">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu Thay Đổi 💾</button>
         </div>
       </form>
     </div>
@@ -375,7 +443,10 @@
               </td>
               <td style="text-align: center;">
                 <div class="table-actions" style="justify-content: center; gap: 0.35rem;">
-                  <button class="action-icon-btn btn-edit" onclick="ReviewMgmt.openReplyModal('${r.id}')" title="${hasReply ? 'Sửa câu phản hồi' : 'Viết phản hồi cho khách'}">
+                  <button class="action-icon-btn btn-edit" onclick="ReviewMgmt.openEditModal('${r.id}')" title="Chỉnh sửa đánh giá & phản hồi">
+                    ✏️
+                  </button>
+                  <button class="action-icon-btn" onclick="ReviewMgmt.openReplyModal('${r.id}')" title="${hasReply ? 'Sửa câu phản hồi' : 'Viết phản hồi cho khách'}" style="color: #2a9d8f;">
                     💬
                   </button>
                   <button class="action-icon-btn" onclick="ReviewMgmt.toggleVisibility('${r.id}')" title="${r.visible ? 'Ẩn đánh giá' : 'Hiển thị lại'}">
@@ -495,6 +566,67 @@
 
         DB.deleteReview(id);
         Toast.info("Đã xóa đánh giá!");
+        await this.renderTable();
+      },
+
+      openEditModal(reviewId) {
+        let rev = this.reviewsList.find(r => String(r.id) === String(reviewId));
+        if (!rev) {
+          const allRev = DB.getReviews();
+          rev = allRev.find(r => String(r.id) === String(reviewId));
+        }
+        if (!rev) return;
+
+        document.getElementById("edit-review-id").value = rev.id;
+        document.getElementById("edit-cust-name").textContent = rev.customerName || 'Khách Hàng';
+        document.getElementById("edit-cust-tier").textContent = rev.customerTier || 'VIP Đồng';
+        document.getElementById("edit-prod-info").textContent = `Sản phẩm: ${rev.productName || 'Trà sữa'} (${rev.productId || 'TS-01'})`;
+        document.getElementById("edit-review-date").textContent = `🕒 ${rev.createdAt || ''}`;
+        document.getElementById("edit-rating-select").value = String(rev.rating || 5);
+        document.getElementById("edit-comment-content").value = rev.comment || '';
+        document.getElementById("edit-reply-content").value = rev.adminReply || '';
+        document.getElementById("edit-visibility-select").value = rev.visible ? "1" : "0";
+
+        Modal.open("edit-review-modal");
+      },
+
+      async submitEditReview(e) {
+        e.preventDefault();
+        const id = document.getElementById("edit-review-id").value;
+        const so_sao = parseInt(document.getElementById("edit-rating-select").value) || 5;
+        const noi_dung = document.getElementById("edit-comment-content").value.trim();
+        const phan_hoi_admin = document.getElementById("edit-reply-content").value.trim();
+        const isVisible = document.getElementById("edit-visibility-select").value === "1";
+        const apiBase = (typeof APIConfig !== 'undefined') ? APIConfig.getBaseUrl() : (window.API_BASE || '/api');
+
+        try {
+          const res = await fetch(`${apiBase}/reviews/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              so_sao,
+              noi_dung,
+              phan_hoi_admin,
+              trang_thai_hien_thi: isVisible ? 1 : 0
+            })
+          });
+          const json = await res.json().catch(() => ({}));
+          if (json.success) {
+            Toast.success(json.message || "Cập nhật đánh giá thành công!");
+          }
+        } catch (err) {
+          console.warn("Backend API offline, cập nhật vào LocalStorage...");
+        }
+
+        DB.updateReview(id, {
+          rating: so_sao,
+          comment: noi_dung,
+          adminReply: phan_hoi_admin,
+          visible: isVisible
+        });
+
+        Toast.success("Đã cập nhật đánh giá thành công!");
+        Modal.close("edit-review-modal");
         await this.renderTable();
       }
     };

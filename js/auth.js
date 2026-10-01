@@ -379,11 +379,17 @@ const Auth = {
       Toast.success(`Đã đăng nhập vai trò: <b>${res.user.fullName}</b> (${res.user.role.toUpperCase()})`);
       this.updateHeaderAuthUI();
       setTimeout(() => {
-        if (res.user.role === "admin" || res.user.role === "staff") {
+        if (res.user.role === "admin" || res.user.position === "quan_ly") {
           if (!window.location.pathname.includes("/admin/")) {
             window.location.href = "admin/index.html";
           } else {
             window.location.reload();
+          }
+        } else if (res.user.role === "staff") {
+          if (!window.location.pathname.includes("/admin/")) {
+            window.location.href = "admin/orders.html";
+          } else {
+            window.location.href = "orders.html";
           }
         } else {
           if (window.location.pathname.includes("/admin/")) {

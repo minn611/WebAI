@@ -205,6 +205,7 @@ exports.updateStaff = async (req, res) => {
       email,
       vai_tro,
       mat_khau,
+      gioi_tinh,
       dia_chi,
       luong_co_ban,
       trang_thai_lam_viec
@@ -226,11 +227,12 @@ exports.updateStaff = async (req, res) => {
       `UPDATE NHAN_VIEN 
        SET ho_ten = COALESCE(?, ho_ten),
            chuc_vu = COALESCE(?, chuc_vu),
+           gioi_tinh = COALESCE(?, gioi_tinh),
            dia_chi = COALESCE(?, dia_chi),
            luong_co_ban = COALESCE(?, luong_co_ban),
            trang_thai_lam_viec = COALESCE(?, trang_thai_lam_viec)
        WHERE id = ?`,
-      [ho_ten, chuc_vu, dia_chi, luong_co_ban, trang_thai_lam_viec, id]
+      [ho_ten, chuc_vu, gioi_tinh, dia_chi, luong_co_ban, trang_thai_lam_viec, id]
     );
 
     // Cập nhật TAI_KHOAN

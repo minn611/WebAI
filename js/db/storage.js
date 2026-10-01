@@ -261,6 +261,21 @@ const DB = {
     list = list.filter(r => String(r.id) !== String(id));
     this.saveReviews(list);
   },
+  updateReview(id, data) {
+    const list = this.getReviews();
+    const target = list.find(r => String(r.id) === String(id));
+    if (target) {
+      if (data.rating !== undefined) target.rating = parseInt(data.rating);
+      if (data.comment !== undefined) target.comment = data.comment;
+      if (data.adminReply !== undefined) target.adminReply = data.adminReply;
+      if (data.visible !== undefined) {
+        target.visible = (data.visible === true || data.visible === 1 || String(data.visible) === '1' || String(data.visible) === 'true');
+      }
+      this.saveReviews(list);
+      return target;
+    }
+    return null;
+  },
 
   // Reset to initial demo data
   resetDatabase() {

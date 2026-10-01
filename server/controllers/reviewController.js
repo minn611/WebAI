@@ -187,12 +187,12 @@ exports.toggleReviewVisibility = async (req, res) => {
   }
 };
 
-// @desc    Chỉnh sửa đánh giá (Khách hàng - UC 3.2.2.2.3 g)
+// @desc    Chỉnh sửa đánh giá (Khách hàng / Quản lý / Nhân viên - UC 3.2.2.2.3 g)
 // @route   PUT /api/reviews/:id
 exports.updateReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { so_sao, noi_dung } = req.body;
+    const { so_sao, noi_dung, phan_hoi_admin, trang_thai_hien_thi } = req.body;
 
     const [existing] = await pool.query(`SELECT * FROM REVIEWS WHERE id = ?`, [id]);
     if (existing.length === 0) {
@@ -201,10 +201,15 @@ exports.updateReview = async (req, res) => {
 
     const newStars = so_sao !== undefined ? parseInt(so_sao) : existing[0].so_sao;
     const newContent = noi_dung !== undefined ? noi_dung : existing[0].noi_dung;
+    const newReply = phan_hoi_admin !== undefined ? phan_hoi_admin : existing[0].phan_hoi_admin;
+    let newVisibility = existing[0].trang_thai_hien_thi;
+    if (trang_thai_hien_thi !== undefined) {
+      newVisibility = (trang_thai_hien_thi === 1 || trang_thai_hien_thi === true || String(trang_thai_hien_thi) === '1' || String(trang_thai_hien_thi) === 'true') ? 1 : 0;
+    }
 
     await pool.query(
-      `UPDATE REVIEWS SET so_sao = ?, noi_dung = ? WHERE id = ?`,
-      [newStars, newContent, id]
+      `UPDATE REVIEWS SET so_sao = ?, noi_dung = ?, phan_hoi_admin = ?, trang_thai_hien_thi = ? WHERE id = ?`,
+      [newStars, newContent, newReply, newVisibility, id]
     );
 
     // Cập nhật lại sao trung bình của sản phẩm
@@ -218,7 +223,7 @@ exports.updateReview = async (req, res) => {
     res.json({
       success: true,
       message: 'Chỉnh sửa đánh giá thành công!',
-      data: { id, so_sao: newStars, noi_dung: newContent, newAvg }
+      data: { id, so_sao: newStars, noi_dung: newContent, phan_hoi_admin: newReply, trang_thai_hien_thi: newVisibility, newAvg }
     });
   } catch (error) {
     console.error('Error updating review:', error);
